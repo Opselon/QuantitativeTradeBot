@@ -1,195 +1,719 @@
 name: Publish Release
 
 on:
+  # اجرای خودکار پس از Push روی شاخه اصلی
   push:
+    branches:
+      - main
+      - master
     tags:
       - "v*"
       - "release-*"
+
+  # اجرای دستی از تب Actions
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g. 0.64.0)"
+        description: "Release version without v prefix, for example 0.64.0"
         required: true
         default: "0.64.0"
+        type: string
+
+      prerelease:
+        description: "Publish as a pre-release"
+        required: true
+        default: false
+        type: boolean
+
+      draft:
+        description: "Create GitHub Release as draft"
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: write
 
+concurrency:
+  group: publish-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
-    name: Build, Package and Release
+    name: Build, Test, Package and Publish
     runs-on: windows-latest
+    timeout-minutes: 60
+
+    defaults:
+      run:
+        shell: pwsh
 
     env:
-      DOTNET_NOLOGO: true
-      DOTNET_CLI_TELEMETRY_OPTOUT: true
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      DOTNET_NOLOGO: "true"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+      NUGET_XMLDOC_MODE: skip
+
+      SOLUTION_PATH: NexusTradingEngine.sln
+      DESKTOP_PROJECT: src/Nexus.Desktop/Nexus.Desktop.csproj
+      INFRASTRUCTURE_PROJECT: src/Nexus.Infrastructure/Nexus.Infrastructure.csproj
+
+      PUBLISH_ROOT: ${{ github.workspace }}/artifacts/publish
+      RELEASE_ROOT: ${{ github.workspace }}/artifacts/release
+      MIGRATION_ROOT: ${{ github.workspace }}/artifacts/migrations
 
     steps:
-      - name: Checkout Source Code
+      # ------------------------------------------------------------
+      # Source
+      # ------------------------------------------------------------
+
+      - name: Checkout source code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: true
 
-      - name: Determine Version
-        id: get_version
-        shell: bash
+      # ------------------------------------------------------------
+      # Version
+      # ------------------------------------------------------------
+
+      - name: Determine release version and tag
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
-          VERSION="0.64.0"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            TAG_NAME="${{ github.ref_name }}"
-            # Strip 'v' prefix if present
-            VERSION="${TAG_NAME#v}"
-            # Support release-64 style as well
-            if [[ "$TAG_NAME" == release-* ]]; then
-              VERSION="${TAG_NAME#release-}"
-              if [[ "$VERSION" =~ ^[0-9]+$ ]]; then
-                VERSION="0.$VERSION.0"
-              fi
-            fi
-          fi
-          echo "Determined Version: $VERSION"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          $ErrorActionPreference = "Stop"
+
+          if ($env:EVENT_NAME -eq "workflow_dispatch") {
+              $version = $env:INPUT_VERSION.Trim()
+              $releaseTag = "v$version"
+          }
+          elseif ($env:REF_TYPE -eq "tag") {
+              $sourceTag = $env:REF_NAME.Trim()
+
+              if ($sourceTag -match '^v(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$') {
+                  $version = $Matches.version
+                  $releaseTag = $sourceTag
+              }
+              elseif ($sourceTag -match '^release-(?<releaseNumber>\d+)$') {
+                  $releaseNumber = [int]$Matches.releaseNumber
+                  $version = "0.$releaseNumber.0"
+                  $releaseTag = $sourceTag
+              }
+              elseif ($sourceTag -match '^release-(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$') {
+                  $version = $Matches.version
+                  $releaseTag = $sourceTag
+              }
+              else {
+                  throw "Unsupported release tag: '$sourceTag'. Use v0.64.0, release-64, or release-0.64.0."
+              }
+          }
+          else {
+              # Push معمولی روی main/master:
+              # برای جلوگیری از تداخل Releaseها، نسخه یکتا تولید می‌شود.
+              $version = "0.64.$env:RUN_NUMBER"
+              $releaseTag = "v$version"
+          }
+
+          if ($version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
+              throw "Invalid release version: '$version'. Expected semantic version such as 0.64.0."
+          }
+
+          # AssemblyVersion و FileVersion باید عددی باشند و suffix نداشته باشند.
+          $numericVersion = ($version -split '-')[0]
+          $releaseName = "Nexus Trading Engine v$version"
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "numeric_version=$numericVersion" >> $env:GITHUB_OUTPUT
+          "tag=$releaseTag" >> $env:GITHUB_OUTPUT
+          "release_name=$releaseName" >> $env:GITHUB_OUTPUT
+
+          Write-Host "Version       : $version"
+          Write-Host "NumericVersion: $numericVersion"
+          Write-Host "Release tag   : $releaseTag"
+          Write-Host "Release name  : $releaseName"
+
+      # ------------------------------------------------------------
+      # .NET
+      # ------------------------------------------------------------
 
       - name: Setup .NET 10 SDK
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
           include-prerelease: true
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            **/packages.lock.json
+            global.json
+            NuGet.config
 
-      - name: Build Native C++ Component
-        shell: bash
+      - name: Display .NET environment
         run: |
-          chmod +x native/build.sh
-          ./native/build.sh
+          $ErrorActionPreference = "Stop"
+          dotnet --info
+          dotnet --list-sdks
+          dotnet --list-runtimes
 
-      - name: Restore NuGet Packages
-        run: dotnet restore NexusTradingEngine.sln
+      # ------------------------------------------------------------
+      # Prepare directories
+      # ------------------------------------------------------------
 
-      - name: Run Unit & Integration Tests
-        run: >
-          dotnet test NexusTradingEngine.sln
-          --configuration Release
-          --no-restore
-
-      - name: Install EF Core CLI Tool
-        shell: bash
+      - name: Prepare artifact directories
         run: |
-          dotnet tool install --global dotnet-ef --version 9.0.2
-          echo "$USERPROFILE/.dotnet/tools" >> $GITHUB_PATH
+          $ErrorActionPreference = "Stop"
 
-      - name: Create Self-Contained Release Output (Windows x64)
-        run: >
-          dotnet publish src/Nexus.Desktop/Nexus.Desktop.csproj
-          -c Release
-          -r win-x64
-          --self-contained true
-          -p:PublishSingleFile=false
-          -p:PublishReadyToRun=false
-          -p:PublishTrimmed=false
-          -p:VERSION=${{ steps.get_version.outputs.version }}
-          -o ./publish/win-x64-self-contained
+          $paths = @(
+              "${{ env.PUBLISH_ROOT }}",
+              "${{ env.PUBLISH_ROOT }}/win-x64-self-contained",
+              "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent",
+              "${{ env.RELEASE_ROOT }}",
+              "${{ env.MIGRATION_ROOT }}"
+          )
 
-      - name: Create Framework-Dependent Release Output (Windows x64)
-        run: >
-          dotnet publish src/Nexus.Desktop/Nexus.Desktop.csproj
-          -c Release
-          -r win-x64
-          --self-contained false
-          -p:PublishSingleFile=false
-          -p:PublishReadyToRun=false
-          -p:PublishTrimmed=false
-          -p:VERSION=${{ steps.get_version.outputs.version }}
-          -o ./publish/win-x64-framework-dependent
+          foreach ($path in $paths) {
+              if (Test-Path $path) {
+                  Remove-Item -Path $path -Recurse -Force
+              }
 
-      - name: Generate EF Core Migration Bundle (Windows x64)
-        run: >
-          dotnet ef migrations bundle
-          --project src/Nexus.Infrastructure/Nexus.Infrastructure.csproj
-          --startup-project src/Nexus.Infrastructure/Nexus.Infrastructure.csproj
-          --output ./efbundle-temp/efbundle.exe
-          --self-contained
-          -r win-x64
-
-      - name: Deploy Configurations and Database Scripts
-        run: |
-          $config = @"
-          {
-            "SelectedProvider": "SQLite",
-            "ConnectionString": "Data Source=nexus.db",
-            "IsOnboarded": false,
-            "ProfileName": "DefaultMT5",
-            "BrokerServer": "ICMarkets-Demo",
-            "LoginAccountId": "7820491",
-            "TerminalPath": "C:\\Program Files\\MetaTrader 5\\terminal64.exe",
-            "TimeoutSeconds": 30,
-            "AutoReconnect": true,
-            "Mt5Mode": "Simulated",
-            "Mt5BridgeHost": "127.0.0.1",
-            "Mt5BridgePort": 5000,
-            "Mt5BridgeUseSsl": false
+              New-Item -ItemType Directory -Path $path -Force | Out-Null
           }
+
+      # ------------------------------------------------------------
+      # Restore, build and test
+      # ------------------------------------------------------------
+
+      - name: Restore NuGet packages
+        run: |
+          $ErrorActionPreference = "Stop"
+          dotnet restore "${{ env.SOLUTION_PATH }}"
+
+      - name: Build solution
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          dotnet build "${{ env.SOLUTION_PATH }}" `
+            --configuration Release `
+            --no-restore `
+            -p:ContinuousIntegrationBuild=true `
+            -p:Version="${{ steps.version.outputs.version }}" `
+            -p:AssemblyVersion="${{ steps.version.outputs.numeric_version }}" `
+            -p:FileVersion="${{ steps.version.outputs.numeric_version }}" `
+            -p:InformationalVersion="${{ steps.version.outputs.version }}+${{ github.sha }}"
+
+      - name: Run all tests
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          dotnet test "${{ env.SOLUTION_PATH }}" `
+            --configuration Release `
+            --no-restore `
+            --no-build `
+            --logger "trx;LogFileName=test-results.trx" `
+            --results-directory "${{ github.workspace }}/artifacts/test-results"
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ steps.version.outputs.version }}
+          path: artifacts/test-results/**
+          if-no-files-found: warn
+          retention-days: 14
+
+      # ------------------------------------------------------------
+      # Native Windows component
+      # ------------------------------------------------------------
+
+      - name: Verify native build script
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          if (-not (Test-Path "native/build.sh")) {
+              throw "Required native build script was not found: native/build.sh"
+          }
+
+          $bashCommand = Get-Command bash -ErrorAction SilentlyContinue
+
+          if ($null -eq $bashCommand) {
+              throw "Bash is unavailable on the Windows runner."
+          }
+
+          Write-Host "Bash executable: $($bashCommand.Source)"
+
+      - name: Build native Windows component
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Building native Windows component..."
+          bash native/build.sh
+
+          DLL_PATH="native/Nexus.Native/nexus_native.dll"
+
+          if [ ! -f "$DLL_PATH" ]; then
+            echo "::error::Native build completed but $DLL_PATH was not produced."
+            find native -maxdepth 4 -type f -print || true
+            exit 1
+          fi
+
+          echo "Native component created successfully:"
+          ls -lah "$DLL_PATH"
+
+      # ------------------------------------------------------------
+      # EF Core migration bundle
+      # ------------------------------------------------------------
+
+      - name: Install EF Core CLI
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $toolPath = "${{ github.workspace }}/.tools"
+          New-Item -ItemType Directory -Path $toolPath -Force | Out-Null
+
+          dotnet tool install dotnet-ef `
+            --tool-path $toolPath `
+            --version "9.0.2"
+
+          $toolPath >> $env:GITHUB_PATH
+          & "$toolPath/dotnet-ef.exe" --version
+
+      - name: Generate Windows x64 EF migration bundle
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $bundlePath = "${{ env.MIGRATION_ROOT }}/efbundle.exe"
+
+          dotnet ef migrations bundle `
+            --project "${{ env.INFRASTRUCTURE_PROJECT }}" `
+            --startup-project "${{ env.INFRASTRUCTURE_PROJECT }}" `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained `
+            --force `
+            --output "$bundlePath"
+
+          if (-not (Test-Path $bundlePath)) {
+              throw "EF migration bundle was not generated: $bundlePath"
+          }
+
+          $bundle = Get-Item $bundlePath
+
+          if ($bundle.Length -le 0) {
+              throw "Generated EF migration bundle is empty."
+          }
+
+          Write-Host "Migration bundle: $($bundle.FullName)"
+          Write-Host "Migration size  : $($bundle.Length) bytes"
+
+      # ------------------------------------------------------------
+      # Publish
+      # ------------------------------------------------------------
+
+      - name: Publish self-contained Windows x64 app
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          dotnet publish "${{ env.DESKTOP_PROJECT }}" `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            --no-restore `
+            -p:PublishSingleFile=false `
+            -p:PublishReadyToRun=false `
+            -p:PublishTrimmed=false `
+            -p:DebugType=none `
+            -p:DebugSymbols=false `
+            -p:ContinuousIntegrationBuild=true `
+            -p:Version="${{ steps.version.outputs.version }}" `
+            -p:AssemblyVersion="${{ steps.version.outputs.numeric_version }}" `
+            -p:FileVersion="${{ steps.version.outputs.numeric_version }}" `
+            -p:InformationalVersion="${{ steps.version.outputs.version }}+${{ github.sha }}" `
+            --output "${{ env.PUBLISH_ROOT }}/win-x64-self-contained"
+
+      - name: Publish framework-dependent Windows x64 app
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          dotnet publish "${{ env.DESKTOP_PROJECT }}" `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained false `
+            --no-restore `
+            -p:PublishSingleFile=false `
+            -p:PublishReadyToRun=false `
+            -p:PublishTrimmed=false `
+            -p:DebugType=none `
+            -p:DebugSymbols=false `
+            -p:ContinuousIntegrationBuild=true `
+            -p:Version="${{ steps.version.outputs.version }}" `
+            -p:AssemblyVersion="${{ steps.version.outputs.numeric_version }}" `
+            -p:FileVersion="${{ steps.version.outputs.numeric_version }}" `
+            -p:InformationalVersion="${{ steps.version.outputs.version }}+${{ github.sha }}" `
+            --output "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent"
+
+      # ------------------------------------------------------------
+      # Package safe configuration
+      # ------------------------------------------------------------
+
+      - name: Add safe configuration, migration and native files
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $selfContained = "${{ env.PUBLISH_ROOT }}/win-x64-self-contained"
+          $frameworkDependent = "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent"
+          $migrationBundle = "${{ env.MIGRATION_ROOT }}/efbundle.exe"
+          $nativeDll = "${{ github.workspace }}/native/Nexus.Native/nexus_native.dll"
+
+          $config = [ordered]@{
+              SelectedProvider = "SQLite"
+              ConnectionString = "Data Source=nexus.db"
+              IsOnboarded = $false
+              ProfileName = "LocalSimulation"
+              BrokerServer = ""
+              LoginAccountId = ""
+              TerminalPath = ""
+              TimeoutSeconds = 30
+              AutoReconnect = $true
+              Mt5Mode = "Simulated"
+              Mt5BridgeHost = "127.0.0.1"
+              Mt5BridgePort = 5000
+              Mt5BridgeUseSsl = $false
+          }
+
+          $configJson = $config | ConvertTo-Json -Depth 10
+
+          $configTemplate = [ordered]@{
+              SelectedProvider = "SQLite"
+              ConnectionString = "Data Source=nexus.db"
+              IsOnboarded = $false
+              ProfileName = "LocalSimulation"
+              BrokerServer = ""
+              LoginAccountId = ""
+              TerminalPath = ""
+              TimeoutSeconds = 30
+              AutoReconnect = $true
+              Mt5Mode = "Simulated"
+              Mt5BridgeHost = "127.0.0.1"
+              Mt5BridgePort = 5000
+              Mt5BridgeUseSsl = $false
+          } | ConvertTo-Json -Depth 10
+
+          $readme = @"
+          Nexus Trading Engine ${{ steps.version.outputs.version }}
+          =======================================================
+
+          QUICK START
+          -----------
+          1. Run Nexus.Desktop.exe.
+          2. Keep SQLite selected for local testing.
+          3. Keep Mt5Mode set to Simulated.
+          4. MT5 is not required for simulated testing.
+
+          CONFIGURATION
+          -------------
+          Main configuration:
+              nexus_config.json
+
+          Safe template:
+              nexus_config.json.template
+
+          MIGRATIONS
+          ----------
+          The package includes efbundle.exe.
+
+          Review your database connection settings before executing database
+          migrations against PostgreSQL or any non-local database.
+
+          SECURITY
+          --------
+          This package contains no credentials.
+          Do not commit passwords, account secrets or production connection
+          strings into nexus_config.json.
+
+          BUILD
+          -----
+          Version: ${{ steps.version.outputs.version }}
+          Commit:  ${{ github.sha }}
           "@
-          Set-Content -Path ./nexus_config.json -Value $config
 
-          # Deploy default config to both folders
-          Copy-Item ./nexus_config.json ./publish/win-x64-self-contained/nexus_config.json -Force
-          Copy-Item ./nexus_config.json ./publish/win-x64-framework-dependent/nexus_config.json -Force
+          foreach ($destination in @($selfContained, $frameworkDependent)) {
+              if (-not (Test-Path $destination)) {
+                  throw "Publish destination does not exist: $destination"
+              }
 
-          # Copy migration bundle next to each executable for seamless setup
-          Copy-Item ./efbundle-temp/efbundle.exe ./publish/win-x64-self-contained/efbundle.exe -Force
-          Copy-Item ./efbundle-temp/efbundle.exe ./publish/win-x64-framework-dependent/efbundle.exe -Force
+              Set-Content `
+                -Path "$destination/nexus_config.json" `
+                -Value $configJson `
+                -Encoding UTF8
 
-          # Copy compiled native Windows DLL to both folders if exists
-          if (Test-Path native/Nexus.Native/nexus_native.dll) {
-            Copy-Item native/Nexus.Native/nexus_native.dll ./publish/win-x64-self-contained/nexus_native.dll -Force
-            Copy-Item native/Nexus.Native/nexus_native.dll ./publish/win-x64-framework-dependent/nexus_native.dll -Force
+              Set-Content `
+                -Path "$destination/nexus_config.json.template" `
+                -Value $configTemplate `
+                -Encoding UTF8
+
+              Set-Content `
+                -Path "$destination/README.txt" `
+                -Value $readme `
+                -Encoding UTF8
+
+              Copy-Item $migrationBundle "$destination/efbundle.exe" -Force
+              Copy-Item $nativeDll "$destination/nexus_native.dll" -Force
           }
 
-      - name: Create Zipped Portable App Packages
-        run: |
-          $ver = "${{ steps.get_version.outputs.version }}"
-          Compress-Archive -Path publish/win-x64-self-contained/* -DestinationPath "Nexus.Desktop-win-x64-self-contained-$ver.zip" -Force
-          Compress-Archive -Path publish/win-x64-framework-dependent/* -DestinationPath "Nexus.Desktop-win-x64-framework-dependent-$ver.zip" -Force
+      # ------------------------------------------------------------
+      # Validate packages
+      # ------------------------------------------------------------
 
-      - name: Generate Release Notes Draft
-        id: notes
-        shell: bash
+      - name: Validate publish outputs
         run: |
-          VERSION="${{ steps.get_version.outputs.version }}"
-          echo "## Release $VERSION - Deployment & Testing Guide" > release_notes.md
-          echo "" >> release_notes.md
-          echo "This release is pre-configured for instant, automated local validation and contains fully compiled self-contained portable desktop distribution packages." >> release_notes.md
-          echo "" >> release_notes.md
-          echo "### Release Assets Included:" >> release_notes.md
-          echo "- **Self-Contained Windows x64 Portable**: `Nexus.Desktop-win-x64-self-contained-${VERSION}.zip` (No local .NET runtime requirements)." >> release_notes.md
-          echo "- **Framework-Dependent Windows x64 Portable**: `Nexus.Desktop-win-x64-framework-dependent-${VERSION}.zip` (Requires .NET 10.0 runtime on the client machine)." >> release_notes.md
-          echo "- **Entity Framework Migration Bundle**: `efbundle.exe` (Packaged next to the executables for direct schema execution against local/remote database servers)." >> release_notes.md
-          echo "" >> release_notes.md
-          echo "### How to Test and Run:" >> release_notes.md
-          echo "1. Download and extract **`Nexus.Desktop-win-x64-self-contained-${VERSION}.zip`**." >> release_notes.md
-          echo "2. Double-click `Nexus.Desktop.exe` to launch the Desktop Workstation App." >> release_notes.md
-          echo "3. The application will boot up into the interactive **6-Step Onboarding Wizard**." >> release_notes.md
-          echo "4. Under **Step 1 (Persistence Provider)**, choose **SQLite** for a fast, zero-config quick start evaluation, or **PostgreSQL** for enterprise deployment testing." >> release_notes.md
-          echo "5. Under **Step 2 (Database Preparation)**, click **Initialize Database** to create the tables, indexes, and partitions. (If using PostgreSQL, make sure your PostgreSQL server is active and the connection string is valid)." >> release_notes.md
-          echo "6. Under **Step 3 (MetaTrader 5 Onboarding)**, keep **Simulated MT5 Mode** as active to bypass physical MetaTrader installation. (To switch to Live MT5 bridge execution later, select **Real MT5 Bridge** and specify your Terminal Path and Bridge IP endpoints)." >> release_notes.md
-          echo "7. Under **Step 4 (Verify Gateway Session)**, click **Test MT5 Connection**. Under Simulated Mode, this test will perform handshake checks and immediately succeed!" >> release_notes.md
-          echo "8. Under **Step 5 (Financial Snapshot Preview)**, inspect the simulated free margin, balance, and account equity metrics retrieved via the system connector." >> release_notes.md
-          echo "9. Under **Step 6 (Launch Station)**, click **Launch Professional Workspace** to enter the workspace panel!" >> release_notes.md
-          echo "10. In the trading station, you can submit Buy/Sell market orders, see active positions, refresh position stats, and monitor live structured diagnostic logs directly in the UI." >> release_notes.md
+          $ErrorActionPreference = "Stop"
 
-      - name: Create GitHub Release
+          $publishFolders = @(
+              "${{ env.PUBLISH_ROOT }}/win-x64-self-contained",
+              "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent"
+          )
+
+          $requiredFiles = @(
+              "Nexus.Desktop.exe",
+              "nexus_config.json",
+              "nexus_config.json.template",
+              "README.txt",
+              "efbundle.exe",
+              "nexus_native.dll"
+          )
+
+          foreach ($folder in $publishFolders) {
+              Write-Host "Validating: $folder"
+
+              foreach ($requiredFile in $requiredFiles) {
+                  $path = Join-Path $folder $requiredFile
+
+                  if (-not (Test-Path $path)) {
+                      throw "Required release file is missing: $path"
+                  }
+
+                  $file = Get-Item $path
+
+                  if ($file.Length -le 0) {
+                      throw "Required release file is empty: $path"
+                  }
+
+                  Write-Host "  OK: $requiredFile ($($file.Length) bytes)"
+              }
+          }
+
+          $forbiddenPatterns = @(
+              '"Password"\s*:\s*"[^"]+"',
+              '"Secret"\s*:\s*"[^"]+"',
+              '"ApiKey"\s*:\s*"[^"]+"',
+              '"LoginAccountId"\s*:\s*"[0-9]+"'
+          )
+
+          Get-ChildItem "${{ env.PUBLISH_ROOT }}" `
+            -Recurse `
+            -File `
+            -Include *.json,*.config,*.txt |
+          ForEach-Object {
+              $content = Get-Content $_.FullName -Raw
+
+              foreach ($pattern in $forbiddenPatterns) {
+                  if ($content -match $pattern) {
+                      throw "Potential secret or sensitive value detected in: $($_.FullName)"
+                  }
+              }
+          }
+
+      # ------------------------------------------------------------
+      # Zip release files
+      # ------------------------------------------------------------
+
+      - name: Create release ZIP packages
+        id: packages
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $version = "${{ steps.version.outputs.version }}"
+          $releaseRoot = "${{ env.RELEASE_ROOT }}"
+
+          $selfContainedZip = Join-Path `
+            $releaseRoot `
+            "Nexus.Desktop-win-x64-self-contained-$version.zip"
+
+          $frameworkDependentZip = Join-Path `
+            $releaseRoot `
+            "Nexus.Desktop-win-x64-framework-dependent-$version.zip"
+
+          Compress-Archive `
+            -Path "${{ env.PUBLISH_ROOT }}/win-x64-self-contained/*" `
+            -DestinationPath $selfContainedZip `
+            -CompressionLevel Optimal `
+            -Force
+
+          Compress-Archive `
+            -Path "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent/*" `
+            -DestinationPath $frameworkDependentZip `
+            -CompressionLevel Optimal `
+            -Force
+
+          Copy-Item `
+            "${{ env.MIGRATION_ROOT }}/efbundle.exe" `
+            "$releaseRoot/efbundle-win-x64-$version.exe" `
+            -Force
+
+          $releaseFiles = Get-ChildItem $releaseRoot -File
+
+          if ($releaseFiles.Count -lt 3) {
+              throw "Expected at least three release assets but found $($releaseFiles.Count)."
+          }
+
+          foreach ($file in $releaseFiles) {
+              if ($file.Length -le 0) {
+                  throw "Release asset is empty: $($file.FullName)"
+              }
+
+              Write-Host "$($file.Name) - $($file.Length) bytes"
+          }
+
+          "self_contained_zip=$selfContainedZip" >> $env:GITHUB_OUTPUT
+          "framework_zip=$frameworkDependentZip" >> $env:GITHUB_OUTPUT
+
+      # ------------------------------------------------------------
+      # Release notes
+      # ------------------------------------------------------------
+
+      - name: Generate release notes
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $version = "${{ steps.version.outputs.version }}"
+          $tag = "${{ steps.version.outputs.tag }}"
+          $selfContainedName = "Nexus.Desktop-win-x64-self-contained-$version.zip"
+          $frameworkName = "Nexus.Desktop-win-x64-framework-dependent-$version.zip"
+          $migrationName = "efbundle-win-x64-$version.exe"
+
+          $notes = @"
+          # Nexus Trading Engine $version
+
+          ## Recommended download
+
+          Download **$selfContainedName** for normal testing.
+
+          The self-contained package includes the required .NET runtime and does
+          not require a separate .NET installation.
+
+          ## Release assets
+
+          - **$selfContainedName**
+            - Windows x64
+            - Self-contained
+            - Recommended for testers
+            - Includes safe SQLite configuration
+            - Includes simulated MT5 mode
+            - Includes native Windows component
+            - Includes EF migration bundle
+
+          - **$frameworkName**
+            - Windows x64
+            - Requires the compatible .NET Desktop Runtime
+            - Intended for development and advanced testing
+
+          - **$migrationName**
+            - Standalone Windows x64 Entity Framework migration bundle
+
+          ## Quick start
+
+          1. Download `$selfContainedName`.
+          2. Extract the ZIP into a writable directory.
+          3. Run `Nexus.Desktop.exe`.
+          4. Keep SQLite as the persistence provider.
+          5. Keep MT5 mode set to `Simulated`.
+          6. Complete onboarding and open the workstation.
+
+          MT5 is not required for simulated-mode testing.
+
+          ## Real MT5 bridge
+
+          To test the real bridge:
+
+          1. Configure MetaTrader 5 and the Nexus bridge EA.
+          2. Change `Mt5Mode` from `Simulated` to the supported real bridge mode.
+          3. Configure bridge host and port.
+          4. Never store live credentials in source control.
+
+          ## Database
+
+          SQLite is the safe default and uses:
+
+          `Data Source=nexus.db`
+
+          The package also contains `efbundle.exe`. Before executing migrations
+          against PostgreSQL or another remote database, verify the connection
+          string and back up the target database.
+
+          ## Build metadata
+
+          - Version: `$version`
+          - Tag: `$tag`
+          - Commit: `${{ github.sha }}`
+          - Workflow run: `${{ github.run_id }}`
+          "@
+
+          Set-Content `
+            -Path "${{ github.workspace }}/release_notes.md" `
+            -Value $notes `
+            -Encoding UTF8
+
+      # ------------------------------------------------------------
+      # Retain CI artifact
+      # ------------------------------------------------------------
+
+      - name: Upload packaged files as workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-release-${{ steps.version.outputs.version }}
+          path: artifacts/release/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      # ------------------------------------------------------------
+      # GitHub Release
+      # ------------------------------------------------------------
+
+      - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', steps.get_version.outputs.version) || github.ref_name }}
-          name: ${{ github.event_name == 'workflow_dispatch' && format('Release v{0}', steps.get_version.outputs.version) || github.ref_name }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.version.outputs.release_name }}
           body_path: release_notes.md
-          draft: false
-          prerelease: false
+          draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }}
+          prerelease: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || false }}
+          generate_release_notes: false
+          fail_on_unmatched_files: true
+          overwrite_files: true
           files: |
-            Nexus.Desktop-win-x64-self-contained-${{ steps.get_version.outputs.version }}.zip
-            Nexus.Desktop-win-x64-framework-dependent-${{ steps.get_version.outputs.version }}.zip
+            artifacts/release/Nexus.Desktop-win-x64-self-contained-${{ steps.version.outputs.version }}.zip
+            artifacts/release/Nexus.Desktop-win-x64-framework-dependent-${{ steps.version.outputs.version }}.zip
+            artifacts/release/efbundle-win-x64-${{ steps.version.outputs.version }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish completion summary
+        run: |
+          @"
+          # Release completed
+
+          - Version: `${{ steps.version.outputs.version }}`
+          - Tag: `${{ steps.version.outputs.tag }}`
+          - Commit: `${{ github.sha }}`
+          - Self-contained package: `Nexus.Desktop-win-x64-self-contained-${{ steps.version.outputs.version }}.zip`
+          - Framework-dependent package: `Nexus.Desktop-win-x64-framework-dependent-${{ steps.version.outputs.version }}.zip`
+          - Migration bundle: `efbundle-win-x64-${{ steps.version.outputs.version }}.exe`
+          "@ >> $env:GITHUB_STEP_SUMMARY
