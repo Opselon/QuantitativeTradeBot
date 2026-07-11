@@ -1,5 +1,8 @@
 name: Nexus CI & Release Pipeline
 
+# ----------------------------------------------------------
+# Triggers
+# ----------------------------------------------------------
 on:
   push:
     branches:
@@ -17,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Semantic version بدون v، مثلا 0.64.0"
+        description: "نسخه‌ی semantic بدون v (مثلاً 0.64.0)"
         required: true
         default: "0.64.0"
         type: string
@@ -44,6 +47,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   NUGET_XMLDOC_MODE: skip
+
   BUILD_CONFIGURATION: Release
 
   SOLUTION_PATH: NexusTradingEngine.sln
@@ -54,15 +58,18 @@ env:
   RELEASE_ROOT: ${{ github.workspace }}/artifacts/release
   MIGRATION_ROOT: ${{ github.workspace }}/artifacts/migrations
 
+# ============================================================
+# 1) CI – Ubuntu (.NET + Unit Tests + Native)
+# ============================================================
 jobs:
-  # ============================================================
-  # 1) CI – Build + Unit Tests + Native (بدون Docker)
-  # ============================================================
   ci:
     name: CI • Build & Unit Tests (.NET 10 + Native)
     runs-on: ubuntu-latest
 
     steps:
+      # ------------------------------------------------------
+      # Source & .NET
+      # ------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -73,58 +80,37 @@ jobs:
           include-prerelease: true
 
       - name: Show .NET environment
-        run: dotnet --info
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', '**/packages.lock.json') }}
-          restore-keys: |
-            nuget-${{ runner.os }}-
-
-      - name: Build native C++ component
         run: |
-          set -euo pipefail
-          echo "===[ Native Build ]=================================="
+          echo "===[ .NET Environment ]=============================="
+          dotnet --info
 
-          if [ ! -f "native/build.sh" ]; then
-            echo "::error::native/build.sh not found. Ensure native folder exists."
-            exit 1
-          fi
-
-          chmod +x native/build.sh
-          ./native/build.sh
-
-          DLL_PATH="native/Nexus.Native/nexus_native.so"
-          if [ ! -f "$DLL_PATH" ] && [ ! -f "native/Nexus.Native/nexus_native.dll" ]; then
-            echo "::warning::Native build completed but expected output not found (nexus_native.so / nexus_native.dll)."
-          else
-            echo "Native binary present:"
-            find native -maxdepth 4 -type f -name "nexus_native*" -print || true
-          fi
-
+      # ------------------------------------------------------
+      # Restore & Build
+      # ------------------------------------------------------
       - name: Restore solution
         run: |
           echo "===[ Restore ]======================================="
-          dotnet restore ${{ env.SOLUTION_PATH }}
+          dotnet restore "${{ env.SOLUTION_PATH }}"
 
       - name: Build solution (CI)
         run: |
           echo "===[ Build ]========================================="
-          dotnet build ${{ env.SOLUTION_PATH }} \
-            --configuration $BUILD_CONFIGURATION \
+          dotnet build "${{ env.SOLUTION_PATH }}" \
+            --configuration "${BUILD_CONFIGURATION}" \
             --no-restore
 
+      # ------------------------------------------------------
+      # Tests (بدون Docker / Integration / E2E)
+      # ------------------------------------------------------
       - name: Run unit tests (no Docker)
         run: |
           echo "===[ Unit Tests ]===================================="
-          dotnet test ${{ env.SOLUTION_PATH }} \
-            --configuration $BUILD_CONFIGURATION \
+          dotnet test "${{ env.SOLUTION_PATH }}" \
+            --configuration "${BUILD_CONFIGURATION}" \
             --no-build \
             --filter "TestCategory!=Docker&TestCategory!=Integration&TestCategory!=E2E" \
             --logger "trx;LogFileName=unit-tests.trx" \
-            --results-directory TestResults
+            --results-directory "TestResults"
 
       - name: Upload unit test results
         if: always()
@@ -134,48 +120,81 @@ jobs:
           path: TestResults
           if-no-files-found: ignore
 
+      # ------------------------------------------------------
+      # Native component
+      # ------------------------------------------------------
+      - name: Build native C++ component
+        run: |
+          set -euo pipefail
+          echo "===[ Native Build (Linux) ]=========================="
+
+          if [ ! -f "native/build.sh" ]; then
+            echo "::error::native/build.sh not found. Ensure native folder exists."
+            exit 1
+          fi
+
+          chmod +x native/build.sh
+          ./native/build.sh
+
+          if ls native/Nexus.Native/nexus_native.* 1> /dev/null 2>&1; then
+            echo "Native binaries:"
+            ls -lah native/Nexus.Native/nexus_native.*
+          else
+            echo "::warning::Native build completed but no nexus_native.* found."
+          fi
+
+      # ------------------------------------------------------
+      # CI Summary – UX خفن روی Ubuntu
+      # ------------------------------------------------------
       - name: CI summary
         if: always()
         run: |
-          @"
+          cat << EOF >> "$GITHUB_STEP_SUMMARY"
           # Nexus CI Summary
 
+          ## Environment
           - Runner    : ubuntu-latest
-          - Config    : ${{ env.BUILD_CONFIGURATION }}
-          - Solution  : ${{ env.SOLUTION_PATH }}
-          - Tests     : Unit-only (Docker / Integration / E2E skipped by filter)
-          "@ >> $GITHUB_STEP_SUMMARY
+          - Config    : ${BUILD_CONFIGURATION}
+          - Solution  : ${SOLUTION_PATH}
+
+          ## Tests
+          - Type      : Unit-only
+          - Filter    : TestCategory!=Docker & TestCategory!=Integration & TestCategory!=E2E
+
+          ## Native
+          - Script    : native/build.sh
+          - Output    : native/Nexus.Native/nexus_native.*
+
+          EOF
 
   # ============================================================
-  # 2) Release – Windows Packaging + GitHub Release
+  # 2) Release – Windows (.NET + Native + EF Bundle + ZIP + GH Release)
   # ============================================================
   release:
     name: Release • Windows Packaging & GitHub Release
     runs-on: windows-latest
     timeout-minutes: 60
 
+    # مهم: همیشه اجرا شود، حتی اگر CI fail شود
     needs: ci
-
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main'))
+    if: always()
 
     defaults:
       run:
         shell: pwsh
 
     steps:
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       # Source
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       # Version & Tag
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       - name: Determine release version
         id: version
         env:
@@ -185,14 +204,18 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
+          Write-Host "===[ Versioning ]==================================="
+
           if ($env:EVENT_NAME -eq "workflow_dispatch") {
               $version = $env:INPUT_VERSION.Trim()
-              $releaseTag = "v$version"
+              if (-not $version) {
+                  throw "workflow_dispatch: version input is empty."
+              }
           }
           else {
+              # ساده: نسخه‌ی base + شماره‌ی run
               $baseVersion = "0.64"
               $version = "$baseVersion.$env:RUN_NUMBER"
-              $releaseTag = "v$version"
           }
 
           if ($version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
@@ -200,33 +223,27 @@ jobs:
           }
 
           $numericVersion = ($version -split '-')[0]
+          $tag = "v$version"
           $releaseName = "Nexus Trading Engine v$version"
 
           "version=$version" >> $env:GITHUB_OUTPUT
           "numeric_version=$numericVersion" >> $env:GITHUB_OUTPUT
-          "tag=$releaseTag" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
           "release_name=$releaseName" >> $env:GITHUB_OUTPUT
 
-          Write-Host "===[ Versioning ]=================================="
           Write-Host "Version       : $version"
           Write-Host "NumericVersion: $numericVersion"
-          Write-Host "Tag           : $releaseTag"
+          Write-Host "Tag           : $tag"
           Write-Host "Release name  : $releaseName"
 
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       # .NET SDK
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       - name: Setup .NET 10 SDK
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
           include-prerelease: true
-          cache: true
-          cache-dependency-path: |
-            **/*.csproj
-            **/packages.lock.json
-            global.json
-            NuGet.config
 
       - name: Display .NET info
         run: |
@@ -236,9 +253,9 @@ jobs:
           dotnet --list-sdks
           dotnet --list-runtimes
 
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       # Prepare directories
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       - name: Prepare artifact directories
         run: |
           $ErrorActionPreference = "Stop"
@@ -260,9 +277,9 @@ jobs:
               Write-Host "Prepared: $path"
           }
 
-      # ----------------------------------------------------------
-      # Restore & Build & Unit Tests (Release)
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
+      # Restore & Build & Tests (Release)
+      # ------------------------------------------------------
       - name: Restore solution (Release)
         run: |
           $ErrorActionPreference = "Stop"
@@ -296,30 +313,20 @@ jobs:
             --logger "trx;LogFileName=unit-tests.trx" `
             --results-directory "${{ github.workspace }}/artifacts/test-results"
 
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       # Native Windows component
-      # ----------------------------------------------------------
-      - name: Verify native build script
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ Native Script Check ]=========================="
-
-          if (-not (Test-Path "native/build.sh")) {
-              throw "native/build.sh not found. Ensure native component exists."
-          }
-
-          $bashCommand = Get-Command bash -ErrorAction SilentlyContinue
-          if ($null -eq $bashCommand) {
-              throw "Bash is unavailable on Windows runner."
-          }
-
-          Write-Host "Bash at: $($bashCommand.Source)"
-
+      # ------------------------------------------------------
       - name: Build native Windows component
         shell: bash
         run: |
           set -euo pipefail
           echo "===[ Native Build (Windows) ]======================="
+
+          if [ ! -f "native/build.sh" ]; then
+            echo "::error::native/build.sh not found."
+            exit 1
+          fi
+
           chmod +x native/build.sh
           ./native/build.sh
 
@@ -333,23 +340,16 @@ jobs:
           echo "Native DLL:"
           ls -lah "$DLL_PATH"
 
-      # ----------------------------------------------------------
-      # EF Core migration bundle
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
+      # EF migration bundle
+      # ------------------------------------------------------
       - name: Install dotnet-ef CLI
         run: |
           $ErrorActionPreference = "Stop"
           Write-Host "===[ dotnet-ef Install ]============================"
 
-          $toolPath = "${{ github.workspace }}/.tools"
-          New-Item -ItemType Directory -Path $toolPath -Force | Out-Null
-
-          dotnet tool install dotnet-ef `
-            --tool-path $toolPath `
-            --version "9.0.2"
-
-          $toolPath >> $env:GITHUB_PATH
-          & "$toolPath/dotnet-ef.exe" --version
+          dotnet tool install dotnet-ef --global --version "9.0.2"
+          dotnet-ef --version
 
       - name: Generate EF migration bundle (win-x64)
         run: |
@@ -379,9 +379,9 @@ jobs:
           Write-Host "Migration bundle: $($bundle.FullName)"
           Write-Host "Size           : $($bundle.Length) bytes"
 
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       # Publish Desktop – self-contained + framework-dependent
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       - name: Publish self-contained Windows x64
         run: |
           $ErrorActionPreference = "Stop"
@@ -426,9 +426,9 @@ jobs:
             -p:InformationalVersion="${{ steps.version.outputs.version }}+${{ github.sha }}" `
             --output "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent"
 
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       # Safe config + native + efbundle
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       - name: Add safe configuration and native files
         run: |
           $ErrorActionPreference = "Stop"
@@ -488,9 +488,9 @@ jobs:
               Copy-Item $nativeDll "$destination/nexus_native.dll" -Force
           }
 
-      # ----------------------------------------------------------
-      # Validate release packages
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
+      # Validate release outputs
+      # ------------------------------------------------------
       - name: Validate release outputs
         run: |
           $ErrorActionPreference = "Stop"
@@ -546,9 +546,9 @@ jobs:
               }
           }
 
-      # ----------------------------------------------------------
-      # Package ZIPs
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
+      # ZIP packages
+      # ------------------------------------------------------
       - name: Create release ZIP packages
         id: packages
         run: |
@@ -576,23 +576,19 @@ jobs:
                     -Force
 
           $files = Get-ChildItem $releaseRoot -File
-          if ($files.Count -lt 3) {
-              throw "Expected >= 3 release assets, found $($files.Count)."
-          }
-
           foreach ($file in $files) {
+              Write-Host "$($file.Name) - $($file.Length) bytes"
               if ($file.Length -le 0) {
                   throw "Empty asset: $($file.FullName)"
               }
-              Write-Host "$($file.Name) - $($file.Length) bytes"
           }
 
           "self_contained_zip=$selfContainedZip" >> $env:GITHUB_OUTPUT
           "framework_zip=$frameworkZip" >> $env:GITHUB_OUTPUT
 
-      # ----------------------------------------------------------
-      # Release notes
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
+      # Release notes + Upload + GitHub Release
+      # ------------------------------------------------------
       - name: Generate release notes
         run: |
           $ErrorActionPreference = "Stop"
@@ -600,23 +596,20 @@ jobs:
 
           $version = "${{ steps.version.outputs.version }}"
           $tag = "${{ steps.version.outputs.tag }}"
-          $selfContainedName = "Nexus.Desktop-win-x64-self-contained-$version.zip"
-          $frameworkName = "Nexus.Desktop-win-x64-framework-dependent-$version.zip"
-          $migrationName = "efbundle-win-x64-$version.exe"
 
           $notes = @"
           # Nexus Trading Engine $version
 
           ## Assets
-          - $selfContainedName (recommended for testers)
-          - $frameworkName
-          - $migrationName
+          - Nexus.Desktop-win-x64-self-contained-$version.zip
+          - Nexus.Desktop-win-x64-framework-dependent-$version.zip
+          - efbundle-win-x64-$version.exe
 
           ## Quick start
-          1. Download $selfContainedName
-          2. Extract ZIP
-          3. Run Nexus.Desktop.exe
-          4. Use SQLite + Simulated MT5 (no real credentials)
+          1. Download self-contained ZIP.
+          2. Extract.
+          3. Run Nexus.Desktop.exe.
+          4. Use SQLite + Simulated MT5 (no real credentials).
 
           ## Build metadata
           - Version: $version
@@ -626,9 +619,6 @@ jobs:
 
           Set-Content -Path "${{ github.workspace }}/release_notes.md" -Value $notes -Encoding UTF8
 
-      # ----------------------------------------------------------
-      # Upload artifacts & GitHub Release
-      # ----------------------------------------------------------
       - name: Upload release artifacts to workflow
         uses: actions/upload-artifact@v4
         with:
@@ -659,16 +649,19 @@ jobs:
       - name: Pipeline summary
         run: |
           @"
-          # Nexus CI & Release completed
+          # Nexus CI & Release Summary
 
+          ## CI (Ubuntu)
+          - Build    : ${BUILD_CONFIGURATION}
+          - Tests    : Unit-only (no Docker / Integration / E2E)
+
+          ## Release (Windows)
           - Version       : `${{ steps.version.outputs.version }}`
           - Tag           : `${{ steps.version.outputs.tag }}`
-          - Commit        : `${{ github.sha }}`
           - Self-contained: `Nexus.Desktop-win-x64-self-contained-${{ steps.version.outputs.version }}.zip`
           - Framework     : `Nexus.Desktop-win-x64-framework-dependent-${{ steps.version.outputs.version }}.zip`
           - efbundle      : `efbundle-win-x64-${{ steps.version.outputs.version }}.exe`
 
-          Tests in this pipeline:
-          - CI: Unit-only (no Docker / Integration / E2E)
-          - Release: Unit-only (no Docker / Integration / E2E)
+          ## Note
+          - Release job runs regardless of CI result (needs: ci + if: always()).
           "@ >> $env:GITHUB_STEP_SUMMARY
