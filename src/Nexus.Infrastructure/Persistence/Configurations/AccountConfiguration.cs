@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Nexus.Infrastructure.Persistence.Models;
@@ -65,10 +66,23 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                 .HasColumnName("updated_at_utc")
                 .IsRequired();
 
-            // Optimistic Concurrency Token via xmin system column
-            builder.Property<uint>("xmin")
-                .HasColumnName("xmin")
-                .IsRowVersion();
+            var isPostgres = builder.Metadata.Model.GetAnnotations().Any(a =>
+                a.Name.Contains("Npgsql") ||
+                a.Value?.ToString()?.Contains("Npgsql") == true);
+
+            if (isPostgres)
+            {
+                // Optimistic Concurrency Token via xmin system column
+                builder.Property<uint>("xmin")
+                    .HasColumnName("xmin")
+                    .IsRowVersion();
+            }
+            else
+            {
+                builder.Property<uint>("xmin")
+                    .HasColumnName("xmin")
+                    .HasDefaultValue(0u);
+            }
         }
     }
 }
