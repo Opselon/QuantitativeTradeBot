@@ -65,11 +65,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # --- Source ---
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- .NET ---
       - name: Setup .NET 10 SDK
         uses: actions/setup-dotnet@v4
         with:
@@ -79,7 +77,6 @@ jobs:
       - name: Show .NET environment
         run: dotnet --info
 
-      # --- Cache NuGet ---
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -88,7 +85,6 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
 
-      # --- Native C++ ---
       - name: Build native C++ component
         run: |
           set -euo pipefail
@@ -99,17 +95,12 @@ jobs:
           chmod +x native/build.sh
           ./native/build.sh
 
-      # --- Restore ---
       - name: Restore solution
         run: dotnet restore ${{ env.SOLUTION_PATH }}
 
-      # --- Build (CI) ---
       - name: Build solution (CI)
-        run: dotnet build ${{ env.SOLUTION_PATH }} \
-          --configuration $BUILD_CONFIGURATION \
-          --no-restore
+        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration $BUILD_CONFIGURATION --no-restore
 
-      # --- Test ---
       - name: Test solution
         run: >
           dotnet test ${{ env.SOLUTION_PATH }}
@@ -118,7 +109,6 @@ jobs:
           --logger "trx;LogFileName=test-results.trx"
           --results-directory TestResults
 
-      # --- Test artifacts ---
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -171,7 +161,6 @@ jobs:
               $releaseTag = "v$version"
           }
           else {
-              # Push روی main → نسخه یکتا بر اساس run_number
               $baseVersion = "0.64"
               $version = "$baseVersion.$env:RUN_NUMBER"
               $releaseTag = "v$version"
@@ -239,7 +228,7 @@ jobs:
           }
 
       # ----------------------------------------------------------
-      # Restore & Build & Test (Release build)
+      # Restore & Build & Test (Release)
       # ----------------------------------------------------------
       - name: Restore solution (Release)
         run: |
@@ -423,7 +412,6 @@ jobs:
           }
 
           $configJson = $config | ConvertTo-Json -Depth 10
-
           $configTemplate = $config | ConvertTo-Json -Depth 10
 
           $readme = @"
@@ -586,9 +574,7 @@ jobs:
           ## Build metadata
           - Version: $version
           - Tag: $tag
-          - Commit: ${{
-            github.sha
-          }}
+          - Commit: ${{ github.sha }}
           "@
 
           Set-Content -Path "${{ github.workspace }}/release_notes.md" -Value $notes -Encoding UTF8
