@@ -1,28 +1,21 @@
-# Nexus Trading Engine - Next Steps
+# Project Next Steps
 
-## Immediate Next Steps (Phase 3: Inter-Process Communication & MetaTrader 5 Bridge)
-With Phase 2's high-speed database layers successfully running and verified, the next phase focuses on low-latency, bidirectional bridging with MetaTrader 5 (MT5).
+## Upcoming Milestones
 
-### 1. MT5 Bridge Protocol & Tech Stack Selection
-* **gRPC / Protocol Buffers (Protobuf)**: Standardized, robust contract definition and cross-language runtime (MT5 runs C++, NTE runs .NET 10 C#). Extremely fast over local loopback sockets.
-* **Shared Memory / Named Pipes**: Alternative ultra-low-latency IPC mechanism.
+With the completion of **Phase 2.5: Hardened Execution Platform Foundation**, the system is fully prepared to run multiple strategies concurrently, execute risk-managed orders, handle background worker loops, and fall back safely to managed engines when native C++ binaries are missing.
 
-### 2. Protobuf Contract Design
-Define the message boundaries and contracts in `.proto` files:
-* `market_data.proto`: For streaming Tick and Bar data from MT5 to NTE.
-* `execution.proto`: For sending orders, updates, modifications, and cancellations from NTE to MT5, and receiving tickets.
+The immediate next milestones are:
 
-### 3. Tick Stream Adapter
-Create the adapter implementing a gRPC streaming service or Named Pipe listener:
-* Consumes incoming tick streams at minimal allocation rates.
-* Forwards ticks directly to the `MarketDataRepository` and notifies active strategy triggers.
+### 1. MT5 Connectivity & Gateway Session Lifecycle
+- Implement the concrete `IExecutionGateway` and `IMarketDataFeed` using a high-speed inter-process communication (IPC) channel to the MetaTrader 5 Terminal.
+- We will leverage **gRPC over TCP loopback** or **Named Pipes** as the transport protocol, enabling bidrectional, sub-millisecond messaging between NTE (.NET 10) and the MT5 EA (C++).
+- Implement robust gateway connection session recovery, reconnect loops, and terminal heartbeat checks.
 
-### 4. Execution Gateway Adapter
-Create the execution client inside `Nexus.Infrastructure` that:
-* Connects to MT5's trade socket.
-* Sends trade requests asynchronously.
-* Waits for ticket IDs and execution confirmation, translating responses back into Domain order updates.
+### 2. Execution Bridge Integration
+- Connect the `ExecutionCoordinator` to the concrete MT5 gRPC channel.
+- Map terminal execution report ticket codes directly into domain order updates and save results to PostgreSQL.
 
-### 5. Connection Resilience & Auto-Reconnect
-* Build background worker services managing socket lifecycles.
-* Implement exponential backoff reconnection behavior during network dropouts or terminal restarts.
+### 3. WPF User Interface Dashboard
+- Once the backend/runtime substrate is completely hardened, we will build the user interface layer.
+- Design MVVM WPF screens utilizing `CommunityToolkit.Mvvm` source generators.
+- Features: Live PnL dashboard, open positions grid, pending orders panel, active strategy controls, and a manual trade submission form.

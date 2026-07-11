@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   build-test:
-    name: Build and Test - .NET 10
+    name: Build and Test - .NET 10 & Native C++
     runs-on: ubuntu-latest
 
     env:
@@ -37,6 +37,11 @@ jobs:
         with:
           dotnet-version: "10.0.x"
           include-prerelease: true
+
+      - name: Build Native C++ Component
+        run: |
+          chmod +x native/build.sh
+          ./native/build.sh
 
       - name: Show .NET info
         run: dotnet --info
