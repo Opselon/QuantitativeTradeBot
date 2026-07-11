@@ -17,19 +17,20 @@ The Nexus Trading Engine (NTE) strictly adopts **Hexagonal Architecture** (also 
        |  |  | - Interfaces: IStrategy, IRiskManager     |  |  |
        |  |  +-------------------------------------------+  |  |
        |  |                                                 |  |
-       |  | - ExecutionCoordinator, BacktestRunner          |  |
-       |  | - Ports (IExecutionGateway, IDbContext)          |  |
+       |  | - ExecutionCoordinator, Pipeline Context        |  |
+       |  | - Ports (IExecutionGateway, IMarketDataFeed)    |  |
+       |  | - Strategy runtime: Host, Registry, Supervisor  |  |
+       |  | - Security Hardening & Input Validator          |  |
        |  +-------------------------------------------------+  |
        |                                                       |
-       | - PostgreSQL (EF Core, Dapper Bulk Copy)              |
-       | - MT5 gRPC / Named Pipes Bridge                       |
-       | - Telemetry (Serilog, Prometheus)                     |
+       | - PostgreSQL (EF Core, Binary COPY)                   |
+       | - Background Workers & Recovery Services             |
+       | - Native C++ Interop (EMA indicator)                  |
        +-------------------------------------------------------+
                                   |
                                   v
                              Nexus.WpfUi
-                       (Dashboard, Live PnL,
-                       Open Positions, Charts)
+                       (Deferred to Phase 3)
 ```
 
 ### Core Architecture Layers:
@@ -37,22 +38,22 @@ The Nexus Trading Engine (NTE) strictly adopts **Hexagonal Architecture** (also 
    - Zero external library dependencies, framework-agnostic.
    - Contains high-performance value objects (`Symbol`, `Money`, `LotSize`) and core domain entities (`Tick`, `Bar`, `Order`, `Position`, `Account`).
    - Declares the core contracts and algorithmic interfaces (`IStrategy`, `IRiskManager`, `ITrailingManager`).
-   - Contains strict mathematical calculations (e.g., drawdown, margin, standard deviations, moving averages) without external dependencies.
 
 2. **Nexus.Application (Orchestration & Application Services):**
    - Implements execution logic, order coordination, and historical backtesting runners.
    - Defines output and input Ports (interfaces such as `IExecutionGateway`, `IDbContext`, `IMarketDataRepository`) that concrete Infrastructure classes implement.
-   - Hosts pluggable strategy implementations (e.g., `GoldScalperM1`, `EmaCross`).
+   - Hosts pluggable strategy implementations.
+   - Implements the complete **Strategy Hosting Architecture** (`IStrategyHost`, `StrategyHost`, `StrategySupervisor`, `StrategyRegistry`) and **Layered Execution Pipeline** (`ExecutionCoordinator`, `SignalRouter`, `PreTradeRiskEvaluator`).
+   - Hardens inputs and configurations using `InputValidator` and `SecurityConfiguration`.
 
 3. **Nexus.Infrastructure (Adapters & Integrations):**
-   - Implements concrete gateways to real trading environments (e.g., MetaTrader 5 Bridge Adapter utilizing Named Pipes or gRPC).
-   - Manages persistence using Entity Framework Core for transactional storage and high-speed Dapper/ADO.NET binary copy writers for high-throughput time-series streaming tick data.
-   - Integrates logging, telemetry, and system monitoring (Serilog, Prometheus).
+   - Implements concrete gateways to real trading environments (e.g., MetaTrader 5 Bridge contracts).
+   - Manages persistence using Entity Framework Core for transactional storage and high-speed ADO.NET binary copy writers for high-throughput time-series tick data.
+   - Implements Hosted Background Services (`MarketDataIngestionWorker`, `StrategyDispatchWorker`, `ExecutionWorker`) and the `RecoveryStartupService` utilizing `System.Threading.Channels` for backpressure handling.
 
 4. **Nexus.WpfUi (Presentation Layer):**
-   - Desktop user interface constructed in WPF on .NET 8/9.
-   - Leverages MVVM pattern via the modern `CommunityToolkit.Mvvm` source generator library (`[ObservableProperty]`, `[RelayCommand]`).
-   - Communicates with the Application layer via Dependency Injection (Microsoft Extensions DI).
+   - Desktop user interface constructed in WPF on .NET 10.
+   - Deferred until the execution pipeline and MT5 backend substrate are completely hardened.
 
 ---
 
@@ -60,14 +61,12 @@ The Nexus Trading Engine (NTE) strictly adopts **Hexagonal Architecture** (also 
 
 In high-frequency algorithmic systems, garbage collection (GC) pauses introduce catastrophic slippage. NTE prevents GC pressure via a strict **Zero-Allocation Tick Path** design:
 - **`Tick` is a `readonly struct`**: Allocated entirely on the stack. No heap allocation occurs during high-rate market-data stream processing.
-- **Pass-by-Reference**: Where appropriate, large structures are passed using `in` parameters to prevent copying overhead.
 - **High-Performance Buffers**: Internal queues and tick streams utilize pre-allocated ring buffers or `System.Threading.Channels` to handle backpressure and multithreaded handoffs with zero allocations.
 - **Avoid Boxing**: Logging systems and event propagation are explicitly typed to avoid casting structures to `object`.
 
 ---
 
-## 3. High-Precision Mathematical Model
+## 3. High-Precision Mathematical Model & Native Acceleration
 
 - **Financial Values**: All monetary transactions, account balances, spreads, and execution costs are handled using high-precision data types or dedicated `Money` value objects representing clean, scale-safe decimals.
-- **Lot Sizing**: `LotSize` handles volume constraints and minimum increments configured for individual symbols.
-- **Risk Evaluation**: Execution routes always pass through an `IRiskManager` pre-trade check before order dispatch to MT5.
+- **Native Quantitative Engine**: Move intensive quant calculations (e.g. EMA rolling indicator) into native C++ (`native/Nexus.Native`) to bypass JIT compilation overhead and maximize vectorization. Bridge using high-performance P/Invoke.
