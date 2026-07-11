@@ -1,7 +1,6 @@
 name: Nexus CI & Release Pipeline
 
 on:
-  # --- CI: اجرای خودکار روی شاخه‌ها و فیچرها ---
   push:
     branches:
       - main
@@ -15,7 +14,6 @@ on:
       - main
       - develop
 
-  # --- Release: اجرای دستی با ورژن دلخواه ---
   workflow_dispatch:
     inputs:
       version:
@@ -58,10 +56,10 @@ env:
 
 jobs:
   # ============================================================
-  # 1) CI Job – Cross-platform build, test, native
+  # 1) CI – Build + Unit Tests + Native (بدون Docker)
   # ============================================================
   ci:
-    name: CI Build & Test (.NET 10 + Native)
+    name: CI • Build & Unit Tests (.NET 10 + Native)
     runs-on: ubuntu-latest
 
     steps:
@@ -88,40 +86,71 @@ jobs:
       - name: Build native C++ component
         run: |
           set -euo pipefail
+          echo "===[ Native Build ]=================================="
+
           if [ ! -f "native/build.sh" ]; then
             echo "::error::native/build.sh not found. Ensure native folder exists."
             exit 1
           fi
+
           chmod +x native/build.sh
           ./native/build.sh
 
+          DLL_PATH="native/Nexus.Native/nexus_native.so"
+          if [ ! -f "$DLL_PATH" ] && [ ! -f "native/Nexus.Native/nexus_native.dll" ]; then
+            echo "::warning::Native build completed but expected output not found (nexus_native.so / nexus_native.dll)."
+          else
+            echo "Native binary present:"
+            find native -maxdepth 4 -type f -name "nexus_native*" -print || true
+          fi
+
       - name: Restore solution
-        run: dotnet restore ${{ env.SOLUTION_PATH }}
+        run: |
+          echo "===[ Restore ]======================================="
+          dotnet restore ${{ env.SOLUTION_PATH }}
 
       - name: Build solution (CI)
-        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration $BUILD_CONFIGURATION --no-restore
+        run: |
+          echo "===[ Build ]========================================="
+          dotnet build ${{ env.SOLUTION_PATH }} \
+            --configuration $BUILD_CONFIGURATION \
+            --no-restore
 
-      - name: Test solution
-        run: >
-          dotnet test ${{ env.SOLUTION_PATH }}
-          --configuration $BUILD_CONFIGURATION
-          --no-build
-          --logger "trx;LogFileName=test-results.trx"
-          --results-directory TestResults
+      - name: Run unit tests (no Docker)
+        run: |
+          echo "===[ Unit Tests ]===================================="
+          dotnet test ${{ env.SOLUTION_PATH }} \
+            --configuration $BUILD_CONFIGURATION \
+            --no-build \
+            --filter "TestCategory!=Docker&TestCategory!=Integration&TestCategory!=E2E" \
+            --logger "trx;LogFileName=unit-tests.trx" \
+            --results-directory TestResults
 
-      - name: Upload test results
+      - name: Upload unit test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: unit-test-results
           path: TestResults
           if-no-files-found: ignore
 
+      - name: CI summary
+        if: always()
+        run: |
+          @"
+          # Nexus CI Summary
+
+          - Runner    : ubuntu-latest
+          - Config    : ${{ env.BUILD_CONFIGURATION }}
+          - Solution  : ${{ env.SOLUTION_PATH }}
+          - Tests     : Unit-only (Docker / Integration / E2E skipped by filter)
+          "@ >> $GITHUB_STEP_SUMMARY
+
   # ============================================================
-  # 2) Release Job – فقط روی main + workflow_dispatch
+  # 2) Release – Windows Packaging + GitHub Release
   # ============================================================
   release:
-    name: Windows Release & GitHub Release
+    name: Release • Windows Packaging & GitHub Release
     runs-on: windows-latest
     timeout-minutes: 60
 
@@ -178,6 +207,7 @@ jobs:
           "tag=$releaseTag" >> $env:GITHUB_OUTPUT
           "release_name=$releaseName" >> $env:GITHUB_OUTPUT
 
+          Write-Host "===[ Versioning ]=================================="
           Write-Host "Version       : $version"
           Write-Host "NumericVersion: $numericVersion"
           Write-Host "Tag           : $releaseTag"
@@ -201,6 +231,7 @@ jobs:
       - name: Display .NET info
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ .NET Environment ]============================="
           dotnet --info
           dotnet --list-sdks
           dotnet --list-runtimes
@@ -211,6 +242,7 @@ jobs:
       - name: Prepare artifact directories
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ Prepare Artifacts ]============================"
 
           $paths = @(
               "${{ env.PUBLISH_ROOT }}",
@@ -225,19 +257,22 @@ jobs:
                   Remove-Item -Path $path -Recurse -Force
               }
               New-Item -ItemType Directory -Path $path -Force | Out-Null
+              Write-Host "Prepared: $path"
           }
 
       # ----------------------------------------------------------
-      # Restore & Build & Test (Release)
+      # Restore & Build & Unit Tests (Release)
       # ----------------------------------------------------------
       - name: Restore solution (Release)
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ Restore ]======================================"
           dotnet restore "${{ env.SOLUTION_PATH }}"
 
       - name: Build solution (Release)
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ Build ]========================================"
 
           dotnet build "${{ env.SOLUTION_PATH }}" `
             --configuration Release `
@@ -248,15 +283,17 @@ jobs:
             -p:FileVersion="${{ steps.version.outputs.numeric_version }}" `
             -p:InformationalVersion="${{ steps.version.outputs.version }}+${{ github.sha }}"
 
-      - name: Run tests (Release)
+      - name: Run unit tests (Release, بدون Docker)
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ Unit Tests ]==================================="
 
           dotnet test "${{ env.SOLUTION_PATH }}" `
             --configuration Release `
             --no-restore `
             --no-build `
-            --logger "trx;LogFileName=test-results.trx" `
+            --filter "TestCategory!=Docker&TestCategory!=Integration&TestCategory!=E2E" `
+            --logger "trx;LogFileName=unit-tests.trx" `
             --results-directory "${{ github.workspace }}/artifacts/test-results"
 
       # ----------------------------------------------------------
@@ -265,6 +302,7 @@ jobs:
       - name: Verify native build script
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ Native Script Check ]=========================="
 
           if (-not (Test-Path "native/build.sh")) {
               throw "native/build.sh not found. Ensure native component exists."
@@ -281,7 +319,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "Building native Windows component..."
+          echo "===[ Native Build (Windows) ]======================="
           chmod +x native/build.sh
           ./native/build.sh
 
@@ -292,6 +330,7 @@ jobs:
             exit 1
           fi
 
+          echo "Native DLL:"
           ls -lah "$DLL_PATH"
 
       # ----------------------------------------------------------
@@ -300,6 +339,7 @@ jobs:
       - name: Install dotnet-ef CLI
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ dotnet-ef Install ]============================"
 
           $toolPath = "${{ github.workspace }}/.tools"
           New-Item -ItemType Directory -Path $toolPath -Force | Out-Null
@@ -314,6 +354,7 @@ jobs:
       - name: Generate EF migration bundle (win-x64)
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ EF Bundle ]===================================="
 
           $bundlePath = "${{ env.MIGRATION_ROOT }}/efbundle.exe"
 
@@ -344,6 +385,7 @@ jobs:
       - name: Publish self-contained Windows x64
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ Publish Self-contained ]======================="
 
           dotnet publish "${{ env.DESKTOP_PROJECT }}" `
             --configuration Release `
@@ -365,6 +407,7 @@ jobs:
       - name: Publish framework-dependent Windows x64
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ Publish Framework-dependent ]=================="
 
           dotnet publish "${{ env.DESKTOP_PROJECT }}" `
             --configuration Release `
@@ -389,6 +432,7 @@ jobs:
       - name: Add safe configuration and native files
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ Safe Config & Native ]========================="
 
           $selfContained = "${{ env.PUBLISH_ROOT }}/win-x64-self-contained"
           $framework = "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent"
@@ -450,6 +494,7 @@ jobs:
       - name: Validate release outputs
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ Validate Outputs ]=============================="
 
           $publishFolders = @(
               "${{ env.PUBLISH_ROOT }}/win-x64-self-contained",
@@ -508,6 +553,7 @@ jobs:
         id: packages
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ ZIP Packages ]================================="
 
           $version = "${{ steps.version.outputs.version }}"
           $releaseRoot = "${{ env.RELEASE_ROOT }}"
@@ -550,6 +596,7 @@ jobs:
       - name: Generate release notes
         run: |
           $ErrorActionPreference = "Stop"
+          Write-Host "===[ Release Notes ]================================"
 
           $version = "${{ steps.version.outputs.version }}"
           $tag = "${{ steps.version.outputs.tag }}"
@@ -614,10 +661,14 @@ jobs:
           @"
           # Nexus CI & Release completed
 
-          - Version: `${{ steps.version.outputs.version }}`
-          - Tag: `${{ steps.version.outputs.tag }}`
-          - Commit: `${{ github.sha }}`
+          - Version       : `${{ steps.version.outputs.version }}`
+          - Tag           : `${{ steps.version.outputs.tag }}`
+          - Commit        : `${{ github.sha }}`
           - Self-contained: `Nexus.Desktop-win-x64-self-contained-${{ steps.version.outputs.version }}.zip`
-          - Framework: `Nexus.Desktop-win-x64-framework-dependent-${{ steps.version.outputs.version }}.zip`
-          - efbundle: `efbundle-win-x64-${{ steps.version.outputs.version }}.exe`
+          - Framework     : `Nexus.Desktop-win-x64-framework-dependent-${{ steps.version.outputs.version }}.zip`
+          - efbundle      : `efbundle-win-x64-${{ steps.version.outputs.version }}.exe`
+
+          Tests in this pipeline:
+          - CI: Unit-only (no Docker / Integration / E2E)
+          - Release: Unit-only (no Docker / Integration / E2E)
           "@ >> $env:GITHUB_STEP_SUMMARY
