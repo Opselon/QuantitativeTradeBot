@@ -45,6 +45,11 @@ namespace Nexus.Desktop.ViewModels
         private int _timeoutSeconds = 30;
         private bool _autoReconnect = true;
 
+        private string _mt5Mode = "Simulated";
+        private string _mt5BridgeHost = "127.0.0.1";
+        private int _mt5BridgePort = 5000;
+        private bool _mt5BridgeUseSsl = false;
+
         // Step 4 & 5 Properties
         private string _testOutcome = "Not Tested";
         private bool _testSuccess;
@@ -95,6 +100,10 @@ namespace Nexus.Desktop.ViewModels
             if (!string.IsNullOrEmpty(settings.TerminalPath)) _terminalPath = settings.TerminalPath;
             _timeoutSeconds = settings.TimeoutSeconds;
             _autoReconnect = settings.AutoReconnect;
+            _mt5Mode = settings.Mt5Mode;
+            _mt5BridgeHost = settings.Mt5BridgeHost;
+            _mt5BridgePort = settings.Mt5BridgePort;
+            _mt5BridgeUseSsl = settings.Mt5BridgeUseSsl;
 
             // Wire UI Commands
             SelectProviderNextCommand = new AsyncRelayCommand(OnSelectProviderNextAsync);
@@ -245,6 +254,30 @@ namespace Nexus.Desktop.ViewModels
             set => SetProperty(ref _autoReconnect, value);
         }
 
+        public string Mt5Mode
+        {
+            get => _mt5Mode;
+            set => SetProperty(ref _mt5Mode, value);
+        }
+
+        public string Mt5BridgeHost
+        {
+            get => _mt5BridgeHost;
+            set => SetProperty(ref _mt5BridgeHost, value);
+        }
+
+        public int Mt5BridgePort
+        {
+            get => _mt5BridgePort;
+            set => SetProperty(ref _mt5BridgePort, value);
+        }
+
+        public bool Mt5BridgeUseSsl
+        {
+            get => _mt5BridgeUseSsl;
+            set => SetProperty(ref _mt5BridgeUseSsl, value);
+        }
+
         // Test outcome properties
         public string TestOutcome
         {
@@ -363,6 +396,10 @@ namespace Nexus.Desktop.ViewModels
                 settings.TerminalPath = TerminalPath;
                 settings.TimeoutSeconds = TimeoutSeconds;
                 settings.AutoReconnect = AutoReconnect;
+                settings.Mt5Mode = Mt5Mode;
+                settings.Mt5BridgeHost = Mt5BridgeHost;
+                settings.Mt5BridgePort = Mt5BridgePort;
+                settings.Mt5BridgeUseSsl = Mt5BridgeUseSsl;
                 _configService.SaveSettings(settings);
 
                 CurrentStep = 4;
@@ -376,9 +413,10 @@ namespace Nexus.Desktop.ViewModels
         private async Task OnTestConnectionAsync()
         {
             IsBusy = true;
-            BusyMessage = "Testing MetaTrader 5 Connection (Simulated)...";
+            string modeLabel = Mt5Mode == "Real" ? "Real MT5 Bridge" : "Simulated";
+            BusyMessage = $"Testing MetaTrader 5 Connection ({modeLabel})...";
             TestOutcome = "Connecting...";
-            _diagnosticService.Log("Gateway", "INFO", $"Testing connection to MT5 Broker server '{BrokerServer}' for Account ID '{LoginAccountId}' (using simulated fallback)...");
+            _diagnosticService.Log("Gateway", "INFO", $"Testing connection to MT5 Broker server '{BrokerServer}' for Account ID '{LoginAccountId}' (Mode: {modeLabel})...");
 
             var dto = new ConnectionProfileDto
             {

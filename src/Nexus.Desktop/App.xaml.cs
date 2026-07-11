@@ -7,6 +7,7 @@ using Nexus.Application.Security;
 using Nexus.Infrastructure.Persistence;
 using Nexus.Infrastructure.Security;
 using Nexus.Infrastructure.Adapters.Mt5;
+using Nexus.Infrastructure.Mt5Bridge;
 using Nexus.Desktop.Services;
 using Nexus.Desktop.ViewModels;
 
@@ -32,9 +33,19 @@ namespace Nexus.Desktop
                     services.AddSingleton<IDatabaseBootstrapper, SqliteDatabaseBootstrapper>();
                     services.AddSingleton<IDatabaseBootstrapper, PostgreSqlDatabaseBootstrapper>();
 
-                    // Register MT5 Adapters
-                    services.AddSingleton<IMt5ConnectionService, SimulatedMt5ConnectionService>();
-                    services.AddSingleton<IMt5AccountService, SimulatedMt5AccountService>();
+                    // Register MT5 Bridge Components & Adapters
+                    services.AddSingleton<IMt5BridgeClient, TcpMt5BridgeClient>();
+
+                    // Register concrete underlying implementations
+                    services.AddSingleton<SimulatedMt5ConnectionService>();
+                    services.AddSingleton<SimulatedMt5AccountService>();
+                    services.AddSingleton<RealMt5BridgeAdapter>();
+                    services.AddSingleton<RealMt5BridgeConnectionService>();
+
+                    // Register Routing (dynamic selector) services
+                    services.AddSingleton<IMt5ConnectionService, RoutingMt5ConnectionService>();
+                    services.AddSingleton<IMt5AccountService, RoutingMt5AccountService>();
+
                     services.AddSingleton<ITradingPlatformConnector, SimulatedTradingPlatformConnector>();
                     services.AddSingleton<IConnectionHealthMonitor, SimulatedConnectionHealthMonitor>();
 
