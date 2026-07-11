@@ -121,10 +121,31 @@
                         <TextBlock Text="DEVELOPMENT / SIMULATION" Foreground="White" FontSize="10" FontWeight="Bold"/>
                     </Border>
                     <!-- Connection Status Badge -->
-                    <Border Background="#2E7D32" CornerRadius="3" Padding="6,2" Margin="0,0,8,0">
+                    <Border CornerRadius="3" Padding="6,2" Margin="0,0,8,0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="#2E7D32"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Mt5Mode}" Value="Real">
+                                        <Setter Property="Background" Value="#00ADB5"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="6" Height="6" Fill="#4CAF50" Margin="0,0,4,0"/>
-                            <TextBlock Text="SIMULATOR ACTIVE" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                            <TextBlock Foreground="White" FontSize="10" FontWeight="Bold">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="SIMULATOR ACTIVE"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Mt5Mode}" Value="Real">
+                                                <Setter Property="Text" Value="REAL MT5 BRIDGE ACTIVE"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </StackPanel>
                     </Border>
                     <!-- Chosen Provider Badge -->
@@ -328,6 +349,7 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
                                         <!-- Row 0: Profile Name & Server -->
@@ -355,7 +377,49 @@
 
                                         <TextBlock Grid.Row="3" Grid.Column="3" Text="Auto Reconnect:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
                                         <CheckBox Grid.Row="3" Grid.Column="4" IsChecked="{Binding AutoReconnect}" Foreground="White" VerticalAlignment="Center" Margin="0,0,0,12"/>
+
+                                        <!-- Row 4: Mode Selection (Simulated vs Real Bridge) -->
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="MT5 Bridge Mode:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
+                                        <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
+                                            <RadioButton Content="Simulated MT5" IsChecked="{Binding Mt5Mode, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=Simulated}" Foreground="White" GroupName="Mt5ModeGroup" Margin="0,0,15,0"/>
+                                            <RadioButton Content="Real MT5 Bridge" IsChecked="{Binding Mt5Mode, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=Real}" Foreground="White" GroupName="Mt5ModeGroup"/>
+                                        </StackPanel>
                                     </Grid>
+
+                                    <!-- Conditional Real Bridge Configuration Fields -->
+                                    <Border Background="#222831" BorderBrush="#393E46" BorderThickness="1" Padding="15" CornerRadius="4" Margin="0,12,0,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Mt5Mode}" Value="Real">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <StackPanel>
+                                            <TextBlock Text="REAL BRIDGE ENDPOINT CONFIGURATION" Foreground="#00ADB5" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="130"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="30"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Bridge Host (IP):" Style="{StaticResource EnterpriseLabel}"/>
+                                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Mt5BridgeHost, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}"/>
+
+                                                <TextBlock Grid.Row="0" Grid.Column="3" Text="Bridge Port:" Style="{StaticResource EnterpriseLabel}"/>
+                                                <TextBox Grid.Row="0" Grid.Column="4" Text="{Binding Mt5BridgePort, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
 
                                 <!-- STEP 4: Test Connection -->
@@ -398,7 +462,18 @@
 
                                     <StackPanel Orientation="Horizontal">
                                         <Button Content="Test MT5 Connection" Command="{Binding TestConnectionCommand}" Style="{StaticResource ActionButton}" Margin="0,0,10,0"/>
-                                        <TextBlock Text="(Simulated connector fallback is active)" Foreground="#888888" VerticalAlignment="Center" FontSize="11" FontStyle="Italic"/>
+                                        <TextBlock Foreground="#888888" VerticalAlignment="Center" FontSize="11" FontStyle="Italic">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="(Simulated connector fallback is active)"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Mt5Mode}" Value="Real">
+                                                            <Setter Property="Text" Value="(Will wait for connection from MQL5 Expert Advisor)"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </StackPanel>
                                 </StackPanel>
 
