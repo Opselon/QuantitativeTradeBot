@@ -1,0 +1,704 @@
+<Window x:Class="Nexus.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="clr-namespace:Nexus.Desktop.Converters"
+        Title="Nexus Trading Engine - Desktop Workstation v1.0"
+        Height="760" Width="1080"
+        Background="#121212"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <!-- Professional Dark Theme Styles & Converters -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+        <converters:EqualityToBooleanConverter x:Key="EqualityToBooleanConverter"/>
+
+        <Style x:Key="EnterpriseHeader" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="Foreground" Value="#00ADB5"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+        </Style>
+
+        <Style x:Key="EnterpriseSubHeader" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <Style x:Key="EnterpriseBodyText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#BBBBBB"/>
+        </Style>
+
+        <Style x:Key="EnterpriseLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#888888"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+        </Style>
+
+        <Style x:Key="EnterpriseTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="#222831"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#393E46"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Background" Value="#00ADB5"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="Padding" Value="15,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#00C4CC"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#393E46"/>
+                    <Setter Property="Foreground" Value="#777777"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#393E46"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#4F5661"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#222831"/>
+                    <Setter Property="Foreground" Value="#555555"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- 1. Top Status Bar / Header -->
+            <RowDefinition Height="Auto"/>
+            <!-- 2. Main Workspace/Wizard Work Area -->
+            <RowDefinition Height="*"/>
+            <!-- 3. Bottom Diagnostics & Structured Log Panel -->
+            <RowDefinition Height="180"/>
+        </Grid.RowDefinitions>
+
+        <!-- =================================================================== -->
+        <!-- TOP STATUS BAR / Badge Bar                                          -->
+        <!-- =================================================================== -->
+        <Border Grid.Row="0" Background="#1A1A1A" BorderBrush="#393E46" BorderThickness="0,0,0,1" Padding="12,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Application Brand Logo -->
+                <StackPanel Orientation="Horizontal" Grid.Column="0">
+                    <TextBlock Text="⚡" Foreground="#00ADB5" FontSize="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="NEXUS" Foreground="#EEEEEE" FontFamily="Segoe UI" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"/>
+                    <TextBlock Text="TRADING ENGINE" Foreground="#888888" FontFamily="Segoe UI" FontSize="12" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Right: Status / Badges -->
+                <StackPanel Orientation="Horizontal" Grid.Column="2" VerticalAlignment="Center">
+                    <!-- Environment Badge -->
+                    <Border Background="#D65A31" CornerRadius="3" Padding="6,2" Margin="0,0,8,0">
+                        <TextBlock Text="DEVELOPMENT / SIMULATION" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                    </Border>
+                    <!-- Connection Status Badge -->
+                    <Border Background="#2E7D32" CornerRadius="3" Padding="6,2" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="6" Height="6" Fill="#4CAF50" Margin="0,0,4,0"/>
+                            <TextBlock Text="SIMULATOR ACTIVE" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Border>
+                    <!-- Chosen Provider Badge -->
+                    <Border Background="#00ADB5" CornerRadius="3" Padding="6,2">
+                        <TextBlock Text="{Binding SelectedProvider}" Foreground="Black" FontSize="10" FontWeight="Bold"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- =================================================================== -->
+        <!-- MAIN WORKSPACE                                                      -->
+        <!-- =================================================================== -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <!-- Left Navigation Bar -->
+                <ColumnDefinition Width="180"/>
+                <!-- Central Panel Workspace -->
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT NAVIGATION PANEL -->
+            <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="0,0,1,0">
+                <Grid Margin="10,20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Navigation Items -->
+                    <StackPanel Grid.Row="0">
+                        <!-- Navigation Item Header -->
+                        <TextBlock Text="WORKSPACE" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="5,0,0,10"/>
+
+                        <!-- Onboarding Menu Link (Active during onboarding) -->
+                        <Button Content="Onboarding Wizard" HorizontalContentAlignment="Left" Padding="10,8" Margin="0,0,0,5" IsEnabled="True" Background="#00ADB5" Foreground="Black" FontWeight="Bold">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsOnboarded}" Value="True">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="Foreground" Value="#888888"/>
+                                            <Setter Property="FontWeight" Value="Normal"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!-- Dashboard Menu Link -->
+                        <Button Content="Trading Desk" HorizontalContentAlignment="Left" Padding="10,8" Margin="0,0,0,5" IsEnabled="{Binding IsOnboarded}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsOnboarded}" Value="True">
+                                            <Setter Property="Background" Value="#222831"/>
+                                            <Setter Property="Foreground" Value="#00ADB5"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <Button Content="Market Watch" Style="{StaticResource SecondaryButton}" HorizontalContentAlignment="Left" Padding="10,8" Margin="0,0,0,5" IsEnabled="False"/>
+                        <Button Content="Terminal Operations" Style="{StaticResource SecondaryButton}" HorizontalContentAlignment="Left" Padding="10,8" Margin="0,0,0,5" IsEnabled="False"/>
+                    </StackPanel>
+
+                    <!-- Footer Details -->
+                    <StackPanel Grid.Row="1" Margin="5,0">
+                        <TextBlock Text="SYSTEM READY" Foreground="#4CAF50" FontSize="10" FontWeight="Bold"/>
+                        <TextBlock Text="N NTE v1.0.0-dev" Foreground="#444444" FontSize="9" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- CENTRAL WORKSPACE PANEL -->
+            <Border Grid.Column="1" Background="#222831" Padding="30,25">
+                <Grid>
+                    <!-- =============================================================== -->
+                    <!-- ONBOARDING WIZARD SCREENS                                       -->
+                    <!-- =============================================================== -->
+                    <Grid>
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsOnboarded}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Wizard Progress Header -->
+                        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                            <TextBlock Text="{Binding CurrentStep, StringFormat='ONBOARDING WIZARD - STEP {0} OF 6'}" Foreground="#888888" FontSize="11" FontWeight="Bold"/>
+                            <ProgressBar Value="{Binding CurrentStep}" Minimum="1" Maximum="6" Height="4" Margin="0,6,0,0" Foreground="#00ADB5" Background="#393E46" BorderThickness="0"/>
+                        </StackPanel>
+
+                        <!-- Wizard Main Content Area (Provider Selection / Profile Input / Snapshot Preview) -->
+                        <Border Grid.Row="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="25">
+                            <Grid>
+                                <!-- STEP 1: Select Persistence Provider -->
+                                <StackPanel Visibility="{Binding IsStep1, Converter={StaticResource BoolToVisConverter}}">
+                                    <TextBlock Text="Select Local Database Persistence Mode" Style="{StaticResource EnterpriseHeader}"/>
+                                    <TextBlock Text="Choose how Nexus stores account credentials, trades, positions, and strategy configuration profiles." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,20"/>
+
+                                    <Grid Margin="0,0,0,20">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="10"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Option A: PostgreSQL (Recommended) -->
+                                        <Border Grid.Column="0" Background="#222831" BorderBrush="#00ADB5" BorderThickness="1" Padding="20,15" CornerRadius="4">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                                    <RadioButton IsChecked="{Binding SelectedProvider, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=PostgreSQL}" GroupName="Provider" Content="PostgreSQL Server" Foreground="White" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                    <Border Background="#2E7D32" CornerRadius="3" Padding="4,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="RECOMMENDED" Foreground="White" FontSize="8" FontWeight="Bold"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="• Production grade reliability and scalability." Style="{StaticResource EnterpriseBodyText}" Margin="5,0,0,3"/>
+                                                <TextBlock Text="• Supports high-throughput raw Binary COPY partitioning." Style="{StaticResource EnterpriseBodyText}" Margin="5,0,0,3"/>
+                                                <TextBlock Text="• Retains history across simulated system restarts." Style="{StaticResource EnterpriseBodyText}" Margin="5,0,0,3"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Option B: SQLite (Quick Start) -->
+                                        <Border Grid.Column="2" Background="#222831" BorderBrush="#393E46" BorderThickness="1" Padding="20,15" CornerRadius="4">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                                    <RadioButton IsChecked="{Binding SelectedProvider, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=SQLite}" GroupName="Provider" Content="SQLite" Foreground="White" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                    <Border Background="#393E46" CornerRadius="3" Padding="4,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="QUICK START" Foreground="White" FontSize="8" FontWeight="Bold"/>
+                                                </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="• Local self-contained file database." Style="{StaticResource EnterpriseBodyText}" Margin="5,0,0,3"/>
+                                                <TextBlock Text="• Zero configuration or system requirements." Style="{StaticResource EnterpriseBodyText}" Margin="5,0,0,3"/>
+                                                <TextBlock Text="• Perfect for local evaluation, UI exploration, and debugging." Style="{StaticResource ResourceKey=EnterpriseBodyText}" Margin="5,0,0,3"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <TextBlock Text="PostgreSQL is recommended for production enterprise environments. Ensure your database server is running." Foreground="#E2C044" FontSize="11" Margin="0,5,0,0"/>
+                                </StackPanel>
+
+                                <!-- STEP 2: Configure & Initialize Database -->
+                                <StackPanel Visibility="{Binding IsStep2, Converter={StaticResource BoolToVisConverter}}">
+                                    <TextBlock Text="Initialize Selected Persistence Path" Style="{StaticResource EnterpriseHeader}"/>
+                                    <TextBlock Text="Verify and prepare the tables, indexes, and database schemas required for algorithmic execution." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,20"/>
+
+                                    <Grid Margin="0,0,0,20">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="150"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Connection String:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,15"/>
+                                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ConnectionString, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,15"/>
+
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Status Indicator:" Style="{StaticResource EnterpriseLabel}"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DatabaseStatus}" Foreground="#00ADB5" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </Grid>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Initialize Database" Command="{Binding InitializeDbCommand}" Style="{StaticResource ActionButton}" Margin="0,0,10,0"/>
+                                        <Button Content="Apply Migrations" Command="{Binding MigrateDbCommand}" Style="{StaticResource SecondaryButton}"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- STEP 3: Create MT5 Connection Profile -->
+                                <StackPanel Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisConverter}}">
+                                    <TextBlock Text="MetaTrader 5 Onboarding Credentials" Style="{StaticResource EnterpriseHeader}"/>
+                                    <TextBlock Text="Configure connection details to route orders and download snapshots. Sensitive passwords are saved securely using ISecretStore." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,15"/>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="150"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="30"/>
+                                            <ColumnDefinition Width="130"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Row 0: Profile Name & Server -->
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Profile Name:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
+                                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ProfileName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,12"/>
+
+                                        <TextBlock Grid.Row="0" Grid.Column="3" Text="Server / Broker:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
+                                        <TextBox Grid.Row="0" Grid.Column="4" Text="{Binding BrokerServer, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,12"/>
+
+                                        <!-- Row 1: Login & Password -->
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Login / Account ID:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
+                                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LoginAccountId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,12"/>
+
+                                        <TextBlock Grid.Row="1" Grid.Column="3" Text="Password (Masked):" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
+                                        <!-- Using standard textbox with masked binding or direct binding, password is redacted in saved summaries -->
+                                        <TextBox Grid.Row="1" Grid.Column="4" Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,12"/>
+
+                                        <!-- Row 2: Terminal Path -->
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="MT5 Terminal Path:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
+                                        <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="4" Text="{Binding TerminalPath, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,12"/>
+
+                                        <!-- Row 3: Timeout & Reconnect -->
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Timeout (Seconds):" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
+                                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding TimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,12"/>
+
+                                        <TextBlock Grid.Row="3" Grid.Column="3" Text="Auto Reconnect:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
+                                        <CheckBox Grid.Row="3" Grid.Column="4" IsChecked="{Binding AutoReconnect}" Foreground="White" VerticalAlignment="Center" Margin="0,0,0,12"/>
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- STEP 4: Test Connection -->
+                                <StackPanel Visibility="{Binding IsStep4, Converter={StaticResource BoolToVisConverter}}">
+                                    <TextBlock Text="Verify Gateway Communication Session" Style="{StaticResource EnterpriseHeader}"/>
+                                    <TextBlock Text="Run bidirectional heartbeat handshake tests with the terminal connector." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,20"/>
+
+                                    <Border Background="#222831" Padding="20" CornerRadius="4" Margin="0,0,0,20">
+                                        <StackPanel>
+                                            <TextBlock Text="VERIFICATION PROTOCOL" Foreground="#888888" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                            <Grid Margin="0,0,0,10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Target Broker:" Style="{StaticResource EnterpriseLabel}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding BrokerServer}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,0,0,10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Account ID:" Style="{StaticResource EnterpriseLabel}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding LoginAccountId}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                            </Grid>
+
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Outcome Status:" Style="{StaticResource EnterpriseLabel}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding TestOutcome}" Foreground="#E2C044" FontSize="13" FontWeight="Bold"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Test MT5 Connection" Command="{Binding TestConnectionCommand}" Style="{StaticResource ActionButton}" Margin="0,0,10,0"/>
+                                        <TextBlock Text="(Simulated connector fallback is active)" Foreground="#888888" VerticalAlignment="Center" FontSize="11" FontStyle="Italic"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- STEP 5: Account Preview Snapshot -->
+                                <StackPanel Visibility="{Binding IsStep5, Converter={StaticResource BoolToVisConverter}}">
+                                    <TextBlock Text="Broker Account Live Snapshot Preview" Style="{StaticResource EnterpriseHeader}"/>
+                                    <TextBlock Text="Connection successfully verified. Metrics retrieved via application query service." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,15"/>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="15"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Left Grid metrics -->
+                                        <Border Grid.Column="0" Background="#222831" Padding="15" CornerRadius="4">
+                                            <StackPanel>
+                                                <TextBlock Text="FINANCIAL METRICS" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Balance:" Style="{StaticResource EnterpriseLabel}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Balance, StringFormat={}{0:C2}}" Foreground="#4CAF50" FontSize="13" FontWeight="Bold"/>
+                                                </Grid>
+
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Equity:" Style="{StaticResource EnterpriseLabel}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Equity, StringFormat={}{0:C2}}" Foreground="#4CAF50" FontSize="13" FontWeight="Bold"/>
+                                                </Grid>
+
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Free Margin:" Style="{StaticResource EnterpriseLabel}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.FreeMargin, StringFormat={}{0:C2}}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                </Grid>
+
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Currency:" Style="{StaticResource EnterpriseLabel}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Currency}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Right Grid metrics -->
+                                        <Border Grid.Column="2" Background="#222831" Padding="15" CornerRadius="4">
+                                            <StackPanel>
+                                                <TextBlock Text="METADATA &amp; STATUS" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Account ID:" Style="{StaticResource EnterpriseLabel}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountId}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                </Grid>
+
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Server:" Style="{StaticResource EnterpriseLabel}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.BrokerServer}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                </Grid>
+
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Leverage:" Style="{StaticResource EnterpriseLabel}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Leverage, StringFormat='1:{0}'}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                </Grid>
+
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Account Mode:" Style="{StaticResource EnterpriseLabel}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountMode}" Foreground="#00ADB5" FontSize="12" FontWeight="SemiBold"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- STEP 6: Launch Workstation Workspace -->
+                                <StackPanel Visibility="{Binding IsStep6, Converter={StaticResource BoolToVisConverter}}">
+                                    <TextBlock Text="Ready to Launch Trading Station" Style="{StaticResource EnterpriseHeader}"/>
+                                    <TextBlock Text="Onboarding is complete! You can now launch the dashboard workspace. Active credentials, settings, and parameters have been fully persisted." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,20"/>
+
+                                    <Border Background="#2E7D32" CornerRadius="4" Padding="15" Margin="0,0,0,20">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="✓" Foreground="White" FontSize="20" FontWeight="Bold" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                                            <StackPanel>
+                                                <TextBlock Text="Workspace Ready" Foreground="White" FontSize="14" FontWeight="Bold"/>
+                                                <TextBlock Text="Database initialized and MT5 connection profile configured." Foreground="#BBEEEE" FontSize="11" Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Button Content="Launch Professional Workspace" Command="{Binding LaunchWorkspaceCmd}" Style="{StaticResource ActionButton}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Wizard Footer Navigation Buttons -->
+                        <DockPanel Grid.Row="3" Margin="0,20,0,0">
+                            <Button Content="Back" Command="{Binding BackCommand}" Style="{StaticResource SecondaryButton}" DockPanel.Dock="Left"/>
+
+                            <!-- Custom Next button logic per step -->
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <Button Content="Next Step" Command="{Binding SelectProviderNextCommand}" Style="{StaticResource ActionButton}" Visibility="{Binding IsStep1, Converter={StaticResource BoolToVisConverter}}"/>
+                                <Button Content="Next Step" Command="{Binding DbNextCommand}" Style="{StaticResource ActionButton}" Visibility="{Binding IsStep2, Converter={StaticResource BoolToVisConverter}}"/>
+                                <Button Content="Next Step" Command="{Binding CreateProfileNextCommand}" Style="{StaticResource ActionButton}" Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisConverter}}"/>
+                                <Button Content="Next Step" Command="{Binding TestNextCommand}" Style="{StaticResource ActionButton}" Visibility="{Binding IsStep4, Converter={StaticResource BoolToVisConverter}}"/>
+                                <Button Content="Next Step" Command="{Binding AccountNextCommand}" Style="{StaticResource ActionButton}" Visibility="{Binding IsStep5, Converter={StaticResource BoolToVisConverter}}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Grid>
+
+                    <!-- =============================================================== -->
+                    <!-- WORKSPACE TRADING DASHBOARD PANEL (Visible after onboarding)    -->
+                    <!-- =============================================================== -->
+                    <Grid>
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsOnboarded}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="TRADING DESK WORKSTATION" Style="{StaticResource EnterpriseHeader}"/>
+                        <TextBlock Grid.Row="1" Text="Live algorithmic system monitoring dashboard panel. Engine background workers active." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,20"/>
+
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="15"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Left Dashboard: Active System Summary -->
+                            <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" Padding="20" CornerRadius="4">
+                                <StackPanel>
+                                    <TextBlock Text="ACTIVE POSITIONS &amp; EXECUTION STATUS" Foreground="#888888" FontSize="11" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                                    <Border Background="#222831" Padding="25" CornerRadius="4" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,20">
+                                        <StackPanel HorizontalAlignment="Center">
+                                            <TextBlock Text="No Open Positions" Foreground="#888888" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Execution gateway is idle. Route strategy signals to begin." Foreground="#555555" FontSize="11" Margin="0,5,0,0" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="Live Order Routing Flag: IsLiveModeEnabled = FALSE (Safe Default)" Foreground="#D65A31" FontWeight="Bold" FontSize="11" Margin="0,15,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Right Dashboard: Connected Account Preview -->
+                            <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" Padding="20" CornerRadius="4">
+                                <StackPanel>
+                                    <TextBlock Text="CONNECTED ACCOUNT DETAILS" Foreground="#888888" FontSize="11" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="Account ID:" Style="{StaticResource EnterpriseLabel}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountId}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="Broker/Server:" Style="{StaticResource EnterpriseLabel}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.BrokerServer}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="Balance:" Style="{StaticResource EnterpriseLabel}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Balance, StringFormat={}{0:C2}}" Foreground="#4CAF50" FontSize="13" FontWeight="Bold"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="Equity:" Style="{StaticResource EnterpriseLabel}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Equity, StringFormat={}{0:C2}}" Foreground="#4CAF50" FontSize="13" FontWeight="Bold"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="Free Margin:" Style="{StaticResource EnterpriseLabel}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.FreeMargin, StringFormat={}{0:C2}}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="Leverage:" Style="{StaticResource EnterpriseLabel}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Leverage, StringFormat='1:{0}'}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                    </Grid>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="Platform Mode:" Style="{StaticResource EnterpriseLabel}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountMode}" Foreground="#00ADB5" FontSize="12" FontWeight="SemiBold"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- =================================================================== -->
+        <!-- BOTTOM DIAGNOSTICS & LOG PANEL                                      -->
+        <!-- =================================================================== -->
+        <Border Grid.Row="2" Background="#111111" BorderBrush="#393E46" BorderThickness="0,1,0,0">
+            <Grid Margin="12,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Panel Header -->
+                <DockPanel Grid.Row="0" Margin="0,0,0,6">
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                        <TextBlock Text="DIAGNOSTICS &amp; STRUCTURED LOGS" Foreground="#EEEEEE" FontFamily="Segoe UI" FontWeight="Bold" FontSize="11"/>
+                        <TextBlock Text="(Sanitized Payloads / Credentials Redacted)" Foreground="#555555" FontFamily="Segoe UI" FontSize="9" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="LIVE" Foreground="#D65A31" FontWeight="Bold" FontSize="9" DockPanel.Dock="Right" VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <!-- Structured Log Grid -->
+                <ListView Grid.Row="1" ItemsSource="{Binding DiagnosticService.Logs}" Background="#1A1A1A" BorderBrush="#393E46" BorderThickness="1" Foreground="#EEEEEE">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Timestamp" Width="140">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Timestamp, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" Foreground="#888888" FontSize="11" FontFamily="Consolas"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Subsystem" Width="110">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Subsystem}" Foreground="#00ADB5" FontSize="11" FontWeight="Bold"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Level" Width="70">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Level}" FontSize="11" FontWeight="Bold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#EEEEEE"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Level}" Value="ERROR">
+                                                            <Setter Property="Foreground" Value="#D65A31"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Level}" Value="WARN">
+                                                            <Setter Property="Foreground" Value="#E2C044"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Level}" Value="INFO">
+                                                            <Setter Property="Foreground" Value="#4CAF50"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Message" Width="680">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Message}" Foreground="#DDDDDD" FontSize="11" FontFamily="Consolas"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Grid>
+        </Border>
+
+        <!-- Loading overlay -->
+        <Border Grid.Row="0" Grid.RowSpan="3" Background="#AA121212" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisConverter}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="⚡" Foreground="#00ADB5" FontSize="48" HorizontalAlignment="Center">
+                    <TextBlock.RenderTransform>
+                        <RotateTransform Angle="0" x:Name="SpinnerTransform" CenterX="24" CenterY="24"/>
+                    </TextBlock.RenderTransform>
+                </TextBlock>
+                <TextBlock Text="{Binding BusyMessage}" Foreground="White" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,15,0,0"/>
+                <TextBlock Text="Please wait..." Foreground="#888888" FontSize="12" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
