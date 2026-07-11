@@ -2,7 +2,7 @@
 
 ## Upcoming Milestones
 
-With the completion of **Phase 2.5: Hardened Execution Platform Foundation**, the system is fully prepared to run multiple strategies concurrently, execute risk-managed orders, handle background worker loops, and fall back safely to managed engines when native C++ binaries are missing.
+With the completion of **Phase 2.5: Hardened Execution Platform Foundation** and **Phase 2.9: Production-Grade Observability & Recovery Hardening**, the platform has been completely secured and hardened. The system is fully prepared to run multiple strategies concurrently, execute risk-managed orders, handle background worker loops, recover gracefully from host failures, fall back safely to managed engines, and output production-grade telemetry.
 
 The immediate next milestones are:
 

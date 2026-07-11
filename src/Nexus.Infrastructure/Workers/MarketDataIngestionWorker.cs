@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nexus.Application.Ports;
+using Nexus.Application.Observability;
 using Nexus.Core.Entities;
 using Nexus.Core.ValueObjects;
 
@@ -31,7 +32,7 @@ namespace Nexus.Infrastructure.Workers
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Market Data Ingestion Worker is starting...");
+            _logger.LogStructured(LogLevel.Information, LogEventIds.WorkerStartup, "Market Data Ingestion Worker is starting...");
 
             _marketDataFeed.OnTickReceived += OnTickReceivedAsync;
 
@@ -44,20 +45,29 @@ namespace Nexus.Infrastructure.Workers
             }
             catch (OperationCanceledException)
             {
-                _logger.LogInformation("Market Data Ingestion Worker cancellation requested.");
+                _logger.LogStructured(LogLevel.Information, LogEventIds.WorkerShutdown, "Market Data Ingestion Worker cancellation requested.");
             }
             finally
             {
                 _marketDataFeed.OnTickReceived -= OnTickReceivedAsync;
                 await _marketDataFeed.StopAsync(CancellationToken.None);
-                _logger.LogInformation("Market Data Ingestion Worker stopped.");
+                _logger.LogStructured(LogLevel.Information, LogEventIds.WorkerShutdown, "Market Data Ingestion Worker stopped.");
             }
         }
 
         private async Task OnTickReceivedAsync(PriceTickEnvelope tickEnvelope)
         {
+            var context = WorkflowContext.Create("MarketDataIngestion", subsystem: "Ingestion");
+            context.Symbol = tickEnvelope.SymbolName;
+
+            using var scope = _logger.BeginWorkflowScope(context);
+
             try
             {
+                _logger.LogStructured(LogLevel.Debug, LogEventIds.MarketDataReceived,
+                    "Market data received: Symbol={Symbol}, Bid={Bid}, Ask={Ask}",
+                    tickEnvelope.SymbolName, tickEnvelope.Bid, tickEnvelope.Ask);
+
                 // Convert envelope to Zero-Allocation Tick
                 var symbol = new Symbol(tickEnvelope.SymbolName);
                 var tick = new Tick(symbol, tickEnvelope.Timestamp, tickEnvelope.Bid, tickEnvelope.Ask);
@@ -74,7 +84,8 @@ namespace Nexus.Infrastructure.Workers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing incoming tick for {Symbol}", tickEnvelope.SymbolName);
+                _logger.LogStructuredError(ex, LogEventIds.MarketDataReceived,
+                    "Error processing incoming tick for {Symbol}", tickEnvelope.SymbolName);
             }
         }
     }

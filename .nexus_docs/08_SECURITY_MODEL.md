@@ -4,6 +4,7 @@
 To maintain strict security boundaries, no secrets are ever stored inside the source repository:
 - All database, bridge, and telemetry settings are configured via environment variables, `.NET User Secrets`, or standard configuration providers.
 - **Connection String Masking**: Logs and diagnostic reports always pass through a masking routine (`SecurityConfiguration.MaskConnectionString`) to hide usernames, passwords, or authentication keys before rendering.
+- **Structured Log Sanitization**: A central `LogSanitizer` utility scans and redacts credentials, passwords, API keys, and connection strings from logged payloads before they are outputted. Any logging of string templates or objects automatically runs through the sanitizer to prevent any chance of sensitive data exposure in CI build artifacts or telemetry storage.
 
 ## 2. Validation Boundaries
 The platform enforces validation checks at all entry points:
