@@ -1,0 +1,72 @@
+name: dotnet-build
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "feat/**"
+      - "feature/**"
+      - "fix/**"
+      - "hotfix/**"
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: Build and Test - .NET 10
+    runs-on: ubuntu-latest
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      BUILD_CONFIGURATION: Release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+          include-prerelease: true
+
+      - name: Show .NET info
+        run: dotnet --info
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', '**/packages.lock.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore NexusTradingEngine.sln
+
+      - name: Build
+        run: dotnet build NexusTradingEngine.sln --configuration $BUILD_CONFIGURATION --no-restore
+
+      - name: Test
+        run: >
+          dotnet test NexusTradingEngine.sln
+          --configuration $BUILD_CONFIGURATION
+          --no-build
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+          if-no-files-found: ignore

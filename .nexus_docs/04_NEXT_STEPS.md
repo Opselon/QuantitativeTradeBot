@@ -1,19 +1,28 @@
 # Nexus Trading Engine - Next Steps
 
-## Immediate Next Steps (Phase 1)
-1. **Initialize the C# Solution & Projects**:
-   - Generate directories: `src/` and `tests/`.
-   - Setup project references and package configurations for the solution.
-2. **Build the Domain Models in `Nexus.Core`**:
-   - Write fully detailed and robust implementation of `Symbol`, `Tick` (readonly struct), `Bar`, `Order`, `Position`, and `Account` domain entities.
-   - Design strategic interfaces (`IStrategy`, `IRiskManager`, `ITrailingManager`).
-3. **Verify Implementation**:
-   - Write unit tests in `Nexus.Tests.Unit` for newly created core domain objects.
-   - Execute `dotnet build` and `dotnet test` to ensure robust foundations.
+## Immediate Next Steps (Phase 3: Inter-Process Communication & MetaTrader 5 Bridge)
+With Phase 2's high-speed database layers successfully running and verified, the next phase focuses on low-latency, bidirectional bridging with MetaTrader 5 (MT5).
 
-## Medium-Term Roadmap
-- **Phase 2**: PostgreSQL DB, migrations, and binary-copy bulk insertion.
-- **Phase 3**: MetaTrader 5 Bridge integration via high-speed IPC (gRPC or local domain sockets/named pipes).
-- **Phase 4**: Strategy Engine construction with GoldScalperM1 and EmaCrossover alongside dynamic trailing stops.
-- **Phase 5**: WPF client UI using MVVM Community Toolkit.
-- **Phase 6**: Testcontainers PostgreSQL integration.
+### 1. MT5 Bridge Protocol & Tech Stack Selection
+* **gRPC / Protocol Buffers (Protobuf)**: Standardized, robust contract definition and cross-language runtime (MT5 runs C++, NTE runs .NET 10 C#). Extremely fast over local loopback sockets.
+* **Shared Memory / Named Pipes**: Alternative ultra-low-latency IPC mechanism.
+
+### 2. Protobuf Contract Design
+Define the message boundaries and contracts in `.proto` files:
+* `market_data.proto`: For streaming Tick and Bar data from MT5 to NTE.
+* `execution.proto`: For sending orders, updates, modifications, and cancellations from NTE to MT5, and receiving tickets.
+
+### 3. Tick Stream Adapter
+Create the adapter implementing a gRPC streaming service or Named Pipe listener:
+* Consumes incoming tick streams at minimal allocation rates.
+* Forwards ticks directly to the `MarketDataRepository` and notifies active strategy triggers.
+
+### 4. Execution Gateway Adapter
+Create the execution client inside `Nexus.Infrastructure` that:
+* Connects to MT5's trade socket.
+* Sends trade requests asynchronously.
+* Waits for ticket IDs and execution confirmation, translating responses back into Domain order updates.
+
+### 5. Connection Resilience & Auto-Reconnect
+* Build background worker services managing socket lifecycles.
+* Implement exponential backoff reconnection behavior during network dropouts or terminal restarts.
