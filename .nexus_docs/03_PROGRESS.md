@@ -21,6 +21,13 @@
   - Added background worker model with `System.Threading.Channels` queues and `RecoveryStartupService`.
   - Implemented 9 scenario-focused End-to-End workflow tests covering all critical engine lifecycle requirements.
 
+- [x] **Phase 2.9: Production-Grade Observability & Recovery Hardening**
+  - Resolved E2E Recovery flow docker/host boundaries.
+  - Created standardized structured logging abstractions in `src/Nexus.Application/Observability`.
+  - Added end-to-end `CorrelationId`, `OperationId`, and contextual fields across all workers and pipelines.
+  - Implemented secure `LogSanitizer` policy to redact credentials, keys, passwords, and tokens.
+  - Integrated `TestOutputLogger` to stream real-time logs to xUnit test outputs for effortless CI triage.
+
 - [ ] **Phase 3: MetaTrader 5 Bridge & IPC**
   - Contract protobuf definitions.
   - High-speed gRPC/Named Pipes bridge.

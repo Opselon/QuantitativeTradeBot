@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nexus.Application.Strategies;
+using Nexus.Application.Observability;
 using Nexus.Core.Entities;
 
 namespace Nexus.Infrastructure.Workers
@@ -27,7 +28,7 @@ namespace Nexus.Infrastructure.Workers
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Strategy Dispatch Worker is starting...");
+            _logger.LogStructured(LogLevel.Information, LogEventIds.WorkerStartup, "Strategy Dispatch Worker is starting...");
 
             try
             {
@@ -36,7 +37,14 @@ namespace Nexus.Infrastructure.Workers
                     while (_tickChannelReader.TryRead(out var tick))
                     {
                         string correlationId = Guid.NewGuid().ToString("N");
-                        _logger.LogDebug("[CorrID: {CorrelationId}] Dispatching tick to strategies: {Tick}", correlationId, tick);
+
+                        var context = WorkflowContext.Create("StrategyDispatch", correlationId, subsystem: "Strategy");
+                        context.Symbol = tick.Symbol.Name;
+
+                        using var scope = _logger.BeginWorkflowScope(context);
+
+                        _logger.LogStructured(LogLevel.Debug, LogEventIds.MarketDataReceived,
+                            "Dispatching tick to strategies: {Tick}", tick);
 
                         // Hand off to the supervisor (each strategy executes inside try-catch fault containment)
                         await _strategySupervisor.RouteTickAsync(tick, correlationId);
@@ -45,15 +53,15 @@ namespace Nexus.Infrastructure.Workers
             }
             catch (OperationCanceledException)
             {
-                _logger.LogInformation("Strategy Dispatch Worker cancellation requested.");
+                _logger.LogStructured(LogLevel.Information, LogEventIds.WorkerShutdown, "Strategy Dispatch Worker cancellation requested.");
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Strategy Dispatch Worker encountered a critical failure.");
+                _logger.LogStructuredError(ex, LogEventIds.StrategyFailed, "Strategy Dispatch Worker encountered a critical failure.");
             }
             finally
             {
-                _logger.LogInformation("Strategy Dispatch Worker stopped.");
+                _logger.LogStructured(LogLevel.Information, LogEventIds.WorkerShutdown, "Strategy Dispatch Worker stopped.");
             }
         }
     }

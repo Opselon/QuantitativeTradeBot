@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nexus.Application.Pipeline;
+using Nexus.Application.Observability;
 
 namespace Nexus.Infrastructure.Workers
 {
@@ -26,7 +27,7 @@ namespace Nexus.Infrastructure.Workers
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Execution Worker is starting...");
+            _logger.LogStructured(LogLevel.Information, LogEventIds.WorkerStartup, "Execution Worker is starting...");
 
             try
             {
@@ -35,33 +36,44 @@ namespace Nexus.Infrastructure.Workers
                     while (_signalChannelReader.TryRead(out var signal))
                     {
                         string correlationId = Guid.NewGuid().ToString("N");
-                        _logger.LogInformation("[CorrID: {CorrelationId}] Execution worker received trade signal from Strategy: {StrategyId}", correlationId, signal.StrategyId);
+
+                        var workflowContext = WorkflowContext.Create("SignalExecution", correlationId, subsystem: "Execution");
+                        workflowContext.StrategyId = signal.StrategyId;
+                        workflowContext.Symbol = signal.SymbolName;
+
+                        using var scope = _logger.BeginWorkflowScope(workflowContext);
+
+                        _logger.LogStructured(LogLevel.Information, LogEventIds.SignalEmitted,
+                            "Execution worker received trade signal from Strategy: {StrategyId} for {Symbol}",
+                            signal.StrategyId, signal.SymbolName);
 
                         var context = new PipelineContext(signal.StrategyId, correlationId);
                         var result = await _signalRouter.RouteSignalAsync(signal, context, stoppingToken);
 
                         if (result.IsSuccess)
                         {
-                            _logger.LogInformation("[CorrID: {CorrelationId}] Signal executed successfully. Ticket: {TicketId}", correlationId, result.TicketId);
+                            _logger.LogStructured(LogLevel.Information, LogEventIds.OrderFilled,
+                                "Signal executed successfully. Ticket: {TicketId}", result.TicketId);
                         }
                         else
                         {
-                            _logger.LogWarning("[CorrID: {CorrelationId}] Signal execution failed: {Error}", correlationId, result.ErrorMessage);
+                            _logger.LogStructured(LogLevel.Warning, LogEventIds.OrderRejected,
+                                "Signal execution failed: {Error}", result.ErrorMessage);
                         }
                     }
                 }
             }
             catch (OperationCanceledException)
             {
-                _logger.LogInformation("Execution Worker cancellation requested.");
+                _logger.LogStructured(LogLevel.Information, LogEventIds.WorkerShutdown, "Execution Worker cancellation requested.");
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Execution Worker encountered a critical failure.");
+                _logger.LogStructuredError(ex, LogEventIds.StrategyFailed, "Execution Worker encountered a critical failure.");
             }
             finally
             {
-                _logger.LogInformation("Execution Worker stopped.");
+                _logger.LogStructured(LogLevel.Information, LogEventIds.WorkerShutdown, "Execution Worker stopped.");
             }
         }
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Nexus.Application.Observability;
 using Nexus.Core.Entities;
 using Nexus.Core.Interfaces;
 
@@ -28,14 +29,18 @@ namespace Nexus.Application.Strategies
 
         public async Task InitializeAsync()
         {
+            var context = WorkflowContext.Create("StrategyLifecycle", subsystem: "Strategy");
+            context.StrategyId = _descriptor.StrategyId;
+            using var scope = _logger.BeginWorkflowScope(context);
+
             try
             {
-                _logger.LogInformation("Initializing strategy '{StrategyName}' ({StrategyId})", _descriptor.Name, _descriptor.StrategyId);
+                _logger.LogStructured(LogLevel.Information, LogEventIds.StrategyStarted, "Initializing strategy '{StrategyName}' ({StrategyId})", _descriptor.Name, _descriptor.StrategyId);
                 await _strategy.OnInitializeAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during initialization of strategy '{StrategyId}'", _descriptor.StrategyId);
+                _logger.LogStructuredError(ex, LogEventIds.StrategyFailed, "Error during initialization of strategy '{StrategyId}'", _descriptor.StrategyId);
                 throw;
             }
         }
@@ -44,7 +49,12 @@ namespace Nexus.Application.Strategies
         {
             _isRunning = true;
             _isPaused = false;
-            _logger.LogInformation("Strategy '{StrategyId}' started.", _descriptor.StrategyId);
+
+            var context = WorkflowContext.Create("StrategyLifecycle", subsystem: "Strategy");
+            context.StrategyId = _descriptor.StrategyId;
+            using var scope = _logger.BeginWorkflowScope(context);
+
+            _logger.LogStructured(LogLevel.Information, LogEventIds.StrategyStarted, "Strategy '{StrategyId}' started.", _descriptor.StrategyId);
             await Task.CompletedTask;
         }
 
@@ -52,7 +62,12 @@ namespace Nexus.Application.Strategies
         {
             if (!_isRunning) return;
             _isPaused = true;
-            _logger.LogInformation("Strategy '{StrategyId}' paused.", _descriptor.StrategyId);
+
+            var context = WorkflowContext.Create("StrategyLifecycle", subsystem: "Strategy");
+            context.StrategyId = _descriptor.StrategyId;
+            using var scope = _logger.BeginWorkflowScope(context);
+
+            _logger.LogStructured(LogLevel.Information, LogEventIds.StrategyStarted, "Strategy '{StrategyId}' paused.", _descriptor.StrategyId);
             await Task.CompletedTask;
         }
 
@@ -60,21 +75,31 @@ namespace Nexus.Application.Strategies
         {
             if (!_isRunning) return;
             _isPaused = false;
-            _logger.LogInformation("Strategy '{StrategyId}' resumed.", _descriptor.StrategyId);
+
+            var context = WorkflowContext.Create("StrategyLifecycle", subsystem: "Strategy");
+            context.StrategyId = _descriptor.StrategyId;
+            using var scope = _logger.BeginWorkflowScope(context);
+
+            _logger.LogStructured(LogLevel.Information, LogEventIds.StrategyStarted, "Strategy '{StrategyId}' resumed.", _descriptor.StrategyId);
             await Task.CompletedTask;
         }
 
         public async Task StopAsync()
         {
             if (!_isRunning) return;
+
+            var context = WorkflowContext.Create("StrategyLifecycle", subsystem: "Strategy");
+            context.StrategyId = _descriptor.StrategyId;
+            using var scope = _logger.BeginWorkflowScope(context);
+
             try
             {
-                _logger.LogInformation("Stopping strategy '{StrategyId}'", _descriptor.StrategyId);
+                _logger.LogStructured(LogLevel.Information, LogEventIds.StrategyStopped, "Stopping strategy '{StrategyId}'", _descriptor.StrategyId);
                 await _strategy.OnStopAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during stopping strategy '{StrategyId}'", _descriptor.StrategyId);
+                _logger.LogStructuredError(ex, LogEventIds.StrategyFailed, "Error during stopping strategy '{StrategyId}'", _descriptor.StrategyId);
             }
             finally
             {
@@ -90,15 +115,20 @@ namespace Nexus.Application.Strategies
             // Only process if the strategy is subscribed to this symbol
             if (!_descriptor.SubscribedSymbols.Contains(tick.Symbol.Name)) return;
 
+            var context = WorkflowContext.Create("StrategyTickProcessing", correlationId, subsystem: "Strategy");
+            context.StrategyId = _descriptor.StrategyId;
+            context.Symbol = tick.Symbol.Name;
+            using var scope = _logger.BeginWorkflowScope(context);
+
             try
             {
-                _logger.LogDebug("[CorrID: {CorrelationId}] Dispatching Tick to strategy '{StrategyId}': {Tick}", correlationId, _descriptor.StrategyId, tick);
+                _logger.LogStructured(LogLevel.Debug, LogEventIds.MarketDataReceived, "Dispatching Tick to strategy '{StrategyId}': {Tick}", _descriptor.StrategyId, tick);
                 await _strategy.OnTickAsync(tick);
             }
             catch (Exception ex)
             {
                 // Fault Containment: Single strategy crash must not bring down the entire engine
-                _logger.LogError(ex, "[CorrID: {CorrelationId}] Fault in strategy '{StrategyId}' while processing Tick: {Tick}", correlationId, _descriptor.StrategyId, tick);
+                _logger.LogStructuredError(ex, LogEventIds.StrategyFailed, "Fault in strategy '{StrategyId}' while processing Tick: {Tick}", _descriptor.StrategyId, tick);
             }
         }
 
@@ -108,14 +138,19 @@ namespace Nexus.Application.Strategies
 
             if (!_descriptor.SubscribedSymbols.Contains(bar.Symbol.Name)) return;
 
+            var context = WorkflowContext.Create("StrategyBarProcessing", correlationId, subsystem: "Strategy");
+            context.StrategyId = _descriptor.StrategyId;
+            context.Symbol = bar.Symbol.Name;
+            using var scope = _logger.BeginWorkflowScope(context);
+
             try
             {
-                _logger.LogDebug("[CorrID: {CorrelationId}] Dispatching Bar to strategy '{StrategyId}': {Bar}", correlationId, _descriptor.StrategyId, bar);
+                _logger.LogStructured(LogLevel.Debug, LogEventIds.MarketDataReceived, "Dispatching Bar to strategy '{StrategyId}': {Bar}", _descriptor.StrategyId, bar);
                 await _strategy.OnBarAsync(bar);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[CorrID: {CorrelationId}] Fault in strategy '{StrategyId}' while processing Bar: {Bar}", correlationId, _descriptor.StrategyId, bar);
+                _logger.LogStructuredError(ex, LogEventIds.StrategyFailed, "Fault in strategy '{StrategyId}' while processing Bar: {Bar}", _descriptor.StrategyId, bar);
             }
         }
     }
