@@ -1,0 +1,15 @@
+{
+  "SelectedProvider": "SQLite",
+  "ConnectionString": "Data Source=nexus.db",
+  "IsOnboarded": false,
+  "ProfileName": "DefaultMT5",
+  "BrokerServer": "ICMarkets-Demo",
+  "LoginAccountId": "7820491",
+  "TerminalPath": "C:\\Program Files\\MetaTrader 5\\terminal64.exe",
+  "TimeoutSeconds": 30,
+  "AutoReconnect": true,
+  "Mt5Mode": "Simulated",
+  "Mt5BridgeHost": "127.0.0.1",
+  "Mt5BridgePort": 5000,
+  "Mt5BridgeUseSsl": false
+}

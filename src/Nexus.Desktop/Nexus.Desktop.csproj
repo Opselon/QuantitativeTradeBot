@@ -17,4 +17,10 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="RELEASE_README.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -47,3 +47,9 @@ coverage/
 *.nupkg
 .env
 appsettings.Development.json
+
+# Local Publish and Build outputs
+publish/
+local-test-publish/
+efbundle-temp/
+efbundle.exe

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -15,6 +16,21 @@ namespace Nexus.Desktop.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
+        public string AppVersion
+        {
+            get
+            {
+                var assembly = typeof(MainViewModel).Assembly;
+                var attribute = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+                var versionStr = attribute?.InformationalVersion ?? assembly.GetName().Version?.ToString(3) ?? "0.64.0";
+
+                if (versionStr.Contains("+"))
+                {
+                    versionStr = versionStr.Split('+')[0];
+                }
+                return versionStr;
+            }
+        }
         private readonly IAppConfigurationService _configService;
         private readonly ISecretStore _secretStore;
         private readonly IDiagnosticService _diagnosticService;

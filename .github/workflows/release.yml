@@ -1,0 +1,195 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - "v*"
+      - "release-*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 0.64.0)"
+        required: true
+        default: "0.64.0"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Build, Package and Release
+    runs-on: windows-latest
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Version
+        id: get_version
+        shell: bash
+        run: |
+          VERSION="0.64.0"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG_NAME="${{ github.ref_name }}"
+            # Strip 'v' prefix if present
+            VERSION="${TAG_NAME#v}"
+            # Support release-64 style as well
+            if [[ "$TAG_NAME" == release-* ]]; then
+              VERSION="${TAG_NAME#release-}"
+              if [[ "$VERSION" =~ ^[0-9]+$ ]]; then
+                VERSION="0.$VERSION.0"
+              fi
+            fi
+          fi
+          echo "Determined Version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+          include-prerelease: true
+
+      - name: Build Native C++ Component
+        shell: bash
+        run: |
+          chmod +x native/build.sh
+          ./native/build.sh
+
+      - name: Restore NuGet Packages
+        run: dotnet restore NexusTradingEngine.sln
+
+      - name: Run Unit & Integration Tests
+        run: >
+          dotnet test NexusTradingEngine.sln
+          --configuration Release
+          --no-restore
+
+      - name: Install EF Core CLI Tool
+        shell: bash
+        run: |
+          dotnet tool install --global dotnet-ef --version 9.0.2
+          echo "$USERPROFILE/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Create Self-Contained Release Output (Windows x64)
+        run: >
+          dotnet publish src/Nexus.Desktop/Nexus.Desktop.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=false
+          -p:PublishReadyToRun=false
+          -p:PublishTrimmed=false
+          -p:VERSION=${{ steps.get_version.outputs.version }}
+          -o ./publish/win-x64-self-contained
+
+      - name: Create Framework-Dependent Release Output (Windows x64)
+        run: >
+          dotnet publish src/Nexus.Desktop/Nexus.Desktop.csproj
+          -c Release
+          -r win-x64
+          --self-contained false
+          -p:PublishSingleFile=false
+          -p:PublishReadyToRun=false
+          -p:PublishTrimmed=false
+          -p:VERSION=${{ steps.get_version.outputs.version }}
+          -o ./publish/win-x64-framework-dependent
+
+      - name: Generate EF Core Migration Bundle (Windows x64)
+        run: >
+          dotnet ef migrations bundle
+          --project src/Nexus.Infrastructure/Nexus.Infrastructure.csproj
+          --startup-project src/Nexus.Infrastructure/Nexus.Infrastructure.csproj
+          --output ./efbundle-temp/efbundle.exe
+          --self-contained
+          -r win-x64
+
+      - name: Deploy Configurations and Database Scripts
+        run: |
+          $config = @"
+          {
+            "SelectedProvider": "SQLite",
+            "ConnectionString": "Data Source=nexus.db",
+            "IsOnboarded": false,
+            "ProfileName": "DefaultMT5",
+            "BrokerServer": "ICMarkets-Demo",
+            "LoginAccountId": "7820491",
+            "TerminalPath": "C:\\Program Files\\MetaTrader 5\\terminal64.exe",
+            "TimeoutSeconds": 30,
+            "AutoReconnect": true,
+            "Mt5Mode": "Simulated",
+            "Mt5BridgeHost": "127.0.0.1",
+            "Mt5BridgePort": 5000,
+            "Mt5BridgeUseSsl": false
+          }
+          "@
+          Set-Content -Path ./nexus_config.json -Value $config
+
+          # Deploy default config to both folders
+          Copy-Item ./nexus_config.json ./publish/win-x64-self-contained/nexus_config.json -Force
+          Copy-Item ./nexus_config.json ./publish/win-x64-framework-dependent/nexus_config.json -Force
+
+          # Copy migration bundle next to each executable for seamless setup
+          Copy-Item ./efbundle-temp/efbundle.exe ./publish/win-x64-self-contained/efbundle.exe -Force
+          Copy-Item ./efbundle-temp/efbundle.exe ./publish/win-x64-framework-dependent/efbundle.exe -Force
+
+          # Copy compiled native Windows DLL to both folders if exists
+          if (Test-Path native/Nexus.Native/nexus_native.dll) {
+            Copy-Item native/Nexus.Native/nexus_native.dll ./publish/win-x64-self-contained/nexus_native.dll -Force
+            Copy-Item native/Nexus.Native/nexus_native.dll ./publish/win-x64-framework-dependent/nexus_native.dll -Force
+          }
+
+      - name: Create Zipped Portable App Packages
+        run: |
+          $ver = "${{ steps.get_version.outputs.version }}"
+          Compress-Archive -Path publish/win-x64-self-contained/* -DestinationPath "Nexus.Desktop-win-x64-self-contained-$ver.zip" -Force
+          Compress-Archive -Path publish/win-x64-framework-dependent/* -DestinationPath "Nexus.Desktop-win-x64-framework-dependent-$ver.zip" -Force
+
+      - name: Generate Release Notes Draft
+        id: notes
+        shell: bash
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          echo "## Release $VERSION - Deployment & Testing Guide" > release_notes.md
+          echo "" >> release_notes.md
+          echo "This release is pre-configured for instant, automated local validation and contains fully compiled self-contained portable desktop distribution packages." >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Release Assets Included:" >> release_notes.md
+          echo "- **Self-Contained Windows x64 Portable**: `Nexus.Desktop-win-x64-self-contained-${VERSION}.zip` (No local .NET runtime requirements)." >> release_notes.md
+          echo "- **Framework-Dependent Windows x64 Portable**: `Nexus.Desktop-win-x64-framework-dependent-${VERSION}.zip` (Requires .NET 10.0 runtime on the client machine)." >> release_notes.md
+          echo "- **Entity Framework Migration Bundle**: `efbundle.exe` (Packaged next to the executables for direct schema execution against local/remote database servers)." >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### How to Test and Run:" >> release_notes.md
+          echo "1. Download and extract **`Nexus.Desktop-win-x64-self-contained-${VERSION}.zip`**." >> release_notes.md
+          echo "2. Double-click `Nexus.Desktop.exe` to launch the Desktop Workstation App." >> release_notes.md
+          echo "3. The application will boot up into the interactive **6-Step Onboarding Wizard**." >> release_notes.md
+          echo "4. Under **Step 1 (Persistence Provider)**, choose **SQLite** for a fast, zero-config quick start evaluation, or **PostgreSQL** for enterprise deployment testing." >> release_notes.md
+          echo "5. Under **Step 2 (Database Preparation)**, click **Initialize Database** to create the tables, indexes, and partitions. (If using PostgreSQL, make sure your PostgreSQL server is active and the connection string is valid)." >> release_notes.md
+          echo "6. Under **Step 3 (MetaTrader 5 Onboarding)**, keep **Simulated MT5 Mode** as active to bypass physical MetaTrader installation. (To switch to Live MT5 bridge execution later, select **Real MT5 Bridge** and specify your Terminal Path and Bridge IP endpoints)." >> release_notes.md
+          echo "7. Under **Step 4 (Verify Gateway Session)**, click **Test MT5 Connection**. Under Simulated Mode, this test will perform handshake checks and immediately succeed!" >> release_notes.md
+          echo "8. Under **Step 5 (Financial Snapshot Preview)**, inspect the simulated free margin, balance, and account equity metrics retrieved via the system connector." >> release_notes.md
+          echo "9. Under **Step 6 (Launch Station)**, click **Launch Professional Workspace** to enter the workspace panel!" >> release_notes.md
+          echo "10. In the trading station, you can submit Buy/Sell market orders, see active positions, refresh position stats, and monitor live structured diagnostic logs directly in the UI." >> release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', steps.get_version.outputs.version) || github.ref_name }}
+          name: ${{ github.event_name == 'workflow_dispatch' && format('Release v{0}', steps.get_version.outputs.version) || github.ref_name }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: |
+            Nexus.Desktop-win-x64-self-contained-${{ steps.get_version.outputs.version }}.zip
+            Nexus.Desktop-win-x64-framework-dependent-${{ steps.get_version.outputs.version }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
