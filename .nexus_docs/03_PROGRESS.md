@@ -35,3 +35,12 @@
 
 - [ ] **Phase 4: WPF UI Dashboard**
   - MVVM WPF screens, real-time telemetry charts, order submission panel.
+
+- [x] **Phase 5: Release Engineering & Distribution Readiness**
+  - Centralized single-source solution versioning via `Directory.Build.props` with automatic MSBuild bumping support.
+  - Dynamic UI binding to assembly InformationalVersion, ensuring visible versioning in desktop workstation title and footer panels.
+  - Automated deployment configurations featuring script copying to published folders.
+  - Dual-mode packaging (Self-Contained Windows x64 and Framework-Dependent) zipping portable releases.
+  - Automated standalone Entity Framework Migration Bundle (`efbundle.exe`) compiling for effortless database provisioning.
+  - Safe default local-testing configuration templates pre-filled with SQLite and Simulated modes.
+  - Highly robust GitHub Actions workflows supporting automated release generation on git tag pushes or manual triggers.
