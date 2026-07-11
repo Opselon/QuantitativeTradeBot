@@ -619,21 +619,97 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- Left Dashboard: Active System Summary -->
-                            <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" Padding="20" CornerRadius="4">
-                                <StackPanel>
-                                    <TextBlock Text="ACTIVE POSITIONS &amp; EXECUTION STATUS" Foreground="#888888" FontSize="11" FontWeight="Bold" Margin="0,0,0,15"/>
+                            <!-- Left Dashboard: Active Positions & Market Order Form -->
+                            <Grid Grid.Column="0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="2*"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
 
-                                    <Border Background="#222831" Padding="25" CornerRadius="4" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,20">
-                                        <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock Text="No Open Positions" Foreground="#888888" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="Execution gateway is idle. Route strategy signals to begin." Foreground="#555555" FontSize="11" Margin="0,5,0,0" HorizontalAlignment="Center"/>
+                                <!-- Active Positions List -->
+                                <Border Grid.Row="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" Padding="15" CornerRadius="4" Margin="0,0,0,10">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Grid.Row="0" Text="ACTIVE BRIDGE POSITIONS" Foreground="#00ADB5" FontSize="12" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                        <ListView Grid.Row="1" ItemsSource="{Binding OpenPositions}" SelectedItem="{Binding SelectedPosition}" Background="#121212" BorderBrush="#222831" Foreground="White" FontSize="11">
+                                            <ListView.View>
+                                                <GridView>
+                                                    <GridViewColumn Header="Ticket" DisplayMemberBinding="{Binding Ticket}" Width="65"/>
+                                                    <GridViewColumn Header="Symbol" DisplayMemberBinding="{Binding Symbol}" Width="70"/>
+                                                    <GridViewColumn Header="Side" DisplayMemberBinding="{Binding Side}" Width="50"/>
+                                                    <GridViewColumn Header="Volume" DisplayMemberBinding="{Binding Volume}" Width="60"/>
+                                                    <GridViewColumn Header="Open Price" DisplayMemberBinding="{Binding OpenPrice}" Width="80"/>
+                                                    <GridViewColumn Header="Current" DisplayMemberBinding="{Binding CurrentPrice}" Width="80"/>
+                                                    <GridViewColumn Header="Profit" DisplayMemberBinding="{Binding Profit}" Width="70"/>
+                                                    <GridViewColumn Header="Comment" DisplayMemberBinding="{Binding Comment}" Width="110"/>
+                                                </GridView>
+                                            </ListView.View>
+                                        </ListView>
+
+                                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                                            <Button Content="Refresh" Command="{Binding RefreshPositionsUICommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,10,0"/>
+                                            <Button Content="Close Selected" Command="{Binding ClosePositionUICommand}" Style="{StaticResource ActionButton}" Background="#D65A31"/>
                                         </StackPanel>
-                                    </Border>
+                                    </Grid>
+                                </Border>
 
-                                    <TextBlock Text="Live Order Routing Flag: IsLiveModeEnabled = FALSE (Safe Default)" Foreground="#D65A31" FontWeight="Bold" FontSize="11" Margin="0,15,0,0"/>
-                                </StackPanel>
-                            </Border>
+                                <!-- Market Order Submit Form -->
+                                <Border Grid.Row="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" Padding="15" CornerRadius="4">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="PLACE MARKET ORDER VIA REAL BRIDGE" Foreground="#00ADB5" FontSize="12" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                        <Grid Grid.Row="1">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="15"/>
+                                                <ColumnDefinition Width="40"/>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="15"/>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="80"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="10"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Symbol -->
+                                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Symbol:" Style="{StaticResource EnterpriseLabel}"/>
+                                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TradeSymbol, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}"/>
+
+                                            <!-- Side -->
+                                            <TextBlock Grid.Row="0" Grid.Column="3" Text="Side:" Style="{StaticResource EnterpriseLabel}"/>
+                                            <ComboBox Grid.Row="0" Grid.Column="4" SelectedValue="{Binding SelectedSide}" SelectedValuePath="Content" Background="#222831" Foreground="White" BorderBrush="#393E46" VerticalAlignment="Center">
+                                                <ComboBoxItem Content="Buy" IsSelected="True"/>
+                                                <ComboBoxItem Content="Sell"/>
+                                            </ComboBox>
+
+                                            <!-- Volume -->
+                                            <TextBlock Grid.Row="0" Grid.Column="6" Text="Volume:" Style="{StaticResource EnterpriseLabel}"/>
+                                            <TextBox Grid.Row="0" Grid.Column="7" Text="{Binding TradeVolume, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}"/>
+
+                                            <!-- Trade Status Line -->
+                                            <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="5" Text="{Binding TradeStatus, StringFormat='Status: {0}'}" Foreground="#E2C044" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+
+                                            <!-- Action Button -->
+                                            <Button Grid.Row="2" Grid.Column="7" Content="Submit" Command="{Binding PlaceOrderUICommand}" Style="{StaticResource ActionButton}"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </Grid>
 
                             <!-- Right Dashboard: Connected Account Preview -->
                             <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" Padding="20" CornerRadius="4">

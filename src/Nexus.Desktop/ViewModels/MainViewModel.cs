@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Application.Ports;
 using Nexus.Application.Security;
 using Nexus.Application.Workflows;
@@ -16,6 +18,9 @@ namespace Nexus.Desktop.ViewModels
         private readonly IAppConfigurationService _configService;
         private readonly ISecretStore _secretStore;
         private readonly IDiagnosticService _diagnosticService;
+        private readonly IMt5ConnectionService _connectionService;
+        private readonly IMt5TradeService _tradeService;
+        private IMt5Session? _session;
 
         private readonly SelectPersistenceProviderCommand _selectProviderCmd;
         private readonly InitializeDatabaseCommand _initDbCmd;
@@ -23,6 +28,14 @@ namespace Nexus.Desktop.ViewModels
         private readonly CreateConnectionProfileCommand _createProfileCmd;
         private readonly TestMt5ConnectionCommand _testConnectionCmd;
         private readonly LaunchWorkspaceCommand _launchWorkspaceCmd;
+
+        // Trade Panel Properties
+        private string _tradeSymbol = "EURUSD";
+        private decimal _tradeVolume = 0.10m;
+        private string _selectedSide = "Buy";
+        private ObservableCollection<BridgePositionDto> _openPositions = new();
+        private BridgePositionDto? _selectedPosition;
+        private string _tradeStatus = "Idle";
 
         // Onboarding State
         private bool _isOnboarded;
@@ -55,6 +68,43 @@ namespace Nexus.Desktop.ViewModels
         private bool _testSuccess;
         private AccountSnapshotDto? _accountSnapshot;
 
+        // Trade Panel Public Properties
+        public string TradeSymbol
+        {
+            get => _tradeSymbol;
+            set => SetProperty(ref _tradeSymbol, value);
+        }
+
+        public decimal TradeVolume
+        {
+            get => _tradeVolume;
+            set => SetProperty(ref _tradeVolume, value);
+        }
+
+        public string SelectedSide
+        {
+            get => _selectedSide;
+            set => SetProperty(ref _selectedSide, value);
+        }
+
+        public ObservableCollection<BridgePositionDto> OpenPositions
+        {
+            get => _openPositions;
+            set => SetProperty(ref _openPositions, value);
+        }
+
+        public BridgePositionDto? SelectedPosition
+        {
+            get => _selectedPosition;
+            set => SetProperty(ref _selectedPosition, value);
+        }
+
+        public string TradeStatus
+        {
+            get => _tradeStatus;
+            set => SetProperty(ref _tradeStatus, value);
+        }
+
         // Commands
         public ICommand SelectProviderNextCommand { get; }
         public ICommand InitializeDbCommand { get; }
@@ -67,17 +117,25 @@ namespace Nexus.Desktop.ViewModels
         public ICommand LaunchWorkspaceCmd { get; }
         public ICommand BackCommand { get; }
 
+        // Trade Commands
+        public ICommand PlaceOrderUICommand { get; }
+        public ICommand ClosePositionUICommand { get; }
+        public ICommand RefreshPositionsUICommand { get; }
+
         public MainViewModel(
             IAppConfigurationService configService,
             ISecretStore secretStore,
             IEnumerable<IDatabaseBootstrapper> bootstrappers,
             IMt5ConnectionService connectionService,
             IMt5AccountService accountService,
+            IMt5TradeService tradeService,
             IDiagnosticService diagnosticService)
         {
             _configService = configService;
             _secretStore = secretStore;
             _diagnosticService = diagnosticService;
+            _connectionService = connectionService;
+            _tradeService = tradeService;
 
             // Instantiating application-layer commands
             _selectProviderCmd = new SelectPersistenceProviderCommand(_configService);
@@ -117,8 +175,146 @@ namespace Nexus.Desktop.ViewModels
             LaunchWorkspaceCmd = new AsyncRelayCommand(OnLaunchWorkspaceAsync);
             BackCommand = new RelayCommand(OnBack, () => _currentStep > 1);
 
+            // Wire Trade Commands
+            PlaceOrderUICommand = new AsyncRelayCommand(OnPlaceOrderUIAsync);
+            ClosePositionUICommand = new AsyncRelayCommand(OnClosePositionUIAsync);
+            RefreshPositionsUICommand = new AsyncRelayCommand(OnRefreshPositionsUIAsync);
+
             _diagnosticService.Log("AppShell", "INFO", "Application Shell initialized.");
             _diagnosticService.Log("AppShell", "INFO", $"Loaded Selected Provider: {_selectedProvider}");
+        }
+
+        private async Task EnsureSessionAsync(CancellationToken ct)
+        {
+            if (_session == null)
+            {
+                var profile = new ConnectionProfileDto
+                {
+                    ProfileName = ProfileName,
+                    BrokerServer = BrokerServer,
+                    LoginAccountId = LoginAccountId,
+                    Password = Password,
+                    TerminalPath = TerminalPath,
+                    TimeoutSeconds = TimeoutSeconds,
+                    AutoReconnect = AutoReconnect
+                };
+                _session = await _connectionService.CreateSessionAsync(profile, ct);
+            }
+        }
+
+        private async Task OnPlaceOrderUIAsync()
+        {
+            IsBusy = true;
+            BusyMessage = "Submitting Market Order...";
+            TradeStatus = "Submitting...";
+            _diagnosticService.Log("TradingDesk", "INFO", $"Submitting {SelectedSide} market order for {TradeVolume} lots of {TradeSymbol}...");
+
+            try
+            {
+                await EnsureSessionAsync(CancellationToken.None);
+
+                var side = string.Equals(SelectedSide, "Buy", StringComparison.OrdinalIgnoreCase)
+                    ? BridgeOrderSide.Buy
+                    : BridgeOrderSide.Sell;
+
+                var request = new PlaceOrderRequest(TradeSymbol, side, TradeVolume);
+                var response = await _tradeService.PlaceOrderAsync(_session!, request, CancellationToken.None);
+
+                if (response.Success)
+                {
+                    TradeStatus = $"Success - Ticket: {response.Ticket}";
+                    _diagnosticService.Log("TradingDesk", "INFO", $"Order executed successfully! Ticket: {response.Ticket}. Message: {response.BrokerMessage}");
+
+                    // Automatically refresh positions after successful trade
+                    await OnRefreshPositionsUIAsync();
+                }
+                else
+                {
+                    TradeStatus = $"Failed - {response.BrokerMessage}";
+                    _diagnosticService.Log("TradingDesk", "WARN", $"Order execution failed: {response.BrokerMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                TradeStatus = $"Error: {ex.Message}";
+                _diagnosticService.Log("TradingDesk", "ERROR", $"Order execution threw error: {ex.Message}");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task OnClosePositionUIAsync()
+        {
+            if (SelectedPosition == null)
+            {
+                TradeStatus = "No position selected.";
+                return;
+            }
+
+            IsBusy = true;
+            BusyMessage = "Closing Selected Position...";
+            TradeStatus = "Closing...";
+            _diagnosticService.Log("TradingDesk", "INFO", $"Closing position ticket {SelectedPosition.Ticket}...");
+
+            try
+            {
+                await EnsureSessionAsync(CancellationToken.None);
+
+                var request = new ClosePositionRequest(SelectedPosition.Ticket, SelectedPosition.Symbol);
+                var response = await _tradeService.ClosePositionAsync(_session!, request, CancellationToken.None);
+
+                if (response.Success)
+                {
+                    TradeStatus = $"Closed Ticket: {response.Ticket}";
+                    _diagnosticService.Log("TradingDesk", "INFO", $"Position {response.Ticket} closed successfully! Message: {response.BrokerMessage}");
+
+                    // Refresh
+                    await OnRefreshPositionsUIAsync();
+                }
+                else
+                {
+                    TradeStatus = $"Failed Close - {response.BrokerMessage}";
+                    _diagnosticService.Log("TradingDesk", "WARN", $"Position close failed: {response.BrokerMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                TradeStatus = $"Error: {ex.Message}";
+                _diagnosticService.Log("TradingDesk", "ERROR", $"Position close threw error: {ex.Message}");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task OnRefreshPositionsUIAsync()
+        {
+            TradeStatus = "Refreshing positions...";
+            _diagnosticService.Log("TradingDesk", "INFO", "Refreshing open positions from MetaTrader 5...");
+
+            try
+            {
+                await EnsureSessionAsync(CancellationToken.None);
+
+                var positions = await _tradeService.GetOpenPositionsAsync(_session!, CancellationToken.None);
+
+                OpenPositions.Clear();
+                foreach (var pos in positions)
+                {
+                    OpenPositions.Add(pos);
+                }
+
+                TradeStatus = $"Refreshed at {DateTime.Now:HH:mm:ss}";
+                _diagnosticService.Log("TradingDesk", "INFO", $"Successfully retrieved {positions.Count} open positions.");
+            }
+            catch (Exception ex)
+            {
+                TradeStatus = $"Error: {ex.Message}";
+                _diagnosticService.Log("TradingDesk", "ERROR", $"Failed to retrieve open positions: {ex.Message}");
+            }
         }
 
         // Onboarding Navigation / Progress properties
@@ -479,6 +675,9 @@ namespace Nexus.Desktop.ViewModels
                 await _launchWorkspaceCmd.ExecuteAsync();
                 IsOnboarded = true;
                 _diagnosticService.Log("AppShell", "INFO", "Onboarding completed. Welcome to your main trading workspace dashboard!");
+
+                // Load positions in workspace
+                await OnRefreshPositionsUIAsync();
             }
             catch (Exception ex)
             {

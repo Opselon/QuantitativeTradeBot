@@ -152,6 +152,152 @@ namespace Nexus.Tests.Unit.Desktop
             Assert.Contains("Intentional Test Exception", resultReal.ErrorMessage);
         }
 
+        [Fact]
+        public void PlaceOrderRequest_Serialization_RoundTrip()
+        {
+            var originalRequest = new PlaceOrderRequest("EURUSD", BridgeOrderSide.Buy, 0.50m, 1.08000m, 1.10000m, "TestComment", "correlation-id");
+            var envelope = BridgeMessageEnvelope.CreateRequest("req-123", "PlaceOrder", originalRequest);
+
+            var json = JsonSerializer.Serialize(envelope);
+            var deserializedEnvelope = JsonSerializer.Deserialize<BridgeMessageEnvelope>(json);
+
+            Assert.NotNull(deserializedEnvelope);
+            Assert.Equal("Request", deserializedEnvelope.MessageType);
+            Assert.Equal("req-123", deserializedEnvelope.RequestId);
+
+            var payloadJson = JsonSerializer.Serialize(deserializedEnvelope.Payload);
+            var deserializedRequest = JsonSerializer.Deserialize<PlaceOrderRequest>(payloadJson);
+
+            Assert.NotNull(deserializedRequest);
+            Assert.Equal("EURUSD", deserializedRequest.Symbol);
+            Assert.Equal(BridgeOrderSide.Buy, deserializedRequest.Side);
+            Assert.Equal(0.50m, deserializedRequest.Volume);
+            Assert.Equal(1.08000m, deserializedRequest.StopLoss);
+            Assert.Equal(1.10000m, deserializedRequest.TakeProfit);
+            Assert.Equal("TestComment", deserializedRequest.Comment);
+            Assert.Equal("correlation-id", deserializedRequest.ClientCorrelationId);
+        }
+
+        [Fact]
+        public void PlaceOrderResponse_Serialization_RoundTrip()
+        {
+            var originalResponse = new PlaceOrderResponse(true, 123456, BridgeOrderExecutionStatus.Executed, "Success", "comment-text");
+            var envelope = BridgeMessageEnvelope.CreateResponse("req-123", "PlaceOrder", originalResponse, null);
+
+            var json = JsonSerializer.Serialize(envelope);
+            var deserializedEnvelope = JsonSerializer.Deserialize<BridgeMessageEnvelope>(json);
+
+            Assert.NotNull(deserializedEnvelope);
+
+            var payloadJson = JsonSerializer.Serialize(deserializedEnvelope.Payload);
+            var deserializedResponse = JsonSerializer.Deserialize<PlaceOrderResponse>(payloadJson);
+
+            Assert.NotNull(deserializedResponse);
+            Assert.True(deserializedResponse.Success);
+            Assert.Equal(123456, deserializedResponse.Ticket);
+            Assert.Equal(BridgeOrderExecutionStatus.Executed, deserializedResponse.Status);
+            Assert.Equal("Success", deserializedResponse.BrokerMessage);
+            Assert.Equal("comment-text", deserializedResponse.Comment);
+        }
+
+        [Fact]
+        public void ClosePositionRequestAndResponse_Serialization_RoundTrip()
+        {
+            var originalRequest = new ClosePositionRequest(99882, "EURUSD", 0.10m);
+            var reqJson = JsonSerializer.Serialize(originalRequest);
+            var deserializedRequest = JsonSerializer.Deserialize<ClosePositionRequest>(reqJson);
+
+            Assert.NotNull(deserializedRequest);
+            Assert.Equal(99882, deserializedRequest.Ticket);
+            Assert.Equal("EURUSD", deserializedRequest.Symbol);
+            Assert.Equal(0.10m, deserializedRequest.Volume);
+
+            var originalResponse = new ClosePositionResponse(true, 99882, "Closed successfully");
+            var resJson = JsonSerializer.Serialize(originalResponse);
+            var deserializedResponse = JsonSerializer.Deserialize<ClosePositionResponse>(resJson);
+
+            Assert.NotNull(deserializedResponse);
+            Assert.True(deserializedResponse.Success);
+            Assert.Equal(99882, deserializedResponse.Ticket);
+            Assert.Equal("Closed successfully", deserializedResponse.BrokerMessage);
+        }
+
+        [Fact]
+        public void GetOpenPositionsResponse_Serialization_RoundTrip()
+        {
+            var position = new BridgePositionDto(
+                ticket: 54321,
+                symbol: "GBPUSD",
+                side: BridgePositionSide.Sell,
+                volume: 0.25m,
+                openPrice: 1.25000m,
+                currentPrice: 1.24800m,
+                stopLoss: 1.26000m,
+                takeProfit: 1.22000m,
+                profit: 50.00m,
+                swap: -1.20m,
+                magicNumber: 987654,
+                comment: "EA-Position",
+                openTime: new DateTime(2025, 5, 20, 12, 0, 0, DateTimeKind.Utc)
+            );
+
+            var response = new GetOpenPositionsResponse(new List<BridgePositionDto> { position });
+            var json = JsonSerializer.Serialize(response);
+            var deserializedResponse = JsonSerializer.Deserialize<GetOpenPositionsResponse>(json);
+
+            Assert.NotNull(deserializedResponse);
+            Assert.Single(deserializedResponse.Positions);
+
+            var pos = deserializedResponse.Positions[0];
+            Assert.Equal(54321, pos.Ticket);
+            Assert.Equal("GBPUSD", pos.Symbol);
+            Assert.Equal(BridgePositionSide.Sell, pos.Side);
+            Assert.Equal(0.25m, pos.Volume);
+            Assert.Equal(1.25000m, pos.OpenPrice);
+            Assert.Equal(1.24800m, pos.CurrentPrice);
+            Assert.Equal(1.26000m, pos.StopLoss);
+            Assert.Equal(1.22000m, pos.TakeProfit);
+            Assert.Equal(50.00m, pos.Profit);
+            Assert.Equal(-1.20m, pos.Swap);
+            Assert.Equal(987654, pos.MagicNumber);
+            Assert.Equal("EA-Position", pos.Comment);
+            Assert.Equal(new DateTime(2025, 5, 20, 12, 0, 0, DateTimeKind.Utc), pos.OpenTime.ToUniversalTime());
+        }
+
+        [Fact]
+        public async Task RoutingMt5TradeService_DelegatesCorrectly_BasedOnActiveMt5Mode()
+        {
+            var mockConfig = new StubAppConfigurationService();
+            mockConfig.SettingsToReturn = new AppSettings { Mt5Mode = "Simulated" };
+
+            var simulatedService = new SimulatedMt5TradeService();
+            var stubBridgeClient = new StubBridgeClient(null);
+            var realService = new RealMt5BridgeAdapter(stubBridgeClient);
+
+            var routingService = new RoutingMt5TradeService(
+                mockConfig,
+                simulatedService,
+                realService
+            );
+
+            // Act & Assert 1: Simulated Mode (Delegates to SimulatedMt5TradeService)
+            var session = new StubSession();
+            var positions = await routingService.GetOpenPositionsAsync(session, CancellationToken.None);
+            Assert.NotNull(positions);
+            // Should have 1 seeded position
+            Assert.Single(positions);
+            Assert.Equal("EURUSD", positions[0].Symbol);
+
+            // Switch to Real Mode
+            mockConfig.SettingsToReturn = new AppSettings { Mt5Mode = "Real" };
+
+            // Act & Assert 2: Real Mode (Will throw since bridge client stub is not configured with response)
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await routingService.GetOpenPositionsAsync(session, CancellationToken.None);
+            });
+        }
+
         // --- STUB CLASSES ---
 
         private class StubBridgeClient : IMt5BridgeClient

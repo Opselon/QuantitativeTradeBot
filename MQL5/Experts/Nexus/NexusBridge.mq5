@@ -204,6 +204,18 @@ void ProcessIncomingJson(const string json)
    {
       HandlePing(requestId);
    }
+   else if(command == "PlaceOrder")
+   {
+      HandlePlaceOrder(requestId, json);
+   }
+   else if(command == "ClosePosition")
+   {
+      HandleClosePosition(requestId, json);
+   }
+   else if(command == "GetOpenPositions")
+   {
+      HandleGetOpenPositions(requestId);
+   }
    else
    {
       HandleUnknownCommand(requestId, command);
@@ -273,6 +285,246 @@ void HandlePing(const string requestId)
    "}";
 
    string responseEnvelopeJson = BuildEnvelopeJson("Response", requestId, "Ping", payload, "null");
+
+   SendResponse(responseEnvelopeJson);
+}
+
+//+------------------------------------------------------------------+
+//| Command: PlaceOrder - submit market order trading command        |
+//+------------------------------------------------------------------+
+void HandlePlaceOrder(const string requestId, const string json)
+{
+   ResetLastError();
+
+   string symbol = GetJsonStringValue(json, "symbol");
+   string side_str = GetJsonStringValue(json, "side"); // "Buy" or "Sell"
+   double volume = GetJsonDoubleValue(json, "volume");
+   double stopLoss = GetJsonDoubleValue(json, "stopLoss");
+   double takeProfit = GetJsonDoubleValue(json, "takeProfit");
+   string comment = GetJsonStringValue(json, "comment");
+
+   // Validations
+   if(symbol == "")
+   {
+      string errorJson = "{\"code\":\"INVALID_PAYLOAD\",\"message\":\"Symbol parameter is required.\"}";
+      SendResponse(BuildEnvelopeJson("Response", requestId, "PlaceOrder", "{}", errorJson));
+      return;
+   }
+
+   if(volume <= 0.0)
+   {
+      string errorJson = "{\"code\":\"INVALID_PAYLOAD\",\"message\":\"Volume must be greater than zero.\"}";
+      SendResponse(BuildEnvelopeJson("Response", requestId, "PlaceOrder", "{}", errorJson));
+      return;
+   }
+
+   ENUM_ORDER_TYPE order_type;
+   if(side_str == "Buy")
+   {
+      order_type = ORDER_TYPE_BUY;
+   }
+   else if(side_str == "Sell")
+   {
+      order_type = ORDER_TYPE_SELL;
+   }
+   else
+   {
+      string errorJson = "{\"code\":\"INVALID_PAYLOAD\",\"message\":\"Side must be 'Buy' or 'Sell'.\"}";
+      SendResponse(BuildEnvelopeJson("Response", requestId, "PlaceOrder", "{}", errorJson));
+      return;
+   }
+
+   // Prepare trade request
+   MqlTradeRequest request;
+   MqlTradeResult result;
+   ZeroMemory(request);
+   ZeroMemory(result);
+
+   request.action       = TRADE_ACTION_DEAL;
+   request.symbol       = symbol;
+   request.volume       = volume;
+   request.type         = order_type;
+   request.price        = (order_type == ORDER_TYPE_BUY) ? SymbolInfoDouble(symbol, SYMBOL_ASK) : SymbolInfoDouble(symbol, SYMBOL_BID);
+   request.deviation    = 10;
+   request.sl           = stopLoss;
+   request.tp           = takeProfit;
+   request.comment      = comment;
+   request.type_filling = ORDER_FILLING_FOK;
+
+   // Send order
+   bool ok = OrderSend(request, result);
+   int last_err = GetLastError();
+
+   string payload = "";
+   string errorJson = "null";
+
+   if(ok && result.retcode == TRADE_RETCODE_DONE)
+   {
+      payload = "{"
+         "\"success\":true,"
+         "\"ticket\":" + IntegerToString(result.order) + ","
+         "\"status\":\"Executed\","
+         "\"brokerMessage\":\"Trade completed successfully.\","
+         "\"comment\":\"" + EscapeJsonString(comment) + "\""
+      "}";
+   }
+   else
+   {
+      string fail_msg = "OrderSend failed. Retcode: " + IntegerToString(result.retcode) + ", Error: " + IntegerToString(last_err);
+      payload = "{"
+         "\"success\":false,"
+         "\"ticket\":0,"
+         "\"status\":\"Failed\","
+         "\"brokerMessage\":\"" + EscapeJsonString(fail_msg) + "\","
+         "\"comment\":\"\""
+      "}";
+      errorJson = "{"
+         "\"code\":\"TRADE_REJECTED\","
+         "\"message\":\"" + EscapeJsonString(fail_msg) + "\""
+      "}";
+   }
+
+   SendResponse(BuildEnvelopeJson("Response", requestId, "PlaceOrder", payload, errorJson));
+}
+
+//+------------------------------------------------------------------+
+//| Command: ClosePosition - execute full close of active position  |
+//+------------------------------------------------------------------+
+void HandleClosePosition(const string requestId, const string json)
+{
+   ResetLastError();
+
+   long ticket = GetJsonIntValue(json, "ticket");
+   string symbol = GetJsonStringValue(json, "symbol");
+   double volume = GetJsonDoubleValue(json, "volume");
+
+   if(ticket <= 0)
+   {
+      string errorJson = "{\"code\":\"INVALID_PAYLOAD\",\"message\":\"Ticket must be greater than zero.\"}";
+      SendResponse(BuildEnvelopeJson("Response", requestId, "ClosePosition", "{}", errorJson));
+      return;
+   }
+
+   // Validate position exists
+   if(!PositionSelectByTicket(ticket))
+   {
+      string errorJson = "{\"code\":\"POSITION_NOT_FOUND\",\"message\":\"Position with ticket " + IntegerToString(ticket) + " not found.\"}";
+      SendResponse(BuildEnvelopeJson("Response", requestId, "ClosePosition", "{}", errorJson));
+      return;
+   }
+
+   string pos_symbol = PositionGetString(POSITION_SYMBOL);
+   ENUM_POSITION_TYPE pos_type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+   double pos_volume = PositionGetDouble(POSITION_VOLUME);
+
+   if(volume <= 0.0 || volume > pos_volume)
+   {
+      volume = pos_volume; // Default to full close
+   }
+
+   // Prepare close deal order
+   MqlTradeRequest request;
+   MqlTradeResult result;
+   ZeroMemory(request);
+   ZeroMemory(result);
+
+   request.action       = TRADE_ACTION_DEAL;
+   request.position     = ticket;
+   request.symbol       = pos_symbol;
+   request.volume       = volume;
+   request.type         = (pos_type == POSITION_TYPE_BUY) ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
+   request.price        = (request.type == ORDER_TYPE_BUY) ? SymbolInfoDouble(pos_symbol, SYMBOL_ASK) : SymbolInfoDouble(pos_symbol, SYMBOL_BID);
+   request.deviation    = 10;
+   request.type_filling = ORDER_FILLING_FOK;
+
+   bool ok = OrderSend(request, result);
+   int last_err = GetLastError();
+
+   string payload = "";
+   string errorJson = "null";
+
+   if(ok && result.retcode == TRADE_RETCODE_DONE)
+   {
+      payload = "{"
+         "\"success\":true,"
+         "\"ticket\":" + IntegerToString(ticket) + ","
+         "\"brokerMessage\":\"Position closed successfully.\""
+      "}";
+   }
+   else
+   {
+      string fail_msg = "Close failed. Retcode: " + IntegerToString(result.retcode) + ", Error: " + IntegerToString(last_err);
+      payload = "{"
+         "\"success\":false,"
+         "\"ticket\":" + IntegerToString(ticket) + ","
+         "\"brokerMessage\":\"" + EscapeJsonString(fail_msg) + "\""
+      "}";
+      errorJson = "{"
+         "\"code\":\"TRADE_REJECTED\","
+         "\"message\":\"" + EscapeJsonString(fail_msg) + "\""
+      "}";
+   }
+
+   SendResponse(BuildEnvelopeJson("Response", requestId, "ClosePosition", payload, errorJson));
+}
+
+//+------------------------------------------------------------------+
+//| Command: GetOpenPositions - download active position snap       |
+//+------------------------------------------------------------------+
+void HandleGetOpenPositions(const string requestId)
+{
+   ResetLastError();
+
+   string positionsJson = "";
+   int total = PositionsTotal();
+
+   for(int i = 0; i < total; i++)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket > 0)
+      {
+         string symbol = PositionGetString(POSITION_SYMBOL);
+         ENUM_POSITION_TYPE type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+         double volume = PositionGetDouble(POSITION_VOLUME);
+         double open_price = PositionGetDouble(POSITION_PRICE_OPEN);
+         double current_price = PositionGetDouble(POSITION_PRICE_CURRENT);
+         double sl = PositionGetDouble(POSITION_SL);
+         double tp = PositionGetDouble(POSITION_TP);
+         double profit = PositionGetDouble(POSITION_PROFIT);
+         double swap = PositionGetDouble(POSITION_SWAP);
+         long magic = PositionGetInteger(POSITION_MAGIC);
+         string comment = PositionGetString(POSITION_COMMENT);
+         datetime open_time = (datetime)PositionGetInteger(POSITION_TIME);
+
+         string side_str = (type == POSITION_TYPE_BUY) ? "Buy" : "Sell";
+
+         MqlDateTime mqlTime;
+         TimeToStruct(open_time, mqlTime);
+         string time_str = StringFormat("%04d-%02d-%02dT%02d:%02d:%02dZ", mqlTime.year, mqlTime.mon, mqlTime.day, mqlTime.hour, mqlTime.min, mqlTime.sec);
+
+         string pos_item = "{"
+            "\"ticket\":"        + IntegerToString(ticket) + ","
+            "\"symbol\":\""       + EscapeJsonString(symbol) + "\","
+            "\"side\":\""         + side_str + "\","
+            "\"volume\":"         + DoubleToString(volume, 2) + ","
+            "\"openPrice\":"      + DoubleToString(open_price, 5) + ","
+            "\"currentPrice\":"   + DoubleToString(current_price, 5) + ","
+            "\"stopLoss\":"       + DoubleToString(sl, 5) + ","
+            "\"takeProfit\":"     + DoubleToString(tp, 5) + ","
+            "\"profit\":"         + DoubleToString(profit, 2) + ","
+            "\"swap\":"           + DoubleToString(swap, 2) + ","
+            "\"magicNumber\":"    + IntegerToString(magic) + ","
+            "\"comment\":\""      + EscapeJsonString(comment) + "\","
+            "\"openTime\":\""     + time_str + "\""
+         "}";
+
+         if(positionsJson != "") positionsJson += ",";
+         positionsJson += pos_item;
+      }
+   }
+
+   string payload = "{\"positions\":[" + positionsJson + "]}";
+   string responseEnvelopeJson = BuildEnvelopeJson("Response", requestId, "GetOpenPositions", payload, "null");
 
    SendResponse(responseEnvelopeJson);
 }
@@ -350,6 +602,74 @@ string GetJsonStringValue(const string json, const string key)
    if(quote_end < 0) return "";
 
    return StringSubstr(json, quote_start + 1, quote_end - quote_start - 1);
+}
+
+//+------------------------------------------------------------------+
+//| Helper: Extract double value of a JSON key                       |
+//+------------------------------------------------------------------+
+double GetJsonDoubleValue(const string json, const string key)
+{
+   string search_key = "\"" + key + "\"";
+   int key_pos = StringFind(json, search_key);
+   if(key_pos < 0) return 0.0;
+
+   int colon_pos = StringFind(json, ":", key_pos + StringLen(search_key));
+   if(colon_pos < 0) return 0.0;
+
+   int end_pos = colon_pos + 1;
+   while(end_pos < StringLen(json))
+   {
+      ushort ch = StringGetCharacter(json, end_pos);
+      if(ch == ',' || ch == '}' || ch == ']' || ch == '\r' || ch == '\n' || ch == ' ')
+      {
+         break;
+      }
+      end_pos++;
+   }
+
+   string val_str = StringSubstr(json, colon_pos + 1, end_pos - colon_pos - 1);
+   val_str = StringTrim(val_str);
+
+   if(StringLen(val_str) > 0 && StringGetCharacter(val_str, 0) == '"')
+   {
+      val_str = StringSubstr(val_str, 1, StringLen(val_str) - 2);
+   }
+
+   return StringToDouble(val_str);
+}
+
+//+------------------------------------------------------------------+
+//| Helper: Extract integer value of a JSON key                      |
+//+------------------------------------------------------------------+
+long GetJsonIntValue(const string json, const string key)
+{
+   string search_key = "\"" + key + "\"";
+   int key_pos = StringFind(json, search_key);
+   if(key_pos < 0) return 0;
+
+   int colon_pos = StringFind(json, ":", key_pos + StringLen(search_key));
+   if(colon_pos < 0) return 0;
+
+   int end_pos = colon_pos + 1;
+   while(end_pos < StringLen(json))
+   {
+      ushort ch = StringGetCharacter(json, end_pos);
+      if(ch == ',' || ch == '}' || ch == ']' || ch == '\r' || ch == '\n' || ch == ' ')
+      {
+         break;
+      }
+      end_pos++;
+   }
+
+   string val_str = StringSubstr(json, colon_pos + 1, end_pos - colon_pos - 1);
+   val_str = StringTrim(val_str);
+
+   if(StringLen(val_str) > 0 && StringGetCharacter(val_str, 0) == '"')
+   {
+      val_str = StringSubstr(val_str, 1, StringLen(val_str) - 2);
+   }
+
+   return StringToInteger(val_str);
 }
 
 //+------------------------------------------------------------------+

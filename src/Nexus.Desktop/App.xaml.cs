@@ -39,12 +39,14 @@ namespace Nexus.Desktop
                     // Register concrete underlying implementations
                     services.AddSingleton<SimulatedMt5ConnectionService>();
                     services.AddSingleton<SimulatedMt5AccountService>();
+                    services.AddSingleton<SimulatedMt5TradeService>();
                     services.AddSingleton<RealMt5BridgeAdapter>();
                     services.AddSingleton<RealMt5BridgeConnectionService>();
 
                     // Register Routing (dynamic selector) services
                     services.AddSingleton<IMt5ConnectionService, RoutingMt5ConnectionService>();
                     services.AddSingleton<IMt5AccountService, RoutingMt5AccountService>();
+                    services.AddSingleton<IMt5TradeService, RoutingMt5TradeService>();
 
                     services.AddSingleton<ITradingPlatformConnector, SimulatedTradingPlatformConnector>();
                     services.AddSingleton<IConnectionHealthMonitor, SimulatedConnectionHealthMonitor>();
