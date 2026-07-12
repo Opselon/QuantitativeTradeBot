@@ -56,28 +56,34 @@ jobs:
         shell: pwsh
         run: |
           $OutputFile = "base_structure.md"
+          $RootPath = (Get-Location).Path
           $Lines = @()
 
-          # 1. Base Markdown Header & Architecture Context
-          $Lines += "# 00 – Nexus Project Structure & Deep Diagnostics"
-          $Lines += ""
-          $Lines += "> 🤖 **AI Agent Info:** This file is assembled dynamically by the Enterprise Pipeline."
-          $Lines += "> Use this as your primary map to understand the architecture, full source-code file index, and latest build status."
-          $Lines += ""
-          $Lines += "## 🏛️ Nexus Trading Engine (NTE) Architecture Summary"
-          $Lines += "**Style:** Decoupled Hexagonal / Clean Architecture"
-          $Lines += "- **Nexus.Core:** Zero external dependencies. Uses *Zero-Allocation Tick Path*. Contains value objects (\`Symbol\`, \`Money\`, \`LotSize\`) and core interfaces (\`IStrategy\`, \`IRiskManager\`)."
-          $Lines += "- **Nexus.Application:** Implements execution logic, \`IExecutionGateway\`, \`ExecutionCoordinator\`, and the \`IMt5TradingService\` with Simulated vs Real Routing adapters."
-          $Lines += "- **Nexus.Infrastructure:** Adapters (EF Core, Background Workers, Time-Series tick copy)."
-          $Lines += "- **Native C++:** High-performance quantitative engine (EMA calculations) via P/Invoke to bypass JIT."
-          $Lines += "- **Nexus.WpfUi (WPF Layer):** Rich Desktop UI designed in WPF on .NET 10."
-          $Lines += ""
-          $Lines += "---"
-          $Lines += "## 📂 Interactive Project Structure Tree"
-          $Lines += "<details open>"
-          $Lines += "<summary><b>Click to collapse/expand Project Tree (Filtered with WPF, .NET & C++ files)</b></summary>"
-          $Lines += ""
-          $Lines += "```text"
+          # 1. Base Markdown Header & Architecture Context (Using Array Join to avoid Here-String indentation bugs)
+          $HeaderArray = @(
+              "# 00 – Nexus Project Structure & Deep Diagnostics",
+              "",
+              "> 🤖 **AI Agent Info:** This file is assembled dynamically by the Enterprise Pipeline.",
+              "> Use this as your primary map to understand the architecture, full source-code file index, and latest build status.",
+              "",
+              "## 🏛️ Nexus Trading Engine (NTE) Architecture Summary",
+              "**Style:** Decoupled Hexagonal / Clean Architecture",
+              "- **Nexus.Core:** Zero external dependencies. Uses *Zero-Allocation Tick Path*. Contains value objects (\`Symbol\`, \`Money\`, \`LotSize\`) and core interfaces (\`IStrategy\`, \`IRiskManager\`).",
+              "- **Nexus.Application:** Implements execution logic, \`IExecutionGateway\`, \`ExecutionCoordinator\`, and the \`IMt5TradingService\` with Simulated vs Real Routing adapters.",
+              "- **Nexus.Infrastructure:** Adapters (EF Core, Background Workers, Time-Series tick copy).",
+              "- **Native C++:** High-performance quantitative engine (EMA calculations) via P/Invoke to bypass JIT.",
+              "- **Nexus.WpfUi (WPF Layer):** Rich Desktop UI designed in WPF on .NET 10.",
+              "",
+              "---",
+              "## 📂 Interactive Project Structure Tree",
+              "<details open>",
+              "<summary><b>Click to collapse/expand Project Tree (Filtered with WPF, .NET & C++ files)</b></summary>",
+              "",
+              "```text"
+          )
+          
+          # Merge the header array into $Lines
+          $Lines += $HeaderArray
 
           # Global exclusions (Skipping completely to avoid littering the tree)
           $GlobalExcludes = @(".git", "bin", "obj", ".vs", "TestResults", "publish", "artifacts", "node_modules", "packages", "tmp", "log")
