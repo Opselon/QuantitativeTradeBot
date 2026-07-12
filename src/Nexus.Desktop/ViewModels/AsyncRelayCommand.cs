@@ -4,7 +4,12 @@ using System.Windows.Input;
 
 namespace Nexus.Desktop.ViewModels
 {
-    public class AsyncRelayCommand : ICommand
+    public interface IAsyncRelayCommand : ICommand
+    {
+        Task ExecuteAsync(object? parameter);
+    }
+
+    public class AsyncRelayCommand : IAsyncRelayCommand
     {
         private readonly Func<Task> _execute;
         private readonly Func<bool>? _canExecute;
@@ -29,6 +34,11 @@ namespace Nexus.Desktop.ViewModels
         }
 
         public async void Execute(object? parameter)
+        {
+            await ExecuteAsync(parameter);
+        }
+
+        public async Task ExecuteAsync(object? parameter)
         {
             _isExecuting = true;
             CommandManager.InvalidateRequerySuggested();

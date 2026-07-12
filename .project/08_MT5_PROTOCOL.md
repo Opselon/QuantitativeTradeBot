@@ -410,3 +410,57 @@ Calls are automatically delegated to the active adapter:
 - **Mapping Verification**: Confirms account snaps map accurately to Clean Architecture domain entities.
 - **Routing Verification**: Ensures dynamic delegation switching functions seamlessly.
 - **Regression Checks**: Validates that mock workflows are preserved without interference.
+
+---
+
+## 9. UI Integration and Message Flows
+
+With Stage 3, the manual trading operator dashboard (`Mt5TradingPanel.xaml`) has been fully integrated into the Desktop Workstation.
+
+### 9.1. Architectural Layout
+The UI is strictly separated from any physical infrastructure:
+```text
+[Mt5TradingPanel View (XAML)]
+             │
+             ▼
+[Mt5TradingViewModel]
+             │
+             ▼
+[IMt5OperatorService (Facade)]
+             │
+             ▼
+[IMt5TradingService (Abstraction)] ──► [RoutingMt5TradingService]
+                                                 │
+                        ┌────────────────────────┴────────────────────────┐
+                        ▼                                                 ▼
+          [SimulatedMt5TradingService]                      [RealMt5TradingService]
+```
+
+### 9.2. End-to-End Message Flows
+
+#### 1. Retrieve & Refresh Positions
+- **Trigger**: Manual operator clicks "REFRESH POSITIONS" or the auto-refresh background loop timer fires (every 5 seconds).
+- **Flow**:
+  1. `Mt5TradingViewModel` calls `_operatorService.GetPositionsAsync()`.
+  2. `Mt5OperatorService` invokes `_tradingService.GetOpenPositionsAsync()`.
+  3. `RoutingMt5TradingService` resolves the active service:
+     - **Simulated Mode**: Fetches in-memory simulated positions from `SimulatedMt5TradeService`.
+     - **Real Mode**: Sends a `GetOpenPositions` JSON Request Envelope over TCP via `TcpMt5BridgeClient` to `NexusBridge.mq5`.
+  4. The response flows back, gets converted into clean `DesktopPositionDto` items, and wraps in `DesktopPositionViewModel` to bind to the UI Grid on the main Dispatcher Thread.
+
+#### 2. Execute Market Order (Buy/Sell)
+- **Trigger**: Operator validates Symbol & Volume, then clicks "BUY MARKET" or "SELL MARKET".
+- **Flow**:
+  1. `Mt5TradingViewModel` executes `PlaceOrderAsync(symbol, side, volume)`.
+  2. `Mt5OperatorService` maps side to `BridgeOrderSide` and calls `_tradingService.PlaceMarketOrderAsync()`.
+  3. Active trade service compiles request and returns trade results (`Ticket`, `Success`, `ErrorMessage`).
+  4. Operator service normalizes exceptions (e.g., `SocketException` mapped to "Connection lost") and returns `DesktopTradeResult`.
+  5. UI updates StatusMessage/ErrorMessage and triggers an automated positional refresh.
+
+#### 3. Close Active Position
+- **Trigger**: Operator selects a row in the Grid and clicks "CLOSE POSITION".
+- **Flow**:
+  1. `Mt5TradingViewModel` dispatches `ClosePositionAsync(ticket, symbol)`.
+  2. `Mt5OperatorService` invokes `_tradingService.ClosePositionAsync()`.
+  3. Active implementation instructs close execution (on simulated positions or real terminal tickets).
+  4. Results are processed, errors are normalized, and UI refreshes the active positions table.

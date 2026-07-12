@@ -1,6 +1,24 @@
 # 26_CHANGELOG – Nexus Trading Engine Change Log
 
-## [Unreleased] - Stage 2 (MT5 MQL5 Bridge Handlers & Real Execution)
+## [Completed] - Stage 3 (WPF UI Integration & MT5 Operator Panel) - 2025-07-14
+
+### Added
+- **Desktop Models**:
+  - `DesktopOrderSide` (enum: Buy/Sell).
+  - `DesktopPositionDto` carrying mapped positional metrics (Ticket, Symbol, Side, Volume, StopLoss, TakeProfit, Profit, Swap, Commission, OpenTime, Status).
+  - `DesktopTradeResult` carrying manual order feedback details.
+- **Operator Facade Service**: Created `IMt5OperatorService` and `Mt5OperatorService` wrapping the core `IMt5TradingService` with elegant DTO mappings and exception translation (e.g. SocketExceptions mapped to "Connection lost", TimeoutException to "Bridge timeout").
+- **Operator ViewModels**:
+  - `DesktopPositionViewModel` exposing calculated metrics (like position `Duration`).
+  - `Mt5TradingViewModel` managing states (Connected, Busy, Refreshing, Executing), validating inputs (volume within [0.01, 100]), executing operator logs via `IDiagnosticService`, and running a safe, cancellable background polling loop.
+- **WPF UI Operator Dashboard Control**:
+  - `Mt5TradingPanel.xaml` and its code-behind `Mt5TradingPanel.xaml.cs` containing Top Connection metrics panel, Middle Manual Trade Entry ticket, and Bottom Positions DataGrid with contextual actions.
+- **Integration & DI Registry**: Registered new operator facade and viewmodel in `App.xaml.cs`, injected `Mt5TradingViewModel` as a property in `MainViewModel`, and embedded `Mt5TradingPanel` in the workstation view in `MainWindow.xaml`.
+- **Deterministic Unit Tests**: Added a comprehensive suite of unit tests in `tests/Nexus.Tests.Unit/Desktop/Mt5TradingViewModelTests.cs` validating refresh, buy, sell, close, busy states, inputs validation, and logging, with target-OS framework compilation conditional support for headless Linux platforms.
+
+---
+
+## [Completed] - Stage 2 (MT5 MQL5 Bridge Handlers & Real Execution) - 2025-07-13
 
 ### Added
 - **MQL5 EA Bridge Handlers**: Implemented command dispatchers inside `NexusBridge.mq5` for `PlaceOrder`, `ClosePosition`, and `GetOpenPositions` commands.

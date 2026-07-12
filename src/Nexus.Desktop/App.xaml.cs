@@ -55,6 +55,10 @@ namespace Nexus.Desktop
                     services.AddSingleton<ITradingPlatformConnector, SimulatedTradingPlatformConnector>();
                     services.AddSingleton<IConnectionHealthMonitor, SimulatedConnectionHealthMonitor>();
 
+                    // Register MT5 Operator Facade & ViewModel
+                    services.AddSingleton<IMt5OperatorService, Mt5OperatorService>();
+                    services.AddSingleton<Mt5TradingViewModel>();
+
                     // Register ViewModels & Windows
                     services.AddSingleton<MainViewModel>();
                     services.AddSingleton<MainWindow>();
