@@ -1,301 +1,302 @@
 # 00 – Nexus Project Structure & Deep Diagnostics
 
 > 🤖 **AI Agent Info:** This file is assembled dynamically by the Enterprise Pipeline.
-> Use this as your primary map to understand the architecture and latest build status.
+> Use this as your primary map to understand the architecture, full source-code file index, and latest build status.
 
 ## 🏛️ Nexus Trading Engine (NTE) Architecture Summary
 **Style:** Decoupled Hexagonal / Clean Architecture
-- **Nexus.Core:** Zero external dependencies. Uses *Zero-Allocation Tick Path*.
-- **Nexus.Application:** Implements execution logic, `IMt5TradingService` (Simulated vs Real Routing).
-- **Nexus.Infrastructure:** Adapters (EF Core, ADO.NET, Background Workers).
-- **Native C++:** High-performance math via P/Invoke.
-- **Nexus.WpfUi:** Desktop UI layer.
+- **Nexus.Core:** Zero external dependencies. Uses *Zero-Allocation Tick Path*. Contains value objects (\Symbol\, \Money\, \LotSize\) and core interfaces (\IStrategy\, \IRiskManager\).
+- **Nexus.Application:** Implements execution logic, \IExecutionGateway\, \ExecutionCoordinator\, and the \IMt5TradingService\ with Simulated vs Real Routing adapters.
+- **Nexus.Infrastructure:** Adapters (EF Core, Background Workers, Time-Series tick copy).
+- **Native C++:** High-performance quantitative engine (EMA calculations) via P/Invoke to bypass JIT.
+- **Nexus.WpfUi (WPF Layer):** Rich Desktop UI designed in WPF on .NET 10.
+
 ---
-## 📂 High-Level Directory Tree
-<details><summary>Click to expand</summary>
-```text
-.nexus_docs
-.project
-MQL5
-MQL5/Experts
-MQL5/Experts/Nexus
-native
-native/Nexus.Native
-src
-src/Nexus.Application
-src/Nexus.Application/Analytics
-src/Nexus.Application/Mt5
-src/Nexus.Application/Mt5Bridge
-src/Nexus.Application/Mt5Bridge/Contracts
-src/Nexus.Application/Observability
-src/Nexus.Application/Pipeline
-src/Nexus.Application/Ports
-src/Nexus.Application/Security
-src/Nexus.Application/Strategies
-src/Nexus.Application/Workflows
-src/Nexus.Application/Workflows/DTOs
-src/Nexus.Core
-src/Nexus.Core/DomainEvents
-src/Nexus.Core/Entities
-src/Nexus.Core/Interfaces
-src/Nexus.Core/ValueObjects
-src/Nexus.Desktop
-src/Nexus.Desktop/Converters
-src/Nexus.Desktop/Services
-src/Nexus.Desktop/ViewModels
-src/Nexus.Infrastructure
-src/Nexus.Infrastructure/Adapters
-src/Nexus.Infrastructure/Adapters/Mt5
-src/Nexus.Infrastructure/Mt5Bridge
-src/Nexus.Infrastructure/Persistence
-src/Nexus.Infrastructure/Persistence/Configurations
-src/Nexus.Infrastructure/Persistence/Migrations
-src/Nexus.Infrastructure/Persistence/Models
-src/Nexus.Infrastructure/Persistence/Repositories
-src/Nexus.Infrastructure/Persistence/Scripts
-src/Nexus.Infrastructure/Security
-src/Nexus.Infrastructure/Workers
-src/Nexus.WpfUi
-tests
-tests/Nexus.Tests.EndToEnd
-tests/Nexus.Tests.EndToEnd/Fixture
-tests/Nexus.Tests.EndToEnd/Mocks
-tests/Nexus.Tests.Integration
-tests/Nexus.Tests.Unit
-tests/Nexus.Tests.Unit/Desktop
-tests/Nexus.Tests.Unit/Entities
-tests/Nexus.Tests.Unit/ValueObjects
+## 📂 Interactive Project Structure Tree
+<details open>
+<summary><b>Click to collapse/expand Project Tree (Filtered with WPF, .NET & C++ files)</b></summary>
+
+`	ext
+├─── .git/
+|   ├─── hooks/
+|   ├─── info/
+├─── .github/
+|   └─── workflows/
+|       ├─── dotnet-build.yml
+|       └─── release.yml
+├─── .nexus_docs/
+|   ├─── 01_ARCHITECTURE.md
+|   ├─── 02_DATABASE_SCHEMA.md
+|   ├─── 03_PROGRESS.md
+|   ├─── 04_NEXT_STEPS.md
+|   ├─── 05_EXECUTION_PIPELINE.md
+|   ├─── 06_STRATEGY_RUNTIME.md
+|   ├─── 07_NATIVE_ACCELERATION.md
+|   ├─── 08_MT5_PROTOCOL.md
+|   ├─── 08_SECURITY_MODEL.md
+|   ├─── 09_E2E_TEST_PLAN.md
+|   ├─── 10_OBSERVABILITY.md
+|   ├─── 11_LOCAL_VALIDATION.md
+|   ├─── 12_DESKTOP_CLIENT.md
+|   ├─── 13_RELEASE_ENGINEERING.md
+|   └─── MetaTrade5.md
+├─── .project/
+|   ├─── 00_MASTER_PLAN.md
+|   ├─── 01_ARCHITECTURE.md
+|   ├─── 08_MT5_PROTOCOL.md
+|   ├─── 13_EXECUTION_ENGINE.md
+|   ├─── 21_PROGRESS.md
+|   ├─── 22_TODO.md
+|   ├─── 25_DECISIONS.md
+|   └─── 26_CHANGELOG.md
+├─── MQL5/
+|   └─── Experts/
+|       └─── Nexus/
+├─── native/
+|   ├─── Nexus.Native/
+|   |   ├─── NexusNative.cpp
+|   |   └─── NexusNative.h
+|   └─── build.sh
+├─── src/
+|   ├─── Nexus.Application/
+|   |   ├─── Analytics/
+|   |   |   ├─── IIndicatorEngine.cs
+|   |   |   ├─── INativeAnalyticsEngine.cs
+|   |   |   ├─── ManagedIndicatorEngine.cs
+|   |   |   ├─── NativeAnalyticsEngine.cs
+|   |   |   └─── NativeIndicatorEngine.cs
+|   |   ├─── Mt5/
+|   |   |   ├─── ClosePositionResult.cs
+|   |   |   ├─── IMt5TradingService.cs
+|   |   |   ├─── OpenPositionDto.cs
+|   |   |   └─── PlaceOrderResult.cs
+|   |   ├─── Mt5Bridge/
+|   |   |   └─── Contracts/
+|   |   |       ├─── BridgeError.cs
+|   |   |       ├─── BridgeMessageEnvelope.cs
+|   |   |       ├─── BridgeOrderExecutionStatus.cs
+|   |   |       ├─── BridgeOrderSide.cs
+|   |   |       ├─── BridgePositionDto.cs
+|   |   |       ├─── BridgePositionSide.cs
+|   |   |       ├─── ClosePositionRequest.cs
+|   |   |       ├─── ClosePositionResponse.cs
+|   |   |       ├─── GetAccountSnapshotRequest.cs
+|   |   |       ├─── GetAccountSnapshotResponse.cs
+|   |   |       ├─── GetOpenPositionsRequest.cs
+|   |   |       ├─── GetOpenPositionsResponse.cs
+|   |   |       ├─── PingRequest.cs
+|   |   |       ├─── PingResponse.cs
+|   |   |       ├─── PlaceOrderRequest.cs
+|   |   |       └─── PlaceOrderResponse.cs
+|   |   ├─── Observability/
+|   |   |   └─── WorkflowContext.cs
+|   |   ├─── Pipeline/
+|   |   |   ├─── DefaultRiskManager.cs
+|   |   |   ├─── ExecutionAuditService.cs
+|   |   |   ├─── ExecutionCoordinator.cs
+|   |   |   ├─── ExecutionRequest.cs
+|   |   |   ├─── ExecutionResult.cs
+|   |   |   ├─── OrderIntent.cs
+|   |   |   ├─── OrderIntentFactory.cs
+|   |   |   ├─── PipelineContext.cs
+|   |   |   ├─── PreTradeRiskEvaluator.cs
+|   |   |   ├─── RiskDecision.cs
+|   |   |   ├─── SignalRouter.cs
+|   |   |   └─── TradeSignal.cs
+|   |   ├─── Ports/
+|   |   |   ├─── ExecutionCommand.cs
+|   |   |   ├─── ExecutionReport.cs
+|   |   |   ├─── GatewayConnectionStatus.cs
+|   |   |   ├─── IAccountRepository.cs
+|   |   |   ├─── IAppConfigurationService.cs
+|   |   |   ├─── IConnectionHealthMonitor.cs
+|   |   |   ├─── IDatabaseBootstrapper.cs
+|   |   |   ├─── IExecutionGateway.cs
+|   |   |   ├─── IGatewaySession.cs
+|   |   |   ├─── IGatewaySessionFactory.cs
+|   |   |   ├─── IMarketDataFeed.cs
+|   |   |   ├─── IMarketDataRepository.cs
+|   |   |   ├─── IMt5AccountService.cs
+|   |   |   ├─── IMt5BridgeClient.cs
+|   |   |   ├─── IMt5ConnectionService.cs
+|   |   |   ├─── IMt5Session.cs
+|   |   |   ├─── IMt5TradeService.cs
+|   |   |   ├─── IOrderRepository.cs
+|   |   |   ├─── IPositionRepository.cs
+|   |   |   ├─── ITradingPlatformConnector.cs
+|   |   |   ├─── IUnitOfWork.cs
+|   |   |   └─── PriceTickEnvelope.cs
+|   |   ├─── Security/
+|   |   |   ├─── InputValidator.cs
+|   |   |   ├─── ISecretStore.cs
+|   |   |   └─── SecurityConfiguration.cs
+|   |   ├─── Strategies/
+|   |   |   ├─── InMemoryStrategyStateStore.cs
+|   |   |   ├─── IStrategyHost.cs
+|   |   |   ├─── IStrategyRegistry.cs
+|   |   |   ├─── IStrategyStateStore.cs
+|   |   |   ├─── StrategyDescriptor.cs
+|   |   |   ├─── StrategyExecutionContext.cs
+|   |   |   ├─── StrategyHost.cs
+|   |   |   ├─── StrategyRegistry.cs
+|   |   |   └─── StrategySupervisor.cs
+|   |   ├─── Workflows/
+|   |   |   ├─── DTOs/
+|   |   |   |   ├─── AccountSnapshotDto.cs
+|   |   |   |   ├─── ConnectionProfileDto.cs
+|   |   |   |   └─── ConnectionTestResultDto.cs
+|   |   |   ├─── ClosePositionCommand.cs
+|   |   |   ├─── CreateConnectionProfileCommand.cs
+|   |   |   ├─── DeleteConnectionProfileCommand.cs
+|   |   |   ├─── GetAccountSnapshotQuery.cs
+|   |   |   ├─── GetOpenPositionsQuery.cs
+|   |   |   ├─── GetPersistenceOptionsQuery.cs
+|   |   |   ├─── InitializeDatabaseCommand.cs
+|   |   |   ├─── LaunchWorkspaceCommand.cs
+|   |   |   ├─── MigrateDatabaseCommand.cs
+|   |   |   ├─── PlaceOrderCommand.cs
+|   |   |   ├─── SelectPersistenceProviderCommand.cs
+|   |   |   ├─── TestMt5ConnectionCommand.cs
+|   |   |   └─── UpdateConnectionProfileCommand.cs
+|   |   └─── Nexus.Application.csproj
+|   ├─── Nexus.Core/
+|   |   ├─── DomainEvents/
+|   |   |   ├─── MarginCallEvent.cs
+|   |   |   └─── OrderExecutedEvent.cs
+|   |   ├─── Entities/
+|   |   |   ├─── Account.cs
+|   |   |   ├─── Bar.cs
+|   |   |   ├─── Order.cs
+|   |   |   ├─── Position.cs
+|   |   |   └─── Tick.cs
+|   |   ├─── Interfaces/
+|   |   |   ├─── IRiskManager.cs
+|   |   |   ├─── IStrategy.cs
+|   |   |   └─── ITrailingManager.cs
+|   |   ├─── ValueObjects/
+|   |   |   ├─── LotSize.cs
+|   |   |   ├─── Money.cs
+|   |   |   └─── Symbol.cs
+|   |   └─── Nexus.Core.csproj
+|   ├─── Nexus.Desktop/
+|   |   ├─── Converters/
+|   |   |   └─── EqualityToBooleanConverter.cs
+|   |   ├─── Services/
+|   |   |   ├─── DiagnosticService.cs
+|   |   |   └─── IDiagnosticService.cs
+|   |   ├─── ViewModels/
+|   |   |   ├─── AsyncRelayCommand.cs
+|   |   |   ├─── MainViewModel.cs
+|   |   |   ├─── RelayCommand.cs
+|   |   |   └─── ViewModelBase.cs
+|   |   ├─── App.xaml
+|   |   ├─── App.xaml.cs
+|   |   ├─── MainWindow.xaml
+|   |   ├─── MainWindow.xaml.cs
+|   |   ├─── Nexus.Desktop.csproj
+|   ├─── Nexus.Infrastructure/
+|   |   ├─── Adapters/
+|   |   |   └─── Mt5/
+|   |   |       ├─── RealMt5BridgeAdapter.cs
+|   |   |       ├─── RealMt5BridgeConnectionService.cs
+|   |   |       ├─── RealMt5BridgeSession.cs
+|   |   |       ├─── RealMt5TradingService.cs
+|   |   |       ├─── RoutingMt5AccountService.cs
+|   |   |       ├─── RoutingMt5ConnectionService.cs
+|   |   |       ├─── RoutingMt5TradeService.cs
+|   |   |       ├─── RoutingMt5TradingService.cs
+|   |   |       ├─── SimulatedConnectionHealthMonitor.cs
+|   |   |       ├─── SimulatedMt5AccountService.cs
+|   |   |       ├─── SimulatedMt5ConnectionService.cs
+|   |   |       ├─── SimulatedMt5Session.cs
+|   |   |       ├─── SimulatedMt5TradeService.cs
+|   |   |       ├─── SimulatedMt5TradingService.cs
+|   |   |       └─── SimulatedTradingPlatformConnector.cs
+|   |   ├─── Mt5Bridge/
+|   |   |   └─── TcpMt5BridgeClient.cs
+|   |   ├─── Persistence/
+|   |   |   ├─── Configurations/
+|   |   |   |   ├─── AccountConfiguration.cs
+|   |   |   |   ├─── OrderConfiguration.cs
+|   |   |   |   ├─── PositionConfiguration.cs
+|   |   |   |   └─── TradeConfiguration.cs
+|   |   |   ├─── Migrations/
+|   |   |   ├─── Models/
+|   |   |   |   ├─── AccountDbModel.cs
+|   |   |   |   ├─── OrderDbModel.cs
+|   |   |   |   ├─── PositionDbModel.cs
+|   |   |   |   └─── TradeDbModel.cs
+|   |   |   ├─── Repositories/
+|   |   |   |   ├─── AccountRepository.cs
+|   |   |   |   ├─── MarketDataRepository.cs
+|   |   |   |   ├─── OrderRepository.cs
+|   |   |   |   ├─── PositionRepository.cs
+|   |   |   |   └─── UnitOfWork.cs
+|   |   |   ├─── Scripts/
+|   |   |   ├─── AppConfigurationService.cs
+|   |   |   ├─── DependencyInjection.cs
+|   |   |   ├─── DesignTimeNexusDbContextFactory.cs
+|   |   |   ├─── NexusDbContext.cs
+|   |   |   ├─── PostgreSqlDatabaseBootstrapper.cs
+|   |   |   └─── SqliteDatabaseBootstrapper.cs
+|   |   ├─── Security/
+|   |   |   └─── WindowsSecretStore.cs
+|   |   ├─── Workers/
+|   |   |   ├─── ExecutionWorker.cs
+|   |   |   ├─── MarketDataIngestionWorker.cs
+|   |   |   ├─── RecoveryStartupService.cs
+|   |   |   └─── StrategyDispatchWorker.cs
+|   |   └─── Nexus.Infrastructure.csproj
+|   └─── Nexus.WpfUi/
+|       ├─── App.xaml
+|       ├─── App.xaml.cs
+|       ├─── AssemblyInfo.cs
+|       ├─── MainWindow.xaml
+|       ├─── MainWindow.xaml.cs
+|       └─── Nexus.WpfUi.csproj
+├─── tests/
+|   ├─── Nexus.Tests.EndToEnd/
+|   |   ├─── Fixture/
+|   |   |   ├─── E2ETestHost.cs
+|   |   |   └─── TestOutputLogger.cs
+|   |   ├─── Mocks/
+|   |   |   ├─── MockE2EStrategy.cs
+|   |   |   ├─── SimulatedExecutionGateway.cs
+|   |   |   └─── SimulatedMarketDataFeed.cs
+|   |   ├─── E2EWorkflowTests.cs
+|   |   └─── Nexus.Tests.EndToEnd.csproj
+|   ├─── Nexus.Tests.Integration/
+|   |   ├─── GlobalUsings.cs
+|   |   ├─── Nexus.Tests.Integration.csproj
+|   |   └─── PersistenceIntegrationTests.cs
+|   └─── Nexus.Tests.Unit/
+|       ├─── Desktop/
+|       |   ├─── DesktopTests.cs
+|       |   └─── Mt5BridgeTests.cs
+|       ├─── Entities/
+|       |   ├─── AccountTests.cs
+|       |   ├─── OrderAndPositionTests.cs
+|       |   └─── TickAndBarTests.cs
+|       ├─── ValueObjects/
+|       |   ├─── MoneyAndLotSizeTests.cs
+|       |   └─── SymbolTests.cs
+|       ├─── GlobalUsings.cs
+|       ├─── IndicatorEngineTests.cs
+|       └─── Nexus.Tests.Unit.csproj
+├─── 00_PROJECT_STRUCTURE.md
+├─── base_structure.md
+├─── NexusTradingEngine.sln
+└─── README.md
 ```
 </details>
-## 📄 Important Files
-<details><summary>Click to expand</summary>
-```text
-.github/workflows/dotnet-build.yml
-.github/workflows/release.yml
-.gitignore
-.nexus_docs/01_ARCHITECTURE.md
-.nexus_docs/02_DATABASE_SCHEMA.md
-.nexus_docs/03_PROGRESS.md
-.nexus_docs/04_NEXT_STEPS.md
-.nexus_docs/05_EXECUTION_PIPELINE.md
-.nexus_docs/06_STRATEGY_RUNTIME.md
-.nexus_docs/07_NATIVE_ACCELERATION.md
-.nexus_docs/08_MT5_PROTOCOL.md
-.nexus_docs/08_SECURITY_MODEL.md
-.nexus_docs/09_E2E_TEST_PLAN.md
-.nexus_docs/10_OBSERVABILITY.md
-.nexus_docs/11_LOCAL_VALIDATION.md
-.nexus_docs/12_DESKTOP_CLIENT.md
-.nexus_docs/13_RELEASE_ENGINEERING.md
-.nexus_docs/MetaTrade5.md
-.project/00_MASTER_PLAN.md
-.project/01_ARCHITECTURE.md
-.project/08_MT5_PROTOCOL.md
-.project/13_EXECUTION_ENGINE.md
-.project/21_PROGRESS.md
-.project/22_TODO.md
-.project/25_DECISIONS.md
-.project/26_CHANGELOG.md
-00_PROJECT_STRUCTURE.md
-Directory.Build.props
-Directory.Packages.props
-NexusTradingEngine.sln
-README.md
-base_structure.md
-native/Nexus.Native/NexusNative.cpp
-native/Nexus.Native/NexusNative.h
-native/build.sh
-src/Nexus.Application/Analytics/IIndicatorEngine.cs
-src/Nexus.Application/Analytics/INativeAnalyticsEngine.cs
-src/Nexus.Application/Analytics/ManagedIndicatorEngine.cs
-src/Nexus.Application/Analytics/NativeAnalyticsEngine.cs
-src/Nexus.Application/Analytics/NativeIndicatorEngine.cs
-src/Nexus.Application/Mt5/ClosePositionResult.cs
-src/Nexus.Application/Mt5/IMt5TradingService.cs
-src/Nexus.Application/Mt5/OpenPositionDto.cs
-src/Nexus.Application/Mt5/PlaceOrderResult.cs
-src/Nexus.Application/Mt5Bridge/Contracts/BridgeError.cs
-src/Nexus.Application/Mt5Bridge/Contracts/BridgeMessageEnvelope.cs
-src/Nexus.Application/Mt5Bridge/Contracts/BridgeOrderExecutionStatus.cs
-src/Nexus.Application/Mt5Bridge/Contracts/BridgeOrderSide.cs
-src/Nexus.Application/Mt5Bridge/Contracts/BridgePositionDto.cs
-src/Nexus.Application/Mt5Bridge/Contracts/BridgePositionSide.cs
-src/Nexus.Application/Mt5Bridge/Contracts/ClosePositionRequest.cs
-src/Nexus.Application/Mt5Bridge/Contracts/ClosePositionResponse.cs
-src/Nexus.Application/Mt5Bridge/Contracts/GetAccountSnapshotRequest.cs
-src/Nexus.Application/Mt5Bridge/Contracts/GetAccountSnapshotResponse.cs
-src/Nexus.Application/Mt5Bridge/Contracts/GetOpenPositionsRequest.cs
-src/Nexus.Application/Mt5Bridge/Contracts/GetOpenPositionsResponse.cs
-src/Nexus.Application/Mt5Bridge/Contracts/PingRequest.cs
-src/Nexus.Application/Mt5Bridge/Contracts/PingResponse.cs
-src/Nexus.Application/Mt5Bridge/Contracts/PlaceOrderRequest.cs
-src/Nexus.Application/Mt5Bridge/Contracts/PlaceOrderResponse.cs
-src/Nexus.Application/Nexus.Application.csproj
-src/Nexus.Application/Observability/LogEventIds.cs
-src/Nexus.Application/Observability/LogSanitizer.cs
-src/Nexus.Application/Observability/LoggingExtensions.cs
-src/Nexus.Application/Observability/WorkflowContext.cs
-src/Nexus.Application/Pipeline/DefaultRiskManager.cs
-src/Nexus.Application/Pipeline/ExecutionAuditService.cs
-src/Nexus.Application/Pipeline/ExecutionCoordinator.cs
-src/Nexus.Application/Pipeline/ExecutionRequest.cs
-src/Nexus.Application/Pipeline/ExecutionResult.cs
-src/Nexus.Application/Pipeline/OrderIntent.cs
-src/Nexus.Application/Pipeline/OrderIntentFactory.cs
-src/Nexus.Application/Pipeline/PipelineContext.cs
-src/Nexus.Application/Pipeline/PreTradeRiskEvaluator.cs
-src/Nexus.Application/Pipeline/RiskDecision.cs
-src/Nexus.Application/Pipeline/SignalRouter.cs
-src/Nexus.Application/Pipeline/TradeSignal.cs
-src/Nexus.Application/Ports/ExecutionCommand.cs
-src/Nexus.Application/Ports/ExecutionReport.cs
-src/Nexus.Application/Ports/GatewayConnectionStatus.cs
-src/Nexus.Application/Ports/IAccountRepository.cs
-src/Nexus.Application/Ports/IAppConfigurationService.cs
-src/Nexus.Application/Ports/IConnectionHealthMonitor.cs
-src/Nexus.Application/Ports/IDatabaseBootstrapper.cs
-src/Nexus.Application/Ports/IExecutionGateway.cs
-src/Nexus.Application/Ports/IGatewaySession.cs
-src/Nexus.Application/Ports/IGatewaySessionFactory.cs
-src/Nexus.Application/Ports/IMarketDataFeed.cs
-src/Nexus.Application/Ports/IMarketDataRepository.cs
-src/Nexus.Application/Ports/IMt5AccountService.cs
-src/Nexus.Application/Ports/IMt5BridgeClient.cs
-src/Nexus.Application/Ports/IMt5ConnectionService.cs
-src/Nexus.Application/Ports/IMt5Session.cs
-src/Nexus.Application/Ports/IMt5TradeService.cs
-src/Nexus.Application/Ports/IOrderRepository.cs
-src/Nexus.Application/Ports/IPositionRepository.cs
-src/Nexus.Application/Ports/ITradingPlatformConnector.cs
-src/Nexus.Application/Ports/IUnitOfWork.cs
-src/Nexus.Application/Ports/PriceTickEnvelope.cs
-src/Nexus.Application/Security/ISecretStore.cs
-src/Nexus.Application/Security/InputValidator.cs
-src/Nexus.Application/Security/SecurityConfiguration.cs
-src/Nexus.Application/Strategies/IStrategyHost.cs
-src/Nexus.Application/Strategies/IStrategyRegistry.cs
-src/Nexus.Application/Strategies/IStrategyStateStore.cs
-src/Nexus.Application/Strategies/InMemoryStrategyStateStore.cs
-src/Nexus.Application/Strategies/StrategyDescriptor.cs
-src/Nexus.Application/Strategies/StrategyExecutionContext.cs
-src/Nexus.Application/Strategies/StrategyHost.cs
-src/Nexus.Application/Strategies/StrategyRegistry.cs
-src/Nexus.Application/Strategies/StrategySupervisor.cs
-src/Nexus.Application/Workflows/ClosePositionCommand.cs
-src/Nexus.Application/Workflows/CreateConnectionProfileCommand.cs
-src/Nexus.Application/Workflows/DTOs/AccountSnapshotDto.cs
-src/Nexus.Application/Workflows/DTOs/ConnectionProfileDto.cs
-src/Nexus.Application/Workflows/DTOs/ConnectionTestResultDto.cs
-src/Nexus.Application/Workflows/DeleteConnectionProfileCommand.cs
-src/Nexus.Application/Workflows/GetAccountSnapshotQuery.cs
-src/Nexus.Application/Workflows/GetOpenPositionsQuery.cs
-src/Nexus.Application/Workflows/GetPersistenceOptionsQuery.cs
-src/Nexus.Application/Workflows/InitializeDatabaseCommand.cs
-src/Nexus.Application/Workflows/LaunchWorkspaceCommand.cs
-src/Nexus.Application/Workflows/MigrateDatabaseCommand.cs
-src/Nexus.Application/Workflows/PlaceOrderCommand.cs
-src/Nexus.Application/Workflows/SelectPersistenceProviderCommand.cs
-src/Nexus.Application/Workflows/TestMt5ConnectionCommand.cs
-src/Nexus.Application/Workflows/UpdateConnectionProfileCommand.cs
-src/Nexus.Core/DomainEvents/MarginCallEvent.cs
-src/Nexus.Core/DomainEvents/OrderExecutedEvent.cs
-src/Nexus.Core/Entities/Account.cs
-src/Nexus.Core/Entities/Bar.cs
-src/Nexus.Core/Entities/Order.cs
-src/Nexus.Core/Entities/Position.cs
-src/Nexus.Core/Entities/Tick.cs
-src/Nexus.Core/Interfaces/IRiskManager.cs
-src/Nexus.Core/Interfaces/IStrategy.cs
-src/Nexus.Core/Interfaces/ITrailingManager.cs
-src/Nexus.Core/Nexus.Core.csproj
-src/Nexus.Core/ValueObjects/LotSize.cs
-src/Nexus.Core/ValueObjects/Money.cs
-src/Nexus.Core/ValueObjects/Symbol.cs
-src/Nexus.Desktop/App.xaml
-src/Nexus.Desktop/App.xaml.cs
-src/Nexus.Desktop/Converters/EqualityToBooleanConverter.cs
-src/Nexus.Desktop/MainWindow.xaml
-src/Nexus.Desktop/MainWindow.xaml.cs
-src/Nexus.Desktop/Nexus.Desktop.csproj
-src/Nexus.Desktop/Services/DiagnosticService.cs
-src/Nexus.Desktop/Services/IDiagnosticService.cs
-src/Nexus.Desktop/ViewModels/AsyncRelayCommand.cs
-src/Nexus.Desktop/ViewModels/MainViewModel.cs
-src/Nexus.Desktop/ViewModels/RelayCommand.cs
-src/Nexus.Desktop/ViewModels/ViewModelBase.cs
-src/Nexus.Infrastructure/Adapters/Mt5/RealMt5BridgeAdapter.cs
-src/Nexus.Infrastructure/Adapters/Mt5/RealMt5BridgeConnectionService.cs
-src/Nexus.Infrastructure/Adapters/Mt5/RealMt5BridgeSession.cs
-src/Nexus.Infrastructure/Adapters/Mt5/RealMt5TradingService.cs
-src/Nexus.Infrastructure/Adapters/Mt5/RoutingMt5AccountService.cs
-src/Nexus.Infrastructure/Adapters/Mt5/RoutingMt5ConnectionService.cs
-src/Nexus.Infrastructure/Adapters/Mt5/RoutingMt5TradeService.cs
-src/Nexus.Infrastructure/Adapters/Mt5/RoutingMt5TradingService.cs
-src/Nexus.Infrastructure/Adapters/Mt5/SimulatedConnectionHealthMonitor.cs
-src/Nexus.Infrastructure/Adapters/Mt5/SimulatedMt5AccountService.cs
-src/Nexus.Infrastructure/Adapters/Mt5/SimulatedMt5ConnectionService.cs
-src/Nexus.Infrastructure/Adapters/Mt5/SimulatedMt5Session.cs
-src/Nexus.Infrastructure/Adapters/Mt5/SimulatedMt5TradeService.cs
-src/Nexus.Infrastructure/Adapters/Mt5/SimulatedMt5TradingService.cs
-src/Nexus.Infrastructure/Adapters/Mt5/SimulatedTradingPlatformConnector.cs
-src/Nexus.Infrastructure/Mt5Bridge/TcpMt5BridgeClient.cs
-src/Nexus.Infrastructure/Nexus.Infrastructure.csproj
-src/Nexus.Infrastructure/Persistence/AppConfigurationService.cs
-src/Nexus.Infrastructure/Persistence/Configurations/AccountConfiguration.cs
-src/Nexus.Infrastructure/Persistence/Configurations/OrderConfiguration.cs
-src/Nexus.Infrastructure/Persistence/Configurations/PositionConfiguration.cs
-src/Nexus.Infrastructure/Persistence/Configurations/TradeConfiguration.cs
-src/Nexus.Infrastructure/Persistence/DependencyInjection.cs
-src/Nexus.Infrastructure/Persistence/DesignTimeNexusDbContextFactory.cs
-src/Nexus.Infrastructure/Persistence/Migrations/20260101000000_InitialTradingState.cs
-src/Nexus.Infrastructure/Persistence/Models/AccountDbModel.cs
-src/Nexus.Infrastructure/Persistence/Models/OrderDbModel.cs
-src/Nexus.Infrastructure/Persistence/Models/PositionDbModel.cs
-src/Nexus.Infrastructure/Persistence/Models/TradeDbModel.cs
-src/Nexus.Infrastructure/Persistence/NexusDbContext.cs
-src/Nexus.Infrastructure/Persistence/PostgreSqlDatabaseBootstrapper.cs
-src/Nexus.Infrastructure/Persistence/Repositories/AccountRepository.cs
-src/Nexus.Infrastructure/Persistence/Repositories/MarketDataRepository.cs
-src/Nexus.Infrastructure/Persistence/Repositories/OrderRepository.cs
-src/Nexus.Infrastructure/Persistence/Repositories/PositionRepository.cs
-src/Nexus.Infrastructure/Persistence/Repositories/UnitOfWork.cs
-src/Nexus.Infrastructure/Persistence/Scripts/001_create_schema.sql
-src/Nexus.Infrastructure/Persistence/Scripts/002_create_market_partitions.sql
-src/Nexus.Infrastructure/Persistence/Scripts/003_create_indexes.sql
-src/Nexus.Infrastructure/Persistence/SqliteDatabaseBootstrapper.cs
-src/Nexus.Infrastructure/Security/WindowsSecretStore.cs
-src/Nexus.Infrastructure/Workers/ExecutionWorker.cs
-src/Nexus.Infrastructure/Workers/MarketDataIngestionWorker.cs
-src/Nexus.Infrastructure/Workers/RecoveryStartupService.cs
-src/Nexus.Infrastructure/Workers/StrategyDispatchWorker.cs
-src/Nexus.WpfUi/App.xaml
-src/Nexus.WpfUi/App.xaml.cs
-src/Nexus.WpfUi/AssemblyInfo.cs
-src/Nexus.WpfUi/MainWindow.xaml
-src/Nexus.WpfUi/MainWindow.xaml.cs
-src/Nexus.WpfUi/Nexus.WpfUi.csproj
-tests/Nexus.Tests.EndToEnd/E2EWorkflowTests.cs
-tests/Nexus.Tests.EndToEnd/Fixture/E2ETestHost.cs
-tests/Nexus.Tests.EndToEnd/Fixture/TestOutputLogger.cs
-tests/Nexus.Tests.EndToEnd/Mocks/MockE2EStrategy.cs
-tests/Nexus.Tests.EndToEnd/Mocks/SimulatedExecutionGateway.cs
-tests/Nexus.Tests.EndToEnd/Mocks/SimulatedMarketDataFeed.cs
-tests/Nexus.Tests.EndToEnd/Nexus.Tests.EndToEnd.csproj
-tests/Nexus.Tests.Integration/GlobalUsings.cs
-tests/Nexus.Tests.Integration/Nexus.Tests.Integration.csproj
-tests/Nexus.Tests.Integration/PersistenceIntegrationTests.cs
-tests/Nexus.Tests.Unit/Desktop/DesktopTests.cs
-tests/Nexus.Tests.Unit/Desktop/Mt5BridgeTests.cs
-tests/Nexus.Tests.Unit/Entities/AccountTests.cs
-tests/Nexus.Tests.Unit/Entities/OrderAndPositionTests.cs
-tests/Nexus.Tests.Unit/Entities/TickAndBarTests.cs
-tests/Nexus.Tests.Unit/GlobalUsings.cs
-tests/Nexus.Tests.Unit/IndicatorEngineTests.cs
-tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj
-tests/Nexus.Tests.Unit/ValueObjects/MoneyAndLotSizeTests.cs
-tests/Nexus.Tests.Unit/ValueObjects/SymbolTests.cs
-```
-</details>
+
+## 📈 Source File Counts
+| File Type | Count |
+| --- | ---: |
+| C# (.cs) | 169 |
+| WPF (.xaml) | 4 |
+| C/C++ Source | 2 |
+| Projects (.sln, .csproj) | 9 |
 
 ## 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)
 - **Job Status:** success
@@ -318,6 +319,6 @@ No C# errors.
 ```
 ### 🟡 Warnings
 ```text
-6>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 ```
