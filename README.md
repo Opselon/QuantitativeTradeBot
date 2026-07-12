@@ -15,13 +15,13 @@ C# Algorithmic Trading, MT5 Low-Latency Bot, Quantitative Trading Platform, WPF 
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Update release workflow to include commit summary |
-| **Author** | Capsizer |
+| **Commit Message** | feat: implement Stage 2 MT5 MQL5 bridge handlers |
+| **Author** | google-labs-jules[bot] |
 | **Branch** | $env:GITHUB_REF_NAME |
 | **Run Number** | $env:GITHUB_RUN_NUMBER |
 | **Commit SHA** | $env:GITHUB_SHA |
 | **Generated At** | `
-2026-07-12 20:27:43 UTC
+2026-07-12 20:50:34 UTC
 ` |
 
 ---
@@ -293,7 +293,6 @@ C# Algorithmic Trading, MT5 Low-Latency Bot, Quantitative Trading Platform, WPF 
 │       ├── GlobalUsings.cs
 │       ├── IndicatorEngineTests.cs
 │       └── Nexus.Tests.Unit.csproj
-├── 00_PROJECT_STRUCTURE.md
 ├── NexusTradingEngine.sln
 └── README.md
 ```
@@ -329,7 +328,7 @@ No C# errors.
 ```
 #### 🟡 Warnings
 ```text
-5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+6>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 ```
 
