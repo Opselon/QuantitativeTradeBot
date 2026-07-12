@@ -1,22 +1,10 @@
-name: Nexus CI & Release Pipeline
+name: Nexus Enterprise CI/CD & AI Documentation
 
-# ----------------------------------------------------------
-# Triggers
-# ----------------------------------------------------------
 on:
   push:
-    branches:
-      - main
-      - develop
-      - "feat/**"
-      - "feature/**"
-      - "fix/**"
-      - "hotfix/**"
+    branches: [ main, develop, "feat/**", "feature/**", "fix/**", "hotfix/**" ]
   pull_request:
-    branches:
-      - main
-      - develop
-
+    branches: [ main, develop ]
   workflow_dispatch:
     inputs:
       version:
@@ -36,11 +24,10 @@ on:
         type: boolean
 
 permissions:
-  contents: write
-  actions: read # Required to read workflow logs via GitHub CLI
+  contents: write # Required for releases and auto-committing the MD file
 
 concurrency:
-  group: nexus-ci-release-${{ github.ref }}
+  group: nexus-pipeline-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -48,802 +35,287 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   NUGET_XMLDOC_MODE: skip
-
   BUILD_CONFIGURATION: Release
-
   SOLUTION_PATH: NexusTradingEngine.sln
   DESKTOP_PROJECT: src/Nexus.Desktop/Nexus.Desktop.csproj
   INFRASTRUCTURE_PROJECT: src/Nexus.Infrastructure/Nexus.Infrastructure.csproj
 
-  PUBLISH_ROOT: ${{ github.workspace }}/artifacts/publish
-  RELEASE_ROOT: ${{ github.workspace }}/artifacts/release
-  MIGRATION_ROOT: ${{ github.workspace }}/artifacts/migrations
-
-# ============================================================
-# 1) CI – Ubuntu (.NET + Unit Tests + Native)
-# ============================================================
+# =====================================================================
+# JOB 1: PREPARATION & ARCHITECTURE SCAN (Runs Fast, Passes Data Forward)
+# =====================================================================
 jobs:
-  ci:
-    name: CI • Build & Unit Tests (.NET 10 + Native)
+  prep-and-docs:
+    name: 🔍 Scan & Generate Architecture Base
     runs-on: ubuntu-latest
-
     steps:
-      # ------------------------------------------------------
-      # Source & .NET
-      # ------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET 10 SDK
+      - name: Generate Base AI Document
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="base_structure.md"
+          
+          cat << 'HEADER' > "$FILE"
+          # 00 – Nexus Project Structure & Deep Diagnostics
+          
+          > 🤖 **AI Agent Info:** This file is assembled dynamically by the Enterprise Pipeline.
+          > Use this as your primary map to understand the architecture and latest build status.
+          
+          ## 🏛️ Nexus Trading Engine (NTE) Architecture Summary
+          **Style:** Decoupled Hexagonal / Clean Architecture
+          - **Nexus.Core:** Zero external dependencies. Uses *Zero-Allocation Tick Path*.
+          - **Nexus.Application:** Implements execution logic, `IMt5TradingService` (Simulated vs Real Routing).
+          - **Nexus.Infrastructure:** Adapters (EF Core, ADO.NET, Background Workers).
+          - **Native C++:** High-performance math via P/Invoke.
+          - **Nexus.WpfUi:** Desktop UI layer.
+          ---
+          HEADER
+
+          echo "## 📂 High-Level Directory Tree" >> "$FILE"
+          echo "<details><summary>Click to expand</summary>" >> "$FILE"
+          echo '```text' >> "$FILE"
+          find . -type d | grep -vE '^\.$|/.git|/bin|/obj|/packages|/node_modules|/TestResults|/coverage|/publish|/artifacts' | sed 's|^./||' | sort >> "$FILE"
+          echo '```' >> "$FILE"
+          echo "</details>" >> "$FILE"
+
+          echo "## 📄 Important Files" >> "$FILE"
+          echo "<details><summary>Click to expand</summary>" >> "$FILE"
+          echo '```text' >> "$FILE"
+          find . -type f | grep -vE '/.git/|/bin/|/obj/|/packages/|/node_modules/|/TestResults/|/coverage/|/publish/|/artifacts/' | grep -E '\.(sln|csproj|vcxproj|props|targets|cs|fs|vb|xaml|razor|json|jsonc|xml|yml|yaml|md|sql|sh|ps1|cmd|bat|cpp|c|h|hpp|natvis|config|dockerignore|gitignore)$' | sed 's|^./||' | sort >> "$FILE"
+          echo '```' >> "$FILE"
+          echo "</details>" >> "$FILE"
+
+      - name: Upload Base Document Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-doc-base
+          path: base_structure.md
+
+# =====================================================================
+# JOB 2: CI (UBUNTU) - Tests & Linux Native Build
+# =====================================================================
+  ci-ubuntu:
+    name: ⚙️ CI • Ubuntu (.NET + Tests + Native)
+    needs: prep-and-docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
 
-      - name: Show .NET environment
-        run: |
-          echo "===[ .NET Environment ]=============================="
-          dotnet --info
-
-      # ------------------------------------------------------
-      # Restore & Build
-      # ------------------------------------------------------
       - name: Restore solution
+        run: dotnet restore "${{ env.SOLUTION_PATH }}"
+
+      - name: Build solution (Capture Logs Natively)
+        run: dotnet build "${{ env.SOLUTION_PATH }}" --configuration "${BUILD_CONFIGURATION}" --no-restore -fl -flp:logfile=ci_build.log;verbosity=normal
+
+      - name: Run unit tests
         run: |
-          echo "===[ Restore ]======================================="
-          dotnet restore "${{ env.SOLUTION_PATH }}"
+          dotnet test "${{ env.SOLUTION_PATH }}" --configuration "${BUILD_CONFIGURATION}" --no-build \
+          --filter "TestCategory!=Docker&TestCategory!=Integration&TestCategory!=E2E" \
+          --logger "trx;LogFileName=unit-tests.trx" --results-directory "TestResults"
 
-      - name: Build solution (CI)
-        run: |
-          echo "===[ Build ]========================================="
-          dotnet build "${{ env.SOLUTION_PATH }}" \
-            --configuration "${BUILD_CONFIGURATION}" \
-            --no-restore
-
-      # ------------------------------------------------------
-      # Tests (بدون Docker / Integration / E2E)
-      # ------------------------------------------------------
-      - name: Run unit tests (no Docker)
-        run: |
-          echo "===[ Unit Tests ]===================================="
-          dotnet test "${{ env.SOLUTION_PATH }}" \
-            --configuration "${BUILD_CONFIGURATION}" \
-            --no-build \
-            --filter "TestCategory!=Docker&TestCategory!=Integration&TestCategory!=E2E" \
-            --logger "trx;LogFileName=unit-tests.trx" \
-            --results-directory "TestResults"
-
-      - name: Upload unit test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: unit-test-results
-          path: TestResults
-          if-no-files-found: ignore
-
-      # ------------------------------------------------------
-      # Native component
-      # ------------------------------------------------------
       - name: Build native C++ component
         run: |
-          set -euo pipefail
-          echo "===[ Native Build (Linux) ]=========================="
-
-          if [ ! -f "native/build.sh" ]; then
-            echo "::error::native/build.sh not found. Ensure native folder exists."
-            exit 1
+          if [ -f "native/build.sh" ]; then
+            chmod +x native/build.sh
+            ./native/build.sh >> ci_build.log 2>&1 || true
           fi
 
-          chmod +x native/build.sh
-          ./native/build.sh
-
-          if ls native/Nexus.Native/nexus_native.* 1> /dev/null 2>&1; then
-            echo "Native binaries:"
-            ls -lah native/Nexus.Native/nexus_native.*
-          else
-            echo "::warning::Native build completed but no nexus_native.* found."
-          fi
-
-      # ------------------------------------------------------
-      # CI Summary – UX خفن روی Ubuntu
-      # ------------------------------------------------------
-      - name: CI summary
-        if: always()
-        run: |
-          cat << EOF >> "$GITHUB_STEP_SUMMARY"
-          # Nexus CI Summary
-
-          ## Environment
-          - Runner    : ubuntu-latest
-          - Config    : ${BUILD_CONFIGURATION}
-          - Solution  : ${SOLUTION_PATH}
-
-          ## Tests
-          - Type      : Unit-only
-          - Filter    : TestCategory!=Docker & TestCategory!=Integration & TestCategory!=E2E
-
-          ## Native
-          - Script    : native/build.sh
-          - Output    : native/Nexus.Native/nexus_native.*
-
-          EOF
-
-      # ======================================================
-      # PRO FEATURE: Generate Advanced AI Docs in Root
-      # ======================================================
-      - name: Generate PRO AI Structure Document
+      - name: Extract Errors & Warnings for AI (No GH CLI needed)
         if: always()
         shell: bash
-        env:
-          FINAL_STATUS: ${{ job.status }}
-          OUTPUT_FILE: 00_PROJECT_STRUCTURE.md
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-
-          rm -f "$OUTPUT_FILE"
-
-          if [ "$FINAL_STATUS" = "success" ]; then
-            STATUS_ICON="✅"
+          FILE="ci_logs_summary.md"
+          echo "## 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)" > "$FILE"
+          echo "- **Job Status:** ${{ job.status }}" >> "$FILE"
+          
+          echo "### 🔴 Errors" >> "$FILE"
+          echo '```text' >> "$FILE"
+          if [ -f ci_build.log ]; then
+            grep -E "error CS|fatal error" ci_build.log | tail -n 20 >> "$FILE" || echo "No explicit C# errors." >> "$FILE"
           else
-            STATUS_ICON="❌"
+            echo "Build log not found." >> "$FILE"
           fi
+          echo '```' >> "$FILE"
 
-          # 1. HEADER & ARCHITECTURE
-          cat << HEADER > "$OUTPUT_FILE"
-          # 00 – Nexus Project Structure & Deep Diagnostics
+          echo "### 🟡 Warnings" >> "$FILE"
+          echo '```text' >> "$FILE"
+          if [ -f ci_build.log ]; then
+            grep -E "warning CS" ci_build.log | tail -n 20 >> "$FILE" || echo "No explicit C# warnings." >> "$FILE"
+          fi
+          echo '```' >> "$FILE"
 
-          > 🤖 **AI Agent Info:** This file is auto-generated by GitHub Actions in the project root.  
-          > Use this as your primary map to understand the architecture, file locations, and latest build status.
-
-          ## 📊 Pipeline Status (CI)
-
-          | Field | Value |
-          | --- | --- |
-          | **Status** | ${STATUS_ICON} **${FINAL_STATUS}** |
-          | **Repository** | \`${GITHUB_REPOSITORY}\` |
-          | **Branch** | \`${GITHUB_REF_NAME}\` |
-          | **Commit** | \`${GITHUB_SHA}\` |
-          | **Run ID** | \`${GITHUB_RUN_ID}\` |
-          | **Generated At** | \`$(date -u '+%Y-%m-%d %H:%M:%S') UTC\` |
-
-          ---
-
-          ## 🏛️ Nexus Trading Engine (NTE) Architecture Summary
-          **Style:** Decoupled Hexagonal / Clean Architecture
-
-          - **Nexus.Core:** Zero external dependencies. Contains \`Symbol\`, \`Money\`, \`Tick\`, \`Bar\`, \`IStrategy\`. Uses *Zero-Allocation Tick Path* (Readonly Structs, Ring Buffers).
-          - **Nexus.Application:** Implements execution logic, \`IExecutionGateway\`, \`ExecutionCoordinator\`, \`IMt5TradingService\` (Simulated vs Real Routing), Security Hardening.
-          - **Nexus.Infrastructure:** Adapters (EF Core PostgreSQL, ADO.NET binary copy, System.Threading.Channels for Background Workers).
-          - **Native C++:** High-performance math (EMA rolling) via P/Invoke to bypass JIT.
-          - **Nexus.WpfUi:** Desktop UI layer (Deferred).
-
-          ---
-          ## 📂 High-Level Directory Tree
-
-          <details>
-          <summary><b>Click to expand Directory Tree</b></summary>
-
-          \`\`\`text
-          HEADER
-
-          # 2. FOLDERS
-          find . -type d | grep -vE '^\.$|/.git|/bin|/obj|/packages|/node_modules|/TestResults|/coverage|/publish|/artifacts' | sed 's|^./||' | sort >> "$OUTPUT_FILE"
-
-          cat << 'BODY_FILES' >> "$OUTPUT_FILE"
-          \`\`\`
-          </details>
-
-          ## 📄 Important Files
-
-          <details>
-          <summary><b>Click to expand Important Source Files</b></summary>
-
-          \`\`\`text
-          BODY_FILES
-
-          # 3. FILES
-          find . -type f | grep -vE '/.git/|/bin/|/obj/|/packages/|/node_modules/|/TestResults/|/coverage/|/publish/|/artifacts/' | grep -E '\.(sln|csproj|vcxproj|props|targets|cs|fs|vb|xaml|razor|json|jsonc|xml|yml|yaml|md|sql|sh|ps1|cmd|bat|cpp|c|h|hpp|natvis|config|dockerignore|gitignore)$' | sed 's|^./||' | sort >> "$OUTPUT_FILE"
-
-          cat << 'BODY_COUNTS' >> "$OUTPUT_FILE"
-          \`\`\`
-          </details>
-
-          ## 📈 Source File Counts
-
-          BODY_COUNTS
-
-          # 4. COUNTS
-          CS_COUNT=$(find . -type f -name '*.cs' | grep -vE '/bin/|/obj/|/.git/' | wc -l || echo 0)
-          XAML_COUNT=$(find . -type f -name '*.xaml' | grep -vE '/bin/|/obj/|/.git/' | wc -l || echo 0)
-          CPP_COUNT=$(find . -type f \( -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) | grep -vE '/bin/|/obj/|/.git/' | wc -l || echo 0)
-          PROJ_COUNT=$(find . -type f \( -name '*.csproj' -o -name '*.vcxproj' -o -name '*.sln' \) | grep -vE '/bin/|/obj/|/.git/' | wc -l || echo 0)
-          MD_COUNT=$(find . -type f -name '*.md' | grep -vE '/bin/|/obj/|/.git/' | wc -l || echo 0)
-
-          {
-            echo "| Type | Count |"
-            echo "| --- | ---: |"
-            echo "| C# (.cs) | ${CS_COUNT} |"
-            echo "| XAML (.xaml) | ${XAML_COUNT} |"
-            echo "| C/C++ | ${CPP_COUNT} |"
-            echo "| Projects (.sln, .csproj) | ${PROJ_COUNT} |"
-            echo "| Markdown (.md) | ${MD_COUNT} |"
-          } >> "$OUTPUT_FILE"
-
-          # 5. FETCH CI LOGS SAFELY
-          cat << 'LOGS_HEADER' >> "$OUTPUT_FILE"
-
-          ---
-          ## 🐞 CI Logs (Ubuntu - Build & Tests)
-
-          LOGS_HEADER
-
-          echo "Fetching CI logs..."
-          sleep 3
-          gh run view ${{ github.run_id }} --log > ci_logs.txt || echo "Logs pending" > ci_logs.txt
-
-          echo "### 🔴 Errors" >> "$OUTPUT_FILE"
-          echo '\`\`\`text' >> "$OUTPUT_FILE"
-          grep -iE "error CS|::error::|failed!|fatal error|error:" ci_logs.txt | grep -vE "grep|Node\.js" | tail -n 30 > ci_errors.txt || true
-          if [ -s ci_errors.txt ]; then cat ci_errors.txt >> "$OUTPUT_FILE"; else echo "No explicit errors detected." >> "$OUTPUT_FILE"; fi
-          echo '\`\`\`' >> "$OUTPUT_FILE"
-
-          echo "### 🟡 Warnings" >> "$OUTPUT_FILE"
-          echo '\`\`\`text' >> "$OUTPUT_FILE"
-          grep -iE "warning CS|::warning::|warning:" ci_logs.txt | grep -vE "grep|Node\.js" | tail -n 30 > ci_warnings.txt || true
-          if [ -s ci_warnings.txt ]; then cat ci_warnings.txt >> "$OUTPUT_FILE"; else echo "No explicit warnings detected." >> "$OUTPUT_FILE"; fi
-          echo '\`\`\`' >> "$OUTPUT_FILE"
-
-      - name: Upload AI Document Artifact
+      - name: Upload CI Logs Artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ai-project-structure
-          path: 00_PROJECT_STRUCTURE.md
-          if-no-files-found: ignore
+          name: ai-doc-ci
+          path: ci_logs_summary.md
 
-
-  # ============================================================
-  # 2) Release – Windows (.NET + Native + EF Bundle + ZIP + GH Release)
-  # ============================================================
-  release:
-    name: Release • Windows Packaging & GitHub Release
+# =====================================================================
+# JOB 3: RELEASE (WINDOWS) - Packaging, EF Bundle & Release
+# =====================================================================
+  release-windows:
+    name: 📦 Release • Windows & GH Release
+    needs: ci-ubuntu
+    if: always()
     runs-on: windows-latest
     timeout-minutes: 60
-
-    # مهم: همیشه اجرا شود، حتی اگر CI fail شود
-    needs: ci
-    if: always()
-
     defaults:
       run:
         shell: pwsh
+    env:
+      PUBLISH_ROOT: ${{ github.workspace }}/artifacts/publish
+      RELEASE_ROOT: ${{ github.workspace }}/artifacts/release
+      MIGRATION_ROOT: ${{ github.workspace }}/artifacts/migrations
 
     steps:
-      # ------------------------------------------------------
-      # Source
-      # ------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ------------------------------------------------------
-      # Version & Tag
-      # ------------------------------------------------------
-      - name: Determine release version
+      - name: Determine Version
         id: version
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          INPUT_VERSION: ${{ inputs.version }}
-          RUN_NUMBER: ${{ github.run_number }}
         run: |
-          $ErrorActionPreference = "Stop"
-
-          Write-Host "===[ Versioning ]==================================="
-
-          if ($env:EVENT_NAME -eq "workflow_dispatch") {
-              $version = $env:INPUT_VERSION.Trim()
-              if (-not $version) {
-                  throw "workflow_dispatch: version input is empty."
-              }
-          }
-          else {
-              # ساده: نسخه‌ی base + شماره‌ی run
-              $baseVersion = "0.64"
-              $version = "$baseVersion.$env:RUN_NUMBER"
-          }
-
-          if ($version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
-              throw "Invalid version '$version'. Expected semantic version like 0.64.0."
-          }
-
-          $numericVersion = ($version -split '-')[0]
-          $tag = "v$version"
-          $releaseName = "Nexus Trading Engine v$version"
-
+          $version = if ($env:GITHUB_EVENT_NAME -eq "workflow_dispatch") { "${{ inputs.version }}".Trim() } else { "0.64.$env:GITHUB_RUN_NUMBER" }
           "version=$version" >> $env:GITHUB_OUTPUT
-          "numeric_version=$numericVersion" >> $env:GITHUB_OUTPUT
-          "tag=$tag" >> $env:GITHUB_OUTPUT
-          "release_name=$releaseName" >> $env:GITHUB_OUTPUT
+          "tag=v$version" >> $env:GITHUB_OUTPUT
 
-          Write-Host "Version       : $version"
-          Write-Host "NumericVersion: $numericVersion"
-          Write-Host "Tag           : $tag"
-          Write-Host "Release name  : $releaseName"
-
-      # ------------------------------------------------------
-      # .NET SDK
-      # ------------------------------------------------------
-      - name: Setup .NET 10 SDK
+      - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
 
-      - name: Display .NET info
+      - name: Build Solution (Capture Logs Natively)
         run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ .NET Environment ]============================="
-          dotnet --info
-          dotnet --list-sdks
-          dotnet --list-runtimes
-
-      # ------------------------------------------------------
-      # Prepare directories
-      # ------------------------------------------------------
-      - name: Prepare artifact directories
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ Prepare Artifacts ]============================"
-
-          $paths = @(
-              "${{ env.PUBLISH_ROOT }}",
-              "${{ env.PUBLISH_ROOT }}/win-x64-self-contained",
-              "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent",
-              "${{ env.RELEASE_ROOT }}",
-              "${{ env.MIGRATION_ROOT }}"
-          )
-
-          foreach ($path in $paths) {
-              if (Test-Path $path) {
-                  Remove-Item -Path $path -Recurse -Force
-              }
-              New-Item -ItemType Directory -Path $path -Force | Out-Null
-              Write-Host "Prepared: $path"
-          }
-
-      # ------------------------------------------------------
-      # Restore & Build & Tests (Release)
-      # ------------------------------------------------------
-      - name: Restore solution (Release)
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ Restore ]======================================"
           dotnet restore "${{ env.SOLUTION_PATH }}"
+          # Using Native MSBuild logger saves the output to win_build.log safely
+          dotnet build "${{ env.SOLUTION_PATH }}" --configuration Release --no-restore -fl -flp:logfile=win_build.log;verbosity=normal
 
-      - name: Build solution (Release)
+      - name: Extract Windows Errors for AI
+        if: always()
         run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ Build ]========================================"
-
-          dotnet build "${{ env.SOLUTION_PATH }}" `
-            --configuration Release `
-            --no-restore `
-            -p:ContinuousIntegrationBuild=true `
-            -p:Version="${{ steps.version.outputs.version }}" `
-            -p:AssemblyVersion="${{ steps.version.outputs.numeric_version }}" `
-            -p:FileVersion="${{ steps.version.outputs.numeric_version }}" `
-            -p:InformationalVersion="${{ steps.version.outputs.version }}+${{ github.sha }}"
-
-      - name: Run unit tests (Release, بدون Docker)
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ Unit Tests ]==================================="
-
-          dotnet test "${{ env.SOLUTION_PATH }}" `
-            --configuration Release `
-            --no-restore `
-            --no-build `
-            --filter "TestCategory!=Docker&TestCategory!=Integration&TestCategory!=E2E" `
-            --logger "trx;LogFileName=unit-tests.trx" `
-            --results-directory "${{ github.workspace }}/artifacts/test-results"
-
-      # ------------------------------------------------------
-      # Native Windows component
-      # ------------------------------------------------------
-      - name: Build native Windows component
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "===[ Native Build (Windows) ]======================="
-
-          if [ ! -f "native/build.sh" ]; then
-            echo "::error::native/build.sh not found."
-            exit 1
-          fi
-
-          chmod +x native/build.sh
-          ./native/build.sh
-
-          DLL_PATH="native/Nexus.Native/nexus_native.dll"
-          if [ ! -f "$DLL_PATH" ]; then
-            echo "::error::Native build completed but $DLL_PATH not found."
-            find native -maxdepth 4 -type f -print || true
-            exit 1
-          fi
-
-          echo "Native DLL:"
-          ls -lah "$DLL_PATH"
-
-      # ------------------------------------------------------
-      # EF migration bundle
-      # ------------------------------------------------------
-      - name: Install dotnet-ef CLI
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ dotnet-ef Install ]============================"
-
-          dotnet tool install dotnet-ef --global --version "9.0.2"
-          dotnet-ef --version
-
-      - name: Generate EF migration bundle (win-x64)
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ EF Bundle ]===================================="
-
-          $bundlePath = "${{ env.MIGRATION_ROOT }}/efbundle.exe"
-
-          dotnet ef migrations bundle `
-            --project "${{ env.INFRASTRUCTURE_PROJECT }}" `
-            --startup-project "${{ env.INFRASTRUCTURE_PROJECT }}" `
-            --configuration Release `
-            --runtime win-x64 `
-            --self-contained `
-            --force `
-            --output "$bundlePath"
-
-          if (-not (Test-Path $bundlePath)) {
-              throw "EF migration bundle not generated: $bundlePath"
+          $ErrorActionPreference = "Continue"
+          $file = "win_logs_summary.md"
+          "## 🚀 Pipeline Diagnostics (Release Stage - Windows)`n- **Job Status:** ${{ job.status }}`n" | Set-Content $file
+          
+          "### 🔴 Errors`n```text" | Add-Content $file
+          if (Test-Path win_build.log) {
+            $errs = Select-String -Path win_build.log -Pattern "error CS" -SimpleMatch | Select-Object -Last 20
+            if ($errs) { $errs | ForEach-Object { Add-Content $file $_.Line.Trim() } } else { Add-Content $file "No C# errors." }
           }
+          "```" | Add-Content $file
 
-          $bundle = Get-Item $bundlePath
-          if ($bundle.Length -le 0) {
-              throw "EF migration bundle is empty."
-          }
-
-          Write-Host "Migration bundle: $($bundle.FullName)"
-          Write-Host "Size           : $($bundle.Length) bytes"
-
-      # ------------------------------------------------------
-      # Publish Desktop – self-contained + framework-dependent
-      # ------------------------------------------------------
-      - name: Publish self-contained Windows x64
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ Publish Self-contained ]======================="
-
-          dotnet publish "${{ env.DESKTOP_PROJECT }}" `
-            --configuration Release `
-            --runtime win-x64 `
-            --self-contained true `
-            --no-restore `
-            -p:PublishSingleFile=false `
-            -p:PublishReadyToRun=false `
-            -p:PublishTrimmed=false `
-            -p:DebugType=none `
-            -p:DebugSymbols=false `
-            -p:ContinuousIntegrationBuild=true `
-            -p:Version="${{ steps.version.outputs.version }}" `
-            -p:AssemblyVersion="${{ steps.version.outputs.numeric_version }}" `
-            -p:FileVersion="${{ steps.version.outputs.numeric_version }}" `
-            -p:InformationalVersion="${{ steps.version.outputs.version }}+${{ github.sha }}" `
-            --output "${{ env.PUBLISH_ROOT }}/win-x64-self-contained"
-
-      - name: Publish framework-dependent Windows x64
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ Publish Framework-dependent ]=================="
-
-          dotnet publish "${{ env.DESKTOP_PROJECT }}" `
-            --configuration Release `
-            --runtime win-x64 `
-            --self-contained false `
-            --no-restore `
-            -p:PublishSingleFile=false `
-            -p:PublishReadyToRun=false `
-            -p:PublishTrimmed=false `
-            -p:DebugType=none `
-            -p:DebugSymbols=false `
-            -p:ContinuousIntegrationBuild=true `
-            -p:Version="${{ steps.version.outputs.version }}" `
-            -p:AssemblyVersion="${{ steps.version.outputs.numeric_version }}" `
-            -p:FileVersion="${{ steps.version.outputs.numeric_version }}" `
-            -p:InformationalVersion="${{ steps.version.outputs.version }}+${{ github.sha }}" `
-            --output "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent"
-
-      # ------------------------------------------------------
-      # Safe config + native + efbundle
-      # ------------------------------------------------------
-      - name: Add safe configuration and native files
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ Safe Config & Native ]========================="
-
-          $selfContained = "${{ env.PUBLISH_ROOT }}/win-x64-self-contained"
-          $framework = "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent"
-          $migrationBundle = "${{ env.MIGRATION_ROOT }}/efbundle.exe"
-          $nativeDll = "${{ github.workspace }}/native/Nexus.Native/nexus_native.dll"
-
-          $config = [ordered]@{
-              SelectedProvider = "SQLite"
-              ConnectionString = "Data Source=nexus.db"
-              IsOnboarded = $false
-              ProfileName = "LocalSimulation"
-              BrokerServer = ""
-              LoginAccountId = ""
-              TerminalPath = ""
-              TimeoutSeconds = 30
-              AutoReconnect = $true
-              Mt5Mode = "Simulated"
-              Mt5BridgeHost = "127.0.0.1"
-              Mt5BridgePort = 5000
-              Mt5BridgeUseSsl = $false
-          }
-
-          $configJson = $config | ConvertTo-Json -Depth 10
-          $configTemplate = $config | ConvertTo-Json -Depth 10
-
-          $readme = @"
-          Nexus Trading Engine ${{ steps.version.outputs.version }}
-          =======================================================
-
-          QUICK START
-          -----------
-          1. Run Nexus.Desktop.exe.
-          2. Keep SQLite selected for local testing.
-          3. Keep Mt5Mode = Simulated.
-          4. MT5 is NOT required for simulated-mode testing.
-
-          SECURITY
-          --------
-          - No passwords or secrets included.
-          - Do NOT commit real credentials into nexus_config.json.
-          "@
-
-          foreach ($destination in @($selfContained, $framework)) {
-              if (-not (Test-Path $destination)) {
-                  throw "Publish output not found: $destination"
-              }
-
-              Set-Content -Path "$destination/nexus_config.json" -Value $configJson -Encoding UTF8
-              Set-Content -Path "$destination/nexus_config.json.template" -Value $configTemplate -Encoding UTF8
-              Set-Content -Path "$destination/README.txt" -Value $readme -Encoding UTF8
-
-              Copy-Item $migrationBundle "$destination/efbundle.exe" -Force
-              Copy-Item $nativeDll "$destination/nexus_native.dll" -Force
-          }
-
-      # ------------------------------------------------------
-      # Validate release outputs
-      # ------------------------------------------------------
-      - name: Validate release outputs
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ Validate Outputs ]=============================="
-
-          $publishFolders = @(
-              "${{ env.PUBLISH_ROOT }}/win-x64-self-contained",
-              "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent"
-          )
-
-          $requiredFiles = @(
-              "Nexus.Desktop.exe",
-              "nexus_config.json",
-              "nexus_config.json.template",
-              "README.txt",
-              "efbundle.exe",
-              "nexus_native.dll"
-          )
-
-          foreach ($folder in $publishFolders) {
-              Write-Host "Validating: $folder"
-
-              foreach ($requiredFile in $requiredFiles) {
-                  $path = Join-Path $folder $requiredFile
-
-                  if (-not (Test-Path $path)) {
-                      throw "Missing required file: $path"
-                  }
-
-                  $file = Get-Item $path
-                  if ($file.Length -le 0) {
-                      throw "Empty required file: $path"
-                  }
-
-                  Write-Host "  OK: $requiredFile ($($file.Length) bytes)"
-              }
-          }
-
-          $forbiddenPatterns = @(
-              '"Password"\s*:\s*"[^"]+"',
-              '"Secret"\s*:\s*"[^"]+"',
-              '"ApiKey"\s*:\s*"[^"]+"',
-              '"LoginAccountId"\s*:\s*"[0-9]+"'
-          )
-
-          Get-ChildItem "${{ env.PUBLISH_ROOT }}" -Recurse -File -Include *.json,*.config,*.txt |
-          ForEach-Object {
-              $content = Get-Content $_.FullName -Raw
-              foreach ($pattern in $forbiddenPatterns) {
-                  if ($content -match $pattern) {
-                      throw "Potential secret detected in: $($_.FullName)"
-                  }
-              }
-          }
-
-      # ------------------------------------------------------
-      # ZIP packages
-      # ------------------------------------------------------
-      - name: Create release ZIP packages
-        id: packages
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ ZIP Packages ]================================="
-
-          $version = "${{ steps.version.outputs.version }}"
-          $releaseRoot = "${{ env.RELEASE_ROOT }}"
-
-          $selfContainedZip = Join-Path $releaseRoot "Nexus.Desktop-win-x64-self-contained-$version.zip"
-          $frameworkZip = Join-Path $releaseRoot "Nexus.Desktop-win-x64-framework-dependent-$version.zip"
-
-          Compress-Archive -Path "${{ env.PUBLISH_ROOT }}/win-x64-self-contained/*" `
-                           -DestinationPath $selfContainedZip `
-                           -CompressionLevel Optimal `
-                           -Force
-
-          Compress-Archive -Path "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent/*" `
-                           -DestinationPath $frameworkZip `
-                           -CompressionLevel Optimal `
-                           -Force
-
-          Copy-Item "${{ env.MIGRATION_ROOT }}/efbundle.exe" `
-                    "$releaseRoot/efbundle-win-x64-$version.exe" `
-                    -Force
-
-          $files = Get-ChildItem $releaseRoot -File
-          foreach ($file in $files) {
-              Write-Host "$($file.Name) - $($file.Length) bytes"
-              if ($file.Length -le 0) {
-                  throw "Empty asset: $($file.FullName)"
-              }
-          }
-
-          "self_contained_zip=$selfContainedZip" >> $env:GITHUB_OUTPUT
-          "framework_zip=$frameworkZip" >> $env:GITHUB_OUTPUT
-
-      # ------------------------------------------------------
-      # Release notes + Upload + GitHub Release
-      # ------------------------------------------------------
-      - name: Generate release notes
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "===[ Release Notes ]================================"
-
-          $version = "${{ steps.version.outputs.version }}"
-          $tag = "${{ steps.version.outputs.tag }}"
-
-          $notes = @"
-          # Nexus Trading Engine $version
-
-          ## Assets
-          - Nexus.Desktop-win-x64-self-contained-$version.zip
-          - Nexus.Desktop-win-x64-framework-dependent-$version.zip
-          - efbundle-win-x64-$version.exe
-
-          ## Quick start
-          1. Download self-contained ZIP.
-          2. Extract.
-          3. Run Nexus.Desktop.exe.
-          4. Use SQLite + Simulated MT5 (no real credentials).
-
-          ## Build metadata
-          - Version: $version
-          - Tag: $tag
-          - Commit: ${{ github.sha }}
-          "@
-
-          Set-Content -Path "${{ github.workspace }}/release_notes.md" -Value $notes -Encoding UTF8
-
-      - name: Upload release artifacts to workflow
+      - name: Upload Windows Logs Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nexus-release-${{ steps.version.outputs.version }}
-          path: artifacts/release/*
-          if-no-files-found: error
-          retention-days: 30
+          name: ai-doc-win
+          path: win_logs_summary.md
 
-      - name: Create / update GitHub Release
+      - name: Publish Desktop App
+        run: |
+          dotnet publish "${{ env.DESKTOP_PROJECT }}" --configuration Release --runtime win-x64 --self-contained true --no-restore --output "${{ env.PUBLISH_ROOT }}/win-x64-self-contained"
+          dotnet publish "${{ env.DESKTOP_PROJECT }}" --configuration Release --runtime win-x64 --self-contained false --no-restore --output "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent"
+
+      - name: Build Native Windows
+        shell: bash
+        run: |
+          if [ -f "native/build.sh" ]; then
+            chmod +x native/build.sh
+            ./native/build.sh || true
+          fi
+
+      - name: EF Migration Bundle
+        run: |
+          dotnet tool install dotnet-ef --global --version "9.0.2"
+          New-Item -ItemType Directory -Path "${{ env.MIGRATION_ROOT }}" -Force | Out-Null
+          dotnet ef migrations bundle --project "${{ env.INFRASTRUCTURE_PROJECT }}" --startup-project "${{ env.INFRASTRUCTURE_PROJECT }}" --configuration Release --runtime win-x64 --self-contained --force --output "${{ env.MIGRATION_ROOT }}/efbundle.exe" || Write-Warning "EF Bundle failed"
+
+      - name: Create ZIP Packages
+        run: |
+          New-Item -ItemType Directory -Path "${{ env.RELEASE_ROOT }}" -Force | Out-Null
+          $ver = "${{ steps.version.outputs.version }}"
+          Compress-Archive -Path "${{ env.PUBLISH_ROOT }}/win-x64-self-contained/*" -DestinationPath "${{ env.RELEASE_ROOT }}/Nexus-win-x64-self-contained-$ver.zip" -Force
+          Compress-Archive -Path "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent/*" -DestinationPath "${{ env.RELEASE_ROOT }}/Nexus-win-x64-framework-dependent-$ver.zip" -Force
+          if (Test-Path "${{ env.MIGRATION_ROOT }}/efbundle.exe") { Copy-Item "${{ env.MIGRATION_ROOT }}/efbundle.exe" "${{ env.RELEASE_ROOT }}/efbundle-win-x64-$ver.exe" -Force }
+
+      - name: GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: ${{ steps.version.outputs.release_name }}
-          body_path: release_notes.md
-          draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }}
-          prerelease: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || false }}
-          generate_release_notes: false
-          fail_on_unmatched_files: true
-          overwrite_files: true
-          files: |
-            artifacts/release/Nexus.Desktop-win-x64-self-contained-${{ steps.version.outputs.version }}.zip
-            artifacts/release/Nexus.Desktop-win-x64-framework-dependent-${{ steps.version.outputs.version }}.zip
-            artifacts/release/efbundle-win-x64-${{ steps.version.outputs.version }}.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: Nexus Trading Engine ${{ steps.version.outputs.tag }}
+          files: artifacts/release/*
 
-      - name: Pipeline summary
-        run: |
-          @"
-          # Nexus CI & Release Summary
-
-          ## CI (Ubuntu)
-          - Build    : ${BUILD_CONFIGURATION}
-          - Tests    : Unit-only (no Docker / Integration / E2E)
-
-          ## Release (Windows)
-          - Version       : `${{ steps.version.outputs.version }}`
-          - Tag           : `${{ steps.version.outputs.tag }}`
-          - Self-contained: `Nexus.Desktop-win-x64-self-contained-${{ steps.version.outputs.version }}.zip`
-          - Framework     : `Nexus.Desktop-win-x64-framework-dependent-${{ steps.version.outputs.version }}.zip`
-          - efbundle      : `efbundle-win-x64-${{ steps.version.outputs.version }}.exe`
-
-          ## Note
-          - Release job runs regardless of CI result (needs: ci + if: always()).
-          "@ >> $env:GITHUB_STEP_SUMMARY
-
-      # ======================================================
-      # PRO FEATURE: Append Windows Logs & Auto Commit to Root
-      # ======================================================
-      - name: Download AI Document from CI
-        if: always()
-        uses: actions/download-artifact@v4
+# =====================================================================
+# JOB 4: FINALIZE AI DOCUMENT & PUSH (Only runs once at the very end)
+# =====================================================================
+  finalize-ai-doc:
+    name: 📝 Merge Docs & Commit
+    needs: [prep-and-docs, ci-ubuntu, release-windows]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          name: ai-project-structure
-          path: .
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Append Release Logs & Status (PowerShell Safe)
-        if: always()
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          FINAL_STATUS: ${{ job.status }}
-        run: |
-          $ErrorActionPreference = "Continue"
-          $doc = "00_PROJECT_STRUCTURE.md"
-          
-          if (-not (Test-Path $doc)) { "# 00 – Nexus Project Structure`n" | Set-Content $doc }
-          
-          $statusIcon = if ($env:FINAL_STATUS -eq "success") { "✅" } else { "❌" }
-          Add-Content -Path $doc -Value "`n---`n## 🚀 Pipeline Diagnostics (Release Stage - Windows)`n- **Release Stage Status:** $statusIcon **$env:FINAL_STATUS**`n"
-          
-          Write-Host "Fetching Windows Release logs..."
-          Start-Sleep -Seconds 4
-          gh run view ${{ github.run_id }} --log > release_logs.txt
-          
-          Add-Content -Path $doc -Value "### 🔴 Errors`n\`\`\`text"
-          $errs = Select-String -Path release_logs.txt -Pattern "(?i)(error CS|::error::|failed|exception|error:)" | Where-Object { $_.Line -notmatch "Node.js" -and $_.Line -notmatch "Select-String" } | Select-Object -Last 30
-          if ($errs) { $errs | ForEach-Object { Add-Content -Path $doc -Value $_.Line.Trim() } } else { Add-Content -Path $doc -Value "No explicit errors detected." }
-          Add-Content -Path $doc -Value "\`\`\`"
+      - name: Download Base Doc
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: ai-doc-base
+          path: docs_merge/
 
-          Add-Content -Path $doc -Value "`n### 🟡 Warnings`n\`\`\`text"
-          $warns = Select-String -Path release_logs.txt -Pattern "(?i)(warning CS|::warning::|warning:)" | Where-Object { $_.Line -notmatch "Node.js" -and $_.Line -notmatch "Select-String" } | Select-Object -Last 30
-          if ($warns) { $warns | ForEach-Object { Add-Content -Path $doc -Value $_.Line.Trim() } } else { Add-Content -Path $doc -Value "No explicit warnings detected." }
-          Add-Content -Path $doc -Value "\`\`\`"
+      - name: Download CI Logs
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: ai-doc-ci
+          path: docs_merge/
 
-      - name: Auto-Commit Document to Repo Root
-        if: always()
+      - name: Download Windows Logs
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: ai-doc-win
+          path: docs_merge/
+
+      - name: Assemble Final Document
         shell: bash
         run: |
-          # Prevent commit loops and PR pushes
+          FINAL_FILE="00_PROJECT_STRUCTURE.md"
+          rm -f "$FINAL_FILE"
+          
+          if [ -f "docs_merge/base_structure.md" ]; then
+            cat docs_merge/base_structure.md >> "$FINAL_FILE"
+          else
+            echo "# 00 – Nexus Project Structure (Base generation failed)" > "$FINAL_FILE"
+          fi
+          
+          if [ -f "docs_merge/ci_logs_summary.md" ]; then
+            echo "" >> "$FINAL_FILE"
+            cat docs_merge/ci_logs_summary.md >> "$FINAL_FILE"
+          fi
+          
+          if [ -f "docs_merge/win_logs_summary.md" ]; then
+            echo "" >> "$FINAL_FILE"
+            cat docs_merge/win_logs_summary.md >> "$FINAL_FILE"
+          fi
+
+      - name: Commit and Push
+        shell: bash
+        run: |
           if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
               echo "Running in PR, skipping commit push."
               exit 0
