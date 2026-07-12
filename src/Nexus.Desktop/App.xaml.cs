@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Nexus.Application.Mt5;
 using Nexus.Application.Ports;
 using Nexus.Application.Security;
 using Nexus.Infrastructure.Persistence;
@@ -40,13 +41,16 @@ namespace Nexus.Desktop
                     services.AddSingleton<SimulatedMt5ConnectionService>();
                     services.AddSingleton<SimulatedMt5AccountService>();
                     services.AddSingleton<SimulatedMt5TradeService>();
+                    services.AddSingleton<SimulatedMt5TradingService>();
                     services.AddSingleton<RealMt5BridgeAdapter>();
                     services.AddSingleton<RealMt5BridgeConnectionService>();
+                    services.AddSingleton<RealMt5TradingService>();
 
                     // Register Routing (dynamic selector) services
                     services.AddSingleton<IMt5ConnectionService, RoutingMt5ConnectionService>();
                     services.AddSingleton<IMt5AccountService, RoutingMt5AccountService>();
                     services.AddSingleton<IMt5TradeService, RoutingMt5TradeService>();
+                    services.AddSingleton<IMt5TradingService, RoutingMt5TradingService>();
 
                     services.AddSingleton<ITradingPlatformConnector, SimulatedTradingPlatformConnector>();
                     services.AddSingleton<IConnectionHealthMonitor, SimulatedConnectionHealthMonitor>();

@@ -28,10 +28,10 @@
   - Implemented secure `LogSanitizer` policy to redact credentials, keys, passwords, and tokens.
   - Integrated `TestOutputLogger` to stream real-time logs to xUnit test outputs for effortless CI triage.
 
-- [ ] **Phase 3: MetaTrader 5 Bridge & IPC**
-  - Contract protobuf definitions.
-  - High-speed gRPC/Named Pipes bridge.
-  - Real-time order execution matching terminal tickets.
+- [/] **Phase 3: MetaTrader 5 Bridge & IPC**
+  - [x] **Stage 1 (Done - 2025-07-12)**: C# contracts and bridge command models extended, application-facing decoupled IMt5TradingService port implemented, routing by Mt5Mode, and comprehensive unit tests.
+  - [ ] **Stage 2 (Planned)**: Native MQL5 NexusBridge.mq5 Expert Advisor handlers for PlaceOrder, ClosePosition, and GetOpenPositions over JSON-over-TCP bridge.
+  - [ ] **Stage 3 (Planned)**: WPF UI integration & real-time trade dashboard.
 
 - [ ] **Phase 4: WPF UI Dashboard**
   - MVVM WPF screens, real-time telemetry charts, order submission panel.
