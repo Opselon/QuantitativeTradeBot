@@ -1,5 +1,75 @@
-# QuantitativeTradeBot
-C# Algorithmic Trading, MT5 Low-Latency Bot, Quantitative Trading Platform, WPF Trading Terminal.
+Nexus Trading Engine (NTE)
+
+┌─────────────────────────────────────┐
+│             Nexus.WpfUi             │
+├─────────────────────────────────────┤
+│ Operator Dashboard                  │
+│ Strategy Management                 │
+│ MT5 Trading Panel                   │
+│ Position Monitoring                 │
+│ Risk Monitoring                     │
+│ Reporting & Analytics               │
+│ Configuration Wizard                │
+└─────────────────┬───────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────┐
+│         Nexus.Application           │
+├─────────────────────────────────────┤
+│ Execution Coordinator               │
+│ Strategy Coordinator                │
+│ Risk Orchestrator                   │
+│ Portfolio Coordinator               │
+│ Position Tracking Engine            │
+│ Trade Lifecycle Management          │
+│ IMt5TradingService                  │
+│ Application Commands & Queries      │
+└─────────────────┬───────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────┐
+│            Nexus.Domain             │
+├─────────────────────────────────────┤
+│ Orders                              │
+│ Positions                           │
+│ Trades                              │
+│ Accounts                            │
+│ Strategies                          │
+│ Risk Rules                          │
+│ Portfolio Models                    │
+│ Domain Events                       │
+│ Value Objects                       │
+│ Specifications                      │
+└─────────────────┬───────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────┐
+│         Nexus.Infrastructure        │
+├─────────────────────────────────────┤
+│ MT5 Bridge Adapter                  │
+│ Real MT5 Trading Service            │
+│ Simulated Trading Service           │
+│ Routing Trading Service             │
+│ PostgreSQL Persistence              │
+│ SQLite Persistence                  │
+│ Background Workers                  │
+│ Event Processing                    │
+│ Logging & Audit                     │
+│ Configuration Providers             │
+└─────────────────┬───────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────┐
+│          Native C++ Core            │
+├─────────────────────────────────────┤
+│ EMA                                 │
+│ SMA                                 │
+│ RSI                                 │
+│ ATR                                 │
+│ Statistical Models                  │
+│ Quantitative Calculations           │
+│ Optimization Algorithms             │
+└─────────────────────────────────────┘
 
 
 <!-- NEXUS_AUTO_DOC_START -->
