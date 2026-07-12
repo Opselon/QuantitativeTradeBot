@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Nexus.Application\Nexus.Application.csproj" />
+    <ProjectReference Include="..\Nexus.AI\Nexus.AI.csproj" />
   </ItemGroup>
 
   <ItemGroup>
