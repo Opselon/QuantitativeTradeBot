@@ -37,6 +37,7 @@ on:
 
 permissions:
   contents: write
+  actions: read # Required to read workflow logs via GitHub CLI
 
 concurrency:
   group: nexus-ci-release-${{ github.ref }}
@@ -167,13 +168,17 @@ jobs:
 
           EOF
 
-      - name: Generate AI project structure document (CI)
+      # ------------------------------------------------------
+      # Generate AI Project Structure & Catch CI Logs
+      # ------------------------------------------------------
+      - name: Generate AI project structure and diagnostics (CI)
         if: always()
         shell: bash
         env:
           FINAL_STATUS: ${{ job.status }}
           DOC_DIR: QuantitativeTradeBot/.nexus_docs
-          OUTPUT_FILE: QuantitativeTradeBot/.nexus_docs/000_PROJECT_STRUCTURE.md
+          OUTPUT_FILE: QuantitativeTradeBot/.nexus_docs/00_PROJECT_STRUCTURE.md
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -197,7 +202,7 @@ jobs:
           NOW_UTC="$(date -u '+%Y-%m-%d %H:%M:%S')"
 
           cat << 'HEADER' > "$OUTPUT_FILE"
-          # 14 – Nexus Project Structure (Latest Build)
+          # 14 – Nexus Project Structure & Deep Diagnostics
 
           > این فایل به صورت خودکار توسط GitHub Actions ساخته می‌شود.  
           > در هر اجرای CI، محتوای قبلی پاک شده و با snapshot جدید جایگزین می‌شود.
@@ -222,26 +227,12 @@ jobs:
             echo
             echo "## Purpose"
             echo
-            echo "این سند یک نمای AI-friendly از ساختار سورس کد است."
-            echo "هدف: راه‌اندازی سریع Agent برای معماری، دیباگ، Refactor و تحلیل."
-            echo
-            echo "### Includes"
-            echo "- Solutions/Projects: .sln, .csproj, .vcxproj, .props, .targets"
-            echo "- Source: C#, C/C++, XAML, Razor"
-            echo "- Config: JSON, YAML, XML, Dockerfile, GitHub Workflows"
-            echo "- Scripts: .sh, .ps1, .cmd, .bat"
-            echo "- Docs & SQL: .md, .sql"
+            echo "این سند یک نمای AI-friendly از ساختار سورس کد و خطاهای Pipeline است."
+            echo "هدف: درک معماری، یافتن باگ‌ها، و رفع سریع Exceptionهای بیلد."
             echo
             echo "### Excludes (noise reduction)"
             echo "- Directories: bin, obj, packages, node_modules, TestResults, coverage, publish, artifacts, .git"
             echo "- Binaries: *.dll, *.exe, *.pdb, *.so, *.dylib, *.nupkg"
-            echo
-            echo "## Agent Reading Guide"
-            echo
-            echo "1. از solution اصلی (مثلاً NexusTradingEngine.sln) شروع کن."
-            echo "2. لایه‌ها را روی فولدرهای Domain / Application / Infrastructure / Desktop / Native / Tests ببین."
-            echo "3. Configها، Dockerfileها و YAMLهای CI/CD را به‌عنوان behavior runtime و release در نظر بگیر."
-            echo "4. این فایل نقشه است؛ برای تصمیم‌گیری نهایی همیشه خود سورس را بخوان."
           } >> "$OUTPUT_FILE"
 
           cat << 'TREE_HEADER' >> "$OUTPUT_FILE"
@@ -377,23 +368,37 @@ jobs:
               echo "| SQL files | ${SQL_COUNT} |"
               echo "| YAML files | ${YAML_COUNT} |"
             } >> "$OUTPUT_FILE"
-          else
-            echo "(No counts – QuantitativeTradeBot directory not found.)" >> "$OUTPUT_FILE"
           fi
 
-          {
-            echo
-            echo "## Final Result"
-            echo
-            echo "${STATUS_ICON} ${STATUS_TEXT}"
-          } >> "$OUTPUT_FILE"
+          # ==========================================
+          # PRO FEATURE: Fetch CI Logs for AI Context
+          # ==========================================
+          cat << 'LOGS_HEADER' >> "$OUTPUT_FILE"
+
+          ## 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)
+
+          LOGS_HEADER
+
+          echo "Fetching CI logs via GitHub CLI..."
+          sleep 3 # Flush logs
+          gh run view ${{ github.run_id }} --log > ci_logs.txt || echo "Could not fetch logs." > ci_logs.txt
+
+          echo "### 🔴 Errors" >> "$OUTPUT_FILE"
+          echo '```text' >> "$OUTPUT_FILE"
+          grep -iE "error CS|::error::|failed!|exception|fatal error|error:" ci_logs.txt | grep -vi "grep" | tail -n 40 >> "$OUTPUT_FILE" || echo "No explicit errors detected in CI." >> "$OUTPUT_FILE"
+          echo '```' >> "$OUTPUT_FILE"
+
+          echo "### 🟡 Warnings" >> "$OUTPUT_FILE"
+          echo '```text' >> "$OUTPUT_FILE"
+          grep -iE "warning CS|::warning::|warning:" ci_logs.txt | grep -vi "grep" | tail -n 40 >> "$OUTPUT_FILE" || echo "No explicit warnings detected in CI." >> "$OUTPUT_FILE"
+          echo '```' >> "$OUTPUT_FILE"
 
       - name: Upload AI project structure document
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ai-project-structure
-          path: QuantitativeTradeBot/.nexus_docs/000_PROJECT_STRUCTURE.md
+          path: QuantitativeTradeBot/.nexus_docs/00_PROJECT_STRUCTURE.md
           if-no-files-found: ignore
 
   # ============================================================
@@ -894,3 +899,65 @@ jobs:
           ## Note
           - Release job runs regardless of CI result (needs: ci + if: always()).
           "@ >> $env:GITHUB_STEP_SUMMARY
+
+      # ======================================================
+      # PRO FEATURE: Fetch Release Logs & Update AI Doc
+      # ======================================================
+      - name: Download AI project structure document
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          name: ai-project-structure
+          path: QuantitativeTradeBot/.nexus_docs
+
+      - name: Append Release logs to AI Document
+        if: always()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OUTPUT_FILE: QuantitativeTradeBot/.nexus_docs/00_PROJECT_STRUCTURE.md
+          FINAL_STATUS: ${{ job.status }}
+        run: |
+          $ErrorActionPreference = "Continue"
+
+          if (-not (Test-Path $env:OUTPUT_FILE)) {
+              Write-Host "Base AI Document not found (CI failed to upload?). Creating empty."
+              New-Item -ItemType Directory -Force -Path "QuantitativeTradeBot/.nexus_docs" | Out-Null
+              "# 14 – Nexus Project Structure (Release Stage Fallback)`n" | Set-Content $env:OUTPUT_FILE
+          }
+
+          Add-Content -Path $env:OUTPUT_FILE -Value "`n## 🚀 Pipeline Diagnostics (Release Stage - Windows)`n"
+          Add-Content -Path $env:OUTPUT_FILE -Value "- Release Stage Status: **$env:FINAL_STATUS**`n"
+
+          Write-Host "Fetching Release logs via GitHub CLI..."
+          Start-Sleep -Seconds 4
+          gh run view ${{ github.run_id }} --log > release_logs.txt
+
+          Add-Content -Path $env:OUTPUT_FILE -Value "### 🔴 Errors`n"
+          Add-Content -Path $env:OUTPUT_FILE -Value '```text'
+          $errors = Select-String -Path release_logs.txt -Pattern "(?i)(error CS|::error::|failed|exception|fatal error|error:)" | Select-Object -Last 40
+          if ($errors) {
+              $errors | ForEach-Object { Add-Content -Path $env:OUTPUT_FILE -Value $_.Line.Trim() }
+          } else {
+              Add-Content -Path $env:OUTPUT_FILE -Value "No explicit errors detected in Release."
+          }
+          Add-Content -Path $env:OUTPUT_FILE -Value '```'
+
+          Add-Content -Path $env:OUTPUT_FILE -Value "`n### 🟡 Warnings`n"
+          Add-Content -Path $env:OUTPUT_FILE -Value '```text'
+          $warnings = Select-String -Path release_logs.txt -Pattern "(?i)(warning CS|::warning::|warning:)" | Select-Object -Last 40
+          if ($warnings) {
+              $warnings | ForEach-Object { Add-Content -Path $env:OUTPUT_FILE -Value $_.Line.Trim() }
+          } else {
+              Add-Content -Path $env:OUTPUT_FILE -Value "No explicit warnings detected in Release."
+          }
+          Add-Content -Path $env:OUTPUT_FILE -Value '```'
+
+      - name: Re-upload updated AI document
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-project-structure
+          path: QuantitativeTradeBot/.nexus_docs/00_PROJECT_STRUCTURE.md
+          overwrite: true
+          if-no-files-found: ignore
