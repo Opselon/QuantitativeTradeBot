@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Nexus.Application.Mt5;
 using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Application.Ports;
 using Nexus.Application.Workflows.DTOs;
@@ -296,6 +298,208 @@ namespace Nexus.Tests.Unit.Desktop
             {
                 await routingService.GetOpenPositionsAsync(session, CancellationToken.None);
             });
+        }
+
+        [Fact]
+        public async Task RealMt5TradingService_PlaceMarketOrder_MapsResultCorrectly()
+        {
+            // Arrange
+            var responsePayload = new PlaceOrderResponse(
+                success: true,
+                ticket: 98765,
+                status: BridgeOrderExecutionStatus.Executed,
+                brokerMessage: "Trade Executed successfully",
+                comment: "TestComment"
+            );
+
+            var envelope = BridgeMessageEnvelope.CreateResponse(
+                requestId: "some-guid-order",
+                command: "PlaceOrder",
+                payload: responsePayload,
+                error: null
+            );
+
+            var mockBridgeClient = new StubBridgeClient(envelope);
+            var tradingService = new RealMt5TradingService(mockBridgeClient);
+
+            // Act
+            var result = await tradingService.PlaceMarketOrderAsync(
+                symbol: "EURUSD",
+                side: BridgeOrderSide.Buy,
+                volume: 1.50m,
+                stopLoss: 1.08000m,
+                takeProfit: 1.10000m,
+                comment: "TestComment",
+                clientCorrelationId: "correlation-123",
+                cancellationToken: CancellationToken.None
+            );
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.IsSuccess);
+            Assert.Equal(98765, result.Ticket);
+            Assert.Equal("Executed", result.Status);
+            Assert.Equal("Trade Executed successfully", result.ErrorMessage);
+            Assert.Equal("TestComment", result.Comment);
+        }
+
+        [Fact]
+        public async Task RealMt5TradingService_ClosePosition_MapsResultCorrectly()
+        {
+            // Arrange
+            var responsePayload = new ClosePositionResponse(
+                success: true,
+                ticket: 54321,
+                brokerMessage: "Position Closed"
+            );
+
+            var envelope = BridgeMessageEnvelope.CreateResponse(
+                requestId: "some-guid-close",
+                command: "ClosePosition",
+                payload: responsePayload,
+                error: null
+            );
+
+            var mockBridgeClient = new StubBridgeClient(envelope);
+            var tradingService = new RealMt5TradingService(mockBridgeClient);
+
+            // Act
+            var result = await tradingService.ClosePositionAsync(
+                positionTicket: 54321,
+                symbol: "EURUSD",
+                volume: null,
+                cancellationToken: CancellationToken.None
+            );
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.IsSuccess);
+            Assert.Equal(54321, result.Ticket);
+            Assert.Equal("Position Closed", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task RealMt5TradingService_GetOpenPositions_MapsResultCorrectly()
+        {
+            // Arrange
+            var positionDto = new BridgePositionDto(
+                ticket: 112233,
+                symbol: "USDJPY",
+                side: BridgePositionSide.Sell,
+                volume: 0.10m,
+                openPrice: 155.50m,
+                currentPrice: 155.20m,
+                stopLoss: 156.00m,
+                takeProfit: 154.00m,
+                profit: 300.00m,
+                swap: 0.00m,
+                magicNumber: 777,
+                comment: "IndicatorSell",
+                openTime: new DateTime(2025, 6, 1, 10, 0, 0, DateTimeKind.Utc)
+            );
+
+            var responsePayload = new GetOpenPositionsResponse(new List<BridgePositionDto> { positionDto });
+
+            var envelope = BridgeMessageEnvelope.CreateResponse(
+                requestId: "some-guid-positions",
+                command: "GetOpenPositions",
+                payload: responsePayload,
+                error: null
+            );
+
+            var mockBridgeClient = new StubBridgeClient(envelope);
+            var tradingService = new RealMt5TradingService(mockBridgeClient);
+
+            // Act
+            var positions = await tradingService.GetOpenPositionsAsync(CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(positions);
+            Assert.Single(positions);
+            var pos = positions[0];
+            Assert.Equal(112233, pos.Ticket);
+            Assert.Equal("USDJPY", pos.Symbol);
+            Assert.Equal("Sell", pos.Side);
+            Assert.Equal(0.10m, pos.Volume);
+            Assert.Equal(155.50m, pos.OpenPrice);
+            Assert.Equal(155.20m, pos.CurrentPrice);
+            Assert.Equal(156.00m, pos.StopLoss);
+            Assert.Equal(154.00m, pos.TakeProfit);
+            Assert.Equal(300.00m, pos.Profit);
+            Assert.Equal(0.00m, pos.Swap);
+            Assert.Equal(777, pos.MagicNumber);
+            Assert.Equal("IndicatorSell", pos.Comment);
+            Assert.Equal(new DateTime(2025, 6, 1, 10, 0, 0, DateTimeKind.Utc), pos.OpenTime);
+        }
+
+        [Fact]
+        public async Task RoutingMt5TradingService_DelegatesCorrectly_BasedOnActiveMt5Mode()
+        {
+            // Arrange
+            var mockConfig = new StubAppConfigurationService();
+            // Default to Simulated mode first
+            mockConfig.SettingsToReturn = new AppSettings { Mt5Mode = "Simulated" };
+
+            var simulatedTradeService = new SimulatedMt5TradeService();
+            var simulatedTradingService = new SimulatedMt5TradingService(simulatedTradeService);
+
+            var stubBridgeClient = new StubBridgeClient(null);
+            var realTradingService = new RealMt5TradingService(stubBridgeClient);
+
+            var routingTradingService = new RoutingMt5TradingService(
+                mockConfig,
+                simulatedTradingService,
+                realTradingService
+            );
+
+            // Act & Assert 1: Simulated Mode
+            var positions = await routingTradingService.GetOpenPositionsAsync(CancellationToken.None);
+            Assert.NotNull(positions);
+            Assert.Single(positions); // Default seeded simulated position is 1
+            Assert.Equal("EURUSD", positions[0].Symbol);
+
+            // Switch config to Real mode
+            mockConfig.SettingsToReturn = new AppSettings { Mt5Mode = "Real" };
+
+            // Act & Assert 2: Real Mode
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await routingTradingService.GetOpenPositionsAsync(CancellationToken.None);
+            });
+        }
+
+        [Fact]
+        public async Task RealMt5TradingService_MapsBridgeError_ToPlaceOrderResultCorrectly()
+        {
+            // Arrange
+            var envelope = new BridgeMessageEnvelope(
+                messageType: "Response",
+                requestId: "some-guid-err",
+                command: "PlaceOrder",
+                payload: null,
+                error: new BridgeError("TRADE_REJECTED", "No money")
+            );
+
+            var mockBridgeClient = new StubBridgeClient(envelope);
+            var tradingService = new RealMt5TradingService(mockBridgeClient);
+
+            // Act
+            var result = await tradingService.PlaceMarketOrderAsync(
+                symbol: "EURUSD",
+                side: BridgeOrderSide.Buy,
+                volume: 1.0m,
+                stopLoss: null,
+                takeProfit: null,
+                comment: "comment",
+                clientCorrelationId: null,
+                cancellationToken: CancellationToken.None
+            );
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.IsSuccess);
+            Assert.Equal("Failed", result.Status);
+            Assert.Contains("TRADE_REJECTED", result.ErrorMessage);
         }
 
         // --- STUB CLASSES ---
