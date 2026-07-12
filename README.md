@@ -15,13 +15,13 @@ C# Algorithmic Trading, MT5 Low-Latency Bot, Quantitative Trading Platform, WPF 
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | feat: implement Stage 2 MT5 MQL5 bridge handlers |
-| **Author** | google-labs-jules[bot] |
+| **Commit Message** | Merge pull request #11 from Opselon/feat/stage2-mt5-mql5-bridge-handlers-6383571393373438815 |
+| **Author** | Capsizer |
 | **Branch** | $env:GITHUB_REF_NAME |
 | **Run Number** | $env:GITHUB_RUN_NUMBER |
 | **Commit SHA** | $env:GITHUB_SHA |
 | **Generated At** | `
-2026-07-12 20:50:34 UTC
+2026-07-12 21:00:04 UTC
 ` |
 
 ---
@@ -315,7 +315,7 @@ No explicit C# errors.
 ```
 #### 🟡 Warnings
 ```text
-     6>/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Desktop/Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
+     7>/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Desktop/Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
          /home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Desktop/Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
 ```
 
