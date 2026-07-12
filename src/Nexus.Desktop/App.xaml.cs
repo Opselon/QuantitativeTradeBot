@@ -11,6 +11,9 @@ using Nexus.Infrastructure.Adapters.Mt5;
 using Nexus.Infrastructure.Mt5Bridge;
 using Nexus.Desktop.Services;
 using Nexus.Desktop.ViewModels;
+using Nexus.Core.Interfaces;
+using Nexus.Application.Analytics;
+using Nexus.Infrastructure.Native;
 
 namespace Nexus.Desktop
 {
@@ -58,6 +61,18 @@ namespace Nexus.Desktop
                     // Register MT5 Operator Facade & ViewModel
                     services.AddSingleton<IMt5OperatorService, Mt5OperatorService>();
                     services.AddSingleton<Mt5TradingViewModel>();
+
+                    // Register Intelligence & AI Stack
+                    services.AddSingleton<INativeAnalyticsEngine, NativeAnalyticsEngine>();
+                    services.AddSingleton<INativeCoreService, NativeCoreService>();
+                    services.AddSingleton<INeuralModelService, Nexus.AI.NeuralModelService>();
+                    services.AddSingleton<ICurrencyStrengthEngine, Nexus.Application.Intelligence.CurrencyStrengthEngine>();
+                    services.AddSingleton<IAccumulatorService, Nexus.Application.Intelligence.AccumulatorService>();
+                    services.AddSingleton<IDecisionEngine, Nexus.Application.Intelligence.DecisionEngine>();
+                    services.AddSingleton<IScenarioEvaluationEngine, Nexus.Application.Intelligence.ScenarioEvaluationEngine>();
+                    services.AddSingleton<IPatternMemory, Nexus.Application.Intelligence.PatternMemory>();
+                    services.AddSingleton<Nexus.Application.Intelligence.NativeMarketIntelligenceService>();
+                    services.AddSingleton<NexusIntelligenceViewModel>();
 
                     // Register ViewModels & Windows
                     services.AddSingleton<MainViewModel>();

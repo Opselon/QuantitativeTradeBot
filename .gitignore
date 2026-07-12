@@ -53,3 +53,6 @@ publish/
 local-test-publish/
 efbundle-temp/
 efbundle.exe
+
+# Native Build results
+**/build/

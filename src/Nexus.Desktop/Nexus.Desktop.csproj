@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Nexus.Infrastructure\Nexus.Infrastructure.csproj" />
     <ProjectReference Include="..\Nexus.AI\Nexus.AI.csproj" />
+    <ProjectReference Include="..\Nexus.Infrastructure.Native\Nexus.Infrastructure.Native.csproj" />
   </ItemGroup>
 
   <ItemGroup>

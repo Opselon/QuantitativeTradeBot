@@ -19,7 +19,13 @@ The Nexus Trading Engine (NTE) is an enterprise-grade AI quantitative algorithmi
    ┌───────────────────┐┌───────────────────┐┌───────────────────┐
    │    Nexus.Core     ││     Nexus.AI      ││Nexus.Infrastructure│
    │  (Domain Logic)   ││ (Neural Inference)││    (Adapters)     │
-   └───────────────────┘└───────────────────┘└───────────────────┘
+   └───────────────────┘└───────────────────┘└─────────┬─────────┘
+                                                       │
+                                                       ▼
+                                             ┌───────────────────┐
+                                             │ Nexus.Native.Core │
+                                             │ (C++20 High-Perf) │
+                                             └───────────────────┘
 ```
 
 ### 1. Presentation Layer (WPF UI)
@@ -36,3 +42,6 @@ Encapsulates high-performance runtime inference components powered by ONNX Runti
 
 ### 5. Infrastructure Layer (Nexus.Infrastructure)
 Implements all external adapters (PostgreSQL/SQLite EF Core configurations, MT5 socket client, DPAPI Secret Store, background ingestion workers, and native P/Invoke analytical binding resolvers).
+
+### 6. Native Core Layer (Nexus.Native.Core)
+Written in ultra-fast, zero-allocation C++20. Implements AVX2-aligned Stockfish-inspired incremental accumulator and market state engine. Connected to C# via a safe C-ABI boundary using fast, source-generated `LibraryImport`.
