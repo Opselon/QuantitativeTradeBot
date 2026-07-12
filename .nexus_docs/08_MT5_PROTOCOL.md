@@ -163,7 +163,9 @@ Response:
 
 ## 4. New Core Trading Protocols
 
-In Stage 1, these trading protocols have been fully implemented and tested on the C# .NET side (Application & Infrastructure layers). The MT5 terminal/MQL5 Expert Advisor (`NexusBridge.mq5`) side of these commands is **planned for Stage 2** and does not yet exist (currently, only `Ping` and `GetAccountSnapshot` commands are fully integrated end-to-end with active MQL5 execution handlers).
+These trading protocols are fully implemented and integrated across both C# (.NET) and MQL5 (MT5 Terminal) sides:
+- **C# Port Method**: `IMt5TradingService` sends JSON TCP requests via `TcpMt5BridgeClient`.
+- **MQL5 Terminal Side**: `NexusBridge.mq5` parses incoming commands, executes them with robustness safeguards (normalizations, filling mode fallbacks), and replies with structured responses.
 
 ### 4.1. `PlaceOrder` Command
 
@@ -341,9 +343,13 @@ Downloads the current list of active, open positions from the MT5 broker termina
 
 1. **JSON Property Extraction**: Features robust extraction helper methods (`GetJsonStringValue`, `GetJsonDoubleValue`, and `GetJsonIntValue`) capable of reading both quoted strings and unquoted numeric values inside payload trees.
 2. **Trade API Validation**: Assures essential properties (Symbol, Volume, and Type) are fully populated and selectable on-terminal.
-3. **MqlTradeRequest Execution**: Prepares trading requests matching MT5 execution filling policies (e.g. `ORDER_FILLING_FOK` / `TRADE_ACTION_DEAL`) and dispatches via native `OrderSend()`.
-4. **Structured Error Dispatching**: Maps terminal rejections to standardized bridge error codes (such as `TRADE_REJECTED`, `INVALID_PAYLOAD`, and `POSITION_NOT_FOUND`).
-5. **Escape Serialization Safety**: Safely escapes string outputs to prevent malformed or broken JSON transfers.
+3. **MqlTradeRequest Execution**: Prepares trading requests matching MT5 execution filling policies and dispatches via native `OrderSend()`.
+4. **Robustness and Normalizations (Stage 2 improvements)**:
+   - **Dynamic Volume step rounding**: Rounds requested trade lots to the broker's specific `SYMBOL_VOLUME_STEP` and forces them between `SYMBOL_VOLUME_MIN` and `SYMBOL_VOLUME_MAX`.
+   - **Dynamic Filling Mode Fallbacks**: Detects supported filling modes (`FOK` vs `IOC` vs `RETURN`) on the specific symbol dynamically to avoid filling-mode rejection codes (e.g., retcode 10030).
+   - **Precision Pricing Fallbacks**: Resolves latest symbol ask/bid prices via native high-precision `SymbolInfoTick` triggers, falling back cleanly to `SymbolInfoDouble` if necessary. Normalizes trade stop-loss and take-profit prices based on symbol's exact decimal digits (`SYMBOL_DIGITS`).
+5. **Structured Error Dispatching**: Maps terminal rejections to standardized bridge error codes (such as `TRADE_REJECTED`, `INVALID_PAYLOAD`, and `POSITION_NOT_FOUND`).
+6. **Escape Serialization Safety**: Safely escapes string outputs to prevent malformed or broken JSON transfers.
 
 ---
 

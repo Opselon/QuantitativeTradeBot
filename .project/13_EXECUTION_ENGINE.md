@@ -39,8 +39,6 @@ For the `RealMt5TradingService` implementation, trade execution and position syn
 6. **MQL5 Execution**: The `NexusBridge.mq5` EA receives the request, parses the JSON, calls `OrderSend()` (or queries active positions), and returns a serialized JSON response back over the open TCP channel.
 7. **Resolution**: The TCP receiver thread parses the response envelope, resolves the matching `TaskCompletionSource`, maps the `PlaceOrderResponse` / `ClosePositionResponse` / `BridgePositionDto` back into the application DTOs (`PlaceOrderResult` / `ClosePositionResult` / `OpenPositionDto`), and returns.
 
-*Note: In Stage 1, the real MT5/MQL5 execution side is NOT yet implemented; the client will receive a stubbed/simulated execution result when using the simulated mode.*
-
 ---
 
 ## 3. Key Design Decisions
@@ -59,5 +57,5 @@ The `RoutingMt5TradingService` acts as an active interceptor that queries config
 ## 4. Status and Roadmap
 
 - **Stage 1 (Done)**: C# contracts, app-facing `IMt5TradingService`, real/simulated implementations, routing by configuration, and unit tests.
-- **Stage 2 (Planned)**: Implementation of native MQL5 `NexusBridge.mq5` handlers to execute `PlaceOrder`, `ClosePosition`, and `GetOpenPositions` on the MT5 terminal.
+- **Stage 2 (Done)**: Implementation of native MQL5 `NexusBridge.mq5` handlers to execute `PlaceOrder`, `ClosePosition`, and `GetOpenPositions` on the MT5 terminal.
 - **Stage 3 (Planned)**: UI workspace panels in WPF targeting these interfaces to allow real-time position monitoring and trading.
