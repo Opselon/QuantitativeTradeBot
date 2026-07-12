@@ -41,6 +41,8 @@ namespace Nexus.Infrastructure.Adapters.Mt5
             var request = new PlaceOrderRequest(symbol, side, volume, stopLoss, takeProfit, comment, clientCorrelationId);
             var envelopeRequest = BridgeMessageEnvelope.CreateRequest(requestId, "PlaceOrder", request);
 
+            Console.WriteLine($"[RealMt5TradingService] Sending PlaceOrder command. Request ID: {requestId}, Symbol: {symbol}, Side: {side}, Volume: {volume}, CorrelationId: {clientCorrelationId}");
+
             try
             {
                 var responseEnvelope = await _bridgeClient.SendAsync(envelopeRequest, cancellationToken);
@@ -116,6 +118,8 @@ namespace Nexus.Infrastructure.Adapters.Mt5
             var request = new ClosePositionRequest(positionTicket, symbol, volume);
             var envelopeRequest = BridgeMessageEnvelope.CreateRequest(requestId, "ClosePosition", request);
 
+            Console.WriteLine($"[RealMt5TradingService] Sending ClosePosition command. Request ID: {requestId}, Ticket: {positionTicket}, Symbol: {symbol}, Volume: {volume}");
+
             try
             {
                 var responseEnvelope = await _bridgeClient.SendAsync(envelopeRequest, cancellationToken);
@@ -167,6 +171,8 @@ namespace Nexus.Infrastructure.Adapters.Mt5
         {
             string requestId = Guid.NewGuid().ToString();
             var envelopeRequest = BridgeMessageEnvelope.CreateRequest(requestId, "GetOpenPositions", null);
+
+            Console.WriteLine($"[RealMt5TradingService] Sending GetOpenPositions command. Request ID: {requestId}");
 
             try
             {

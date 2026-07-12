@@ -302,11 +302,26 @@ void HandlePlaceOrder(const string requestId, const string json)
    double stopLoss = GetJsonDoubleValue(json, "stopLoss");
    double takeProfit = GetJsonDoubleValue(json, "takeProfit");
    string comment = GetJsonStringValue(json, "comment");
+   string clientCorrelationId = GetJsonStringValue(json, "clientCorrelationId");
+
+   Print("NexusBridge: PlaceOrder - Request ID: ", requestId,
+         ", Symbol: ", symbol,
+         ", Side: ", side_str,
+         ", Volume: ", DoubleToString(volume, 2),
+         ", CorrelationId: ", clientCorrelationId);
 
    // Validations
    if(symbol == "")
    {
       string errorJson = "{\"code\":\"INVALID_PAYLOAD\",\"message\":\"Symbol parameter is required.\"}";
+      SendResponse(BuildEnvelopeJson("Response", requestId, "PlaceOrder", "{}", errorJson));
+      return;
+   }
+
+   // Verify symbol is selectable
+   if(!SymbolSelect(symbol, true))
+   {
+      string errorJson = "{\"code\":\"INVALID_PAYLOAD\",\"message\":\"Symbol " + EscapeJsonString(symbol) + " is not available or cannot be selected.\"}";
       SendResponse(BuildEnvelopeJson("Response", requestId, "PlaceOrder", "{}", errorJson));
       return;
    }
@@ -334,6 +349,53 @@ void HandlePlaceOrder(const string requestId, const string json)
       return;
    }
 
+   // Normalize Volume
+   double vol_step = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
+   if(vol_step > 0)
+   {
+      volume = NormalizeDouble(MathRound(volume / vol_step) * vol_step, 2);
+   }
+
+   double min_volume = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
+   double max_volume = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
+   if(volume < min_volume) volume = min_volume;
+   if(volume > max_volume) volume = max_volume;
+
+   // Get latest price
+   double price = 0.0;
+   MqlTick tick;
+   if(SymbolInfoTick(symbol, tick))
+   {
+      price = (order_type == ORDER_TYPE_BUY) ? tick.ask : tick.bid;
+   }
+   else
+   {
+      price = (order_type == ORDER_TYPE_BUY) ? SymbolInfoDouble(symbol, SYMBOL_ASK) : SymbolInfoDouble(symbol, SYMBOL_BID);
+   }
+
+   // Normalize StopLoss and TakeProfit
+   int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+   double sl_normalized = 0.0;
+   double tp_normalized = 0.0;
+   if(stopLoss > 0.0) sl_normalized = NormalizeDouble(stopLoss, digits);
+   if(takeProfit > 0.0) tp_normalized = NormalizeDouble(takeProfit, digits);
+
+   // Determine Filling Mode
+   uint filling_modes = (uint)SymbolInfoInteger(symbol, SYMBOL_FILLING_MODE);
+   ENUM_ORDER_TYPE_FILLING filling = ORDER_FILLING_FOK;
+   if((filling_modes & SYMBOL_FILLING_FOK) != 0)
+   {
+      filling = ORDER_FILLING_FOK;
+   }
+   else if((filling_modes & SYMBOL_FILLING_IOC) != 0)
+   {
+      filling = ORDER_FILLING_IOC;
+   }
+   else
+   {
+      filling = ORDER_FILLING_RETURN;
+   }
+
    // Prepare trade request
    MqlTradeRequest request;
    MqlTradeResult result;
@@ -344,12 +406,12 @@ void HandlePlaceOrder(const string requestId, const string json)
    request.symbol       = symbol;
    request.volume       = volume;
    request.type         = order_type;
-   request.price        = (order_type == ORDER_TYPE_BUY) ? SymbolInfoDouble(symbol, SYMBOL_ASK) : SymbolInfoDouble(symbol, SYMBOL_BID);
+   request.price        = price;
    request.deviation    = 10;
-   request.sl           = stopLoss;
-   request.tp           = takeProfit;
+   request.sl           = sl_normalized;
+   request.tp           = tp_normalized;
    request.comment      = comment;
-   request.type_filling = ORDER_FILLING_FOK;
+   request.type_filling = filling;
 
    // Send order
    bool ok = OrderSend(request, result);
@@ -360,6 +422,7 @@ void HandlePlaceOrder(const string requestId, const string json)
 
    if(ok && result.retcode == TRADE_RETCODE_DONE)
    {
+      Print("NexusBridge: PlaceOrder - Succeeded. Ticket: ", result.order, ", Retcode: ", result.retcode);
       payload = "{"
          "\"success\":true,"
          "\"ticket\":" + IntegerToString(result.order) + ","
@@ -371,6 +434,7 @@ void HandlePlaceOrder(const string requestId, const string json)
    else
    {
       string fail_msg = "OrderSend failed. Retcode: " + IntegerToString(result.retcode) + ", Error: " + IntegerToString(last_err);
+      Print("NexusBridge: PlaceOrder - Failed. ", fail_msg);
       payload = "{"
          "\"success\":false,"
          "\"ticket\":0,"
@@ -398,6 +462,11 @@ void HandleClosePosition(const string requestId, const string json)
    string symbol = GetJsonStringValue(json, "symbol");
    double volume = GetJsonDoubleValue(json, "volume");
 
+   Print("NexusBridge: ClosePosition - Request ID: ", requestId,
+         ", Ticket: ", ticket,
+         ", Symbol: ", symbol,
+         ", Volume: ", DoubleToString(volume, 2));
+
    if(ticket <= 0)
    {
       string errorJson = "{\"code\":\"INVALID_PAYLOAD\",\"message\":\"Ticket must be greater than zero.\"}";
@@ -421,6 +490,46 @@ void HandleClosePosition(const string requestId, const string json)
    {
       volume = pos_volume; // Default to full close
    }
+   else
+   {
+      // Normalize volume to step
+      double vol_step = SymbolInfoDouble(pos_symbol, SYMBOL_VOLUME_STEP);
+      if(vol_step > 0)
+      {
+         volume = NormalizeDouble(MathRound(volume / vol_step) * vol_step, 2);
+      }
+   }
+
+   // Determine Filling Mode
+   uint filling_modes = (uint)SymbolInfoInteger(pos_symbol, SYMBOL_FILLING_MODE);
+   ENUM_ORDER_TYPE_FILLING filling = ORDER_FILLING_FOK;
+   if((filling_modes & SYMBOL_FILLING_FOK) != 0)
+   {
+      filling = ORDER_FILLING_FOK;
+   }
+   else if((filling_modes & SYMBOL_FILLING_IOC) != 0)
+   {
+      filling = ORDER_FILLING_IOC;
+   }
+   else
+   {
+      filling = ORDER_FILLING_RETURN;
+   }
+
+   // Opposite order type for closing
+   ENUM_ORDER_TYPE order_type = (pos_type == POSITION_TYPE_BUY) ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
+
+   // Get latest price for closing trade
+   double price = 0.0;
+   MqlTick tick_data;
+   if(SymbolInfoTick(pos_symbol, tick_data))
+   {
+      price = (order_type == ORDER_TYPE_BUY) ? tick_data.ask : tick_data.bid;
+   }
+   else
+   {
+      price = (order_type == ORDER_TYPE_BUY) ? SymbolInfoDouble(pos_symbol, SYMBOL_ASK) : SymbolInfoDouble(pos_symbol, SYMBOL_BID);
+   }
 
    // Prepare close deal order
    MqlTradeRequest request;
@@ -432,10 +541,10 @@ void HandleClosePosition(const string requestId, const string json)
    request.position     = ticket;
    request.symbol       = pos_symbol;
    request.volume       = volume;
-   request.type         = (pos_type == POSITION_TYPE_BUY) ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
-   request.price        = (request.type == ORDER_TYPE_BUY) ? SymbolInfoDouble(pos_symbol, SYMBOL_ASK) : SymbolInfoDouble(pos_symbol, SYMBOL_BID);
+   request.type         = order_type;
+   request.price        = price;
    request.deviation    = 10;
-   request.type_filling = ORDER_FILLING_FOK;
+   request.type_filling = filling;
 
    bool ok = OrderSend(request, result);
    int last_err = GetLastError();
@@ -445,6 +554,7 @@ void HandleClosePosition(const string requestId, const string json)
 
    if(ok && result.retcode == TRADE_RETCODE_DONE)
    {
+      Print("NexusBridge: ClosePosition - Succeeded. Ticket: ", ticket, ", Retcode: ", result.retcode);
       payload = "{"
          "\"success\":true,"
          "\"ticket\":" + IntegerToString(ticket) + ","
@@ -454,6 +564,7 @@ void HandleClosePosition(const string requestId, const string json)
    else
    {
       string fail_msg = "Close failed. Retcode: " + IntegerToString(result.retcode) + ", Error: " + IntegerToString(last_err);
+      Print("NexusBridge: ClosePosition - Failed. ", fail_msg);
       payload = "{"
          "\"success\":false,"
          "\"ticket\":" + IntegerToString(ticket) + ","
@@ -477,6 +588,8 @@ void HandleGetOpenPositions(const string requestId)
 
    string positionsJson = "";
    int total = PositionsTotal();
+
+   Print("NexusBridge: GetOpenPositions - Request ID: ", requestId, ", Total positions found: ", total);
 
    for(int i = 0; i < total; i++)
    {

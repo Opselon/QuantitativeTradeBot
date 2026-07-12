@@ -30,7 +30,7 @@
 
 - [/] **Phase 3: MetaTrader 5 Bridge & IPC**
   - [x] **Stage 1 (Done - 2025-07-12)**: C# contracts and bridge command models extended, application-facing decoupled IMt5TradingService port implemented, routing by Mt5Mode, and comprehensive unit tests.
-  - [ ] **Stage 2 (Planned)**: Native MQL5 NexusBridge.mq5 Expert Advisor handlers for PlaceOrder, ClosePosition, and GetOpenPositions over JSON-over-TCP bridge.
+  - [x] **Stage 2 (Done - 2025-07-13)**: Native MQL5 `NexusBridge.mq5` Expert Advisor handlers for `PlaceOrder`, `ClosePosition`, and `GetOpenPositions` over JSON-over-TCP bridge, fully supporting dynamic volume/price normalizations, filling mode checking, and error serializations.
   - [ ] **Stage 3 (Planned)**: WPF UI integration & real-time trade dashboard.
 
 - [ ] **Phase 4: WPF UI Dashboard**

@@ -1,6 +1,19 @@
 # 26_CHANGELOG – Nexus Trading Engine Change Log
 
-## [Unreleased] - Stage 1 (C# Contracts & MT5 Bridge Commands)
+## [Unreleased] - Stage 2 (MT5 MQL5 Bridge Handlers & Real Execution)
+
+### Added
+- **MQL5 EA Bridge Handlers**: Implemented command dispatchers inside `NexusBridge.mq5` for `PlaceOrder`, `ClosePosition`, and `GetOpenPositions` commands.
+- **Robustness Normalizations**:
+  - Added dynamic volume rounding to `SYMBOL_VOLUME_STEP` bounded by min/max allowable lot size.
+  - Added dynamic filling mode detection (`FOK`, `IOC`, `RETURN`) based on Symbol properties.
+  - Added Symbol existence validation via `SymbolSelect()`.
+  - Added precision price extraction using native high-precision `SymbolInfoTick` with fallback to `SymbolInfoDouble`, normalizing stops/take-profits via symbol's `SYMBOL_DIGITS`.
+- **C# Bridge Diagnostics**: Added metadata console logs inside `RealMt5TradingService.cs` when commands are dispatched over TCP.
+
+---
+
+## [Completed] - Stage 1 (C# Contracts & MT5 Bridge Commands) - 2025-07-12
 
 ### Added
 - **Application Port**: Created `IMt5TradingService` interface defining `PlaceMarketOrderAsync`, `ClosePositionAsync`, and `GetOpenPositionsAsync` as a clean, decoupled application port.
