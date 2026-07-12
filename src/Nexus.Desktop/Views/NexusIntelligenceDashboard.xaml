@@ -1,0 +1,334 @@
+<UserControl x:Class="Nexus.Desktop.Views.NexusIntelligenceDashboard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:Nexus.Desktop.Views"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="450"
+             Background="#1E1E1E">
+
+    <UserControl.Resources>
+        <!-- Diagnostic colors -->
+        <local:EvaluationBarPositionConverter x:Key="EvaluationBarPositionConverter"/>
+
+        <SolidColorBrush x:Key="AccentColor" Color="#00ADB5"/>
+        <SolidColorBrush x:Key="DarkBg" Color="#121212"/>
+        <SolidColorBrush x:Key="PanelBg" Color="#222831"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#393E46"/>
+        <SolidColorBrush x:Key="TextLight" Color="#EEEEEE"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#888888"/>
+
+        <Style x:Key="PanelHeader" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#00ADB5"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <Style x:Key="MetricLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#888888"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="MetricValue" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="10">
+
+            <!-- 1. NEURAL EVALUATION PANEL (MOST CRITICAL VISUAL) -->
+            <Border Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="NEURAL EVALUATION DECISION ENGINE" Style="{StaticResource PanelHeader}"/>
+
+                    <!-- Confidence Output Metrics -->
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                            <TextBlock Text="BUY CONF" Style="{StaticResource MetricLabel}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding BuyConfidence, StringFormat={}{0:P0}}" Foreground="#2E7D32" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                            <TextBlock Text="WAIT CONF" Style="{StaticResource MetricLabel}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding WaitConfidence, StringFormat={}{0:P0}}" Foreground="#E2C044" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                            <TextBlock Text="SELL CONF" Style="{StaticResource MetricLabel}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding SellConfidence, StringFormat={}{0:P0}}" Foreground="#C62828" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- NEXUS EVALUATION BAR -->
+                    <TextBlock Text="NEXUS REAL-TIME DECISION BAR" Style="{StaticResource MetricLabel}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+
+                    <Border Height="24" CornerRadius="3" Margin="0,0,0,6">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#C62828" Offset="0.0"/> <!-- SELL -->
+                                <GradientStop Color="#393E46" Offset="0.5"/> <!-- WAIT -->
+                                <GradientStop Color="#2E7D32" Offset="1.0"/> <!-- BUY -->
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Scale indicators -->
+                            <TextBlock Grid.Column="0" Text="SELL" Foreground="White" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            <TextBlock Grid.Column="1" Text="WAIT" Foreground="#BBBBBB" FontSize="9" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="BUY" Foreground="White" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0"/>
+
+                            <!-- Needle pointer / Indicator block bound dynamically -->
+                            <Canvas Grid.ColumnSpan="3" x:Name="TrackCanvas">
+                                <Border Width="6" Height="26" Background="#00ADB5" BorderBrush="White" BorderThickness="1.5" CornerRadius="1" Canvas.Top="-1">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Canvas.Left">
+                                                <Setter.Value>
+                                                    <MultiBinding>
+                                                        <MultiBinding.Converter>
+                                                            <local:EvaluationBarPositionConverter/>
+                                                        </MultiBinding.Converter>
+                                                        <Binding Path="BuyConfidence"/>
+                                                        <Binding Path="SellConfidence"/>
+                                                        <Binding ElementName="TrackCanvas" Path="ActualWidth"/>
+                                                    </MultiBinding>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                            </Canvas>
+                        </Grid>
+                    </Border>
+
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Model Status:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding ModelStatus}" Foreground="#4CAF50" FontWeight="Bold" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Evaluation Score:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding EvaluationScore, StringFormat={}{0:F2}}" Style="{StaticResource MetricValue}" Foreground="#00ADB5" FontWeight="Bold"/>
+                    </Grid>
+
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Inference Time:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding LastInferenceTime}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- 2. NATIVE CORE MONITOR PANEL -->
+            <Border Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="NATIVE HIGH-PERFORMANCE INTEL CORE" Style="{StaticResource PanelHeader}"/>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Native Core Status:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding NativeCoreStatus}" Style="{StaticResource MetricValue}" Foreground="#4CAF50" FontWeight="Bold"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Library Loaded:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding LibraryLoaded}" Style="{StaticResource MetricValue}" TextWrapping="Wrap"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="ABI Bridge Version:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding AbiVersion}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Host Platform:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Platform}" Style="{StaticResource MetricValue}" TextWrapping="Wrap"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="CPU Architecture:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding CpuArchitecture}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Active Native Threads:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding ActiveNativeThreads}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="RAM Allocation:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding MemoryUsage}" Style="{StaticResource MetricValue}" Foreground="#00ADB5" FontWeight="Bold"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- 3. REAL-TIME MARKET INTELLIGENCE DASHBOARD -->
+            <Border Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="MARKET INTELLIGENCE STATE METRICS" Style="{StaticResource PanelHeader}"/>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Market State:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding CurrentMarketState}" Style="{StaticResource MetricValue}" Foreground="#00ADB5" FontWeight="Bold"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Price Structure:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding PriceStructure, StringFormat={}{0:F2}}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Trend State:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding TrendState, StringFormat={}{0:F2}}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Momentum Vector:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Momentum, StringFormat={}{0:F2}}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Volatility Index:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Volatility, StringFormat={}{0:F2}}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Volume Pressure:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding VolumePressure, StringFormat={}{0:F2}}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Symmetric Liquidity:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Liquidity, StringFormat={}{0:F2}}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="USD Strength Score:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding UsdStrength, StringFormat={}{0:F1} / 100}" Style="{StaticResource MetricValue}" Foreground="#E2C044" FontWeight="Bold"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- 4. AI MODEL MONITOR -->
+            <Border Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="AI DEPLOYED NEURAL MODEL MONITOR" Style="{StaticResource PanelHeader}"/>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Model File Name:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding CurrentModelName}" Style="{StaticResource MetricValue}" TextWrapping="Wrap"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Model Version:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding ModelVersion}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Load Status:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding ModelLoadStatus}" Style="{StaticResource MetricValue}" Foreground="#4CAF50"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Inference Latency:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding InferenceLatency}" Style="{StaticResource MetricValue}" Foreground="#00ADB5" FontWeight="Bold"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Last Run Timestamp:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding LastExecutionTimestamp}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- 5. PERFORMANCE METRIC MONITOR -->
+            <Border Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="LATENCY &amp; METADATA ENGINE METRICS" Style="{StaticResource PanelHeader}"/>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Native Compute Latency:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding NativeExecutionLatency}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="CLR Native Interop:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding InteropLatency}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Feature Generation Time:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding FeatureCalculationTime}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Grid Margin="0,2,0,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Neural Inference:" Style="{StaticResource MetricLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding NeuralInferenceTime}" Style="{StaticResource MetricValue}"/>
+                    </Grid>
+
+                    <Border BorderThickness="0,1,0,0" BorderBrush="{StaticResource BorderColor}" Margin="0,6,0,6"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Total Pipeline Duration:" Style="{StaticResource MetricLabel}" FontWeight="Bold"/>
+                        <TextBlock Grid.Column="1" Text="{Binding TotalDecisionPipelineTime}" Style="{StaticResource MetricValue}" Foreground="#00ADB5" FontWeight="Bold"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
