@@ -77,9 +77,40 @@ The following procedure enables developers and QA engineers to validate end-to-e
 
 ---
 
-## Next Steps: Stage 3 – WPF UI Integration
+## Stage 3 – WPF UI Integration & Manual Trading Operator Panel (Completed on 2025-07-14)
 
-In Stage 3, the focus will shift to user-interface elements:
-- Build a dedicated MT5 Trading & Terminal Control Dashboard.
-- Support real-time visualization of active terminal positions.
-- Provide manual order entry / position closing UI capabilities leveraging `IMt5TradingService`.
+We have successfully completed Stage 3 of the WPF manual trading operator dashboard:
+
+### What was Done
+1. **Desktop Models**: Added clean, standard, and bindable desktop models under `src/Nexus.Desktop/Models/`:
+   - `DesktopOrderSide` (enum: Buy/Sell)
+   - `DesktopPositionDto` (mapped open position parameters including Ticket, Side, Volume, StopLoss, TakeProfit, Profit, Swap, Commission, etc.)
+   - `DesktopTradeResult` (success flag, ticket ID, localized/normalized message strings)
+2. **Desktop Operator Service Facade**: Created `IMt5OperatorService` and its implementation `Mt5OperatorService` under `src/Nexus.Desktop/Services/`:
+   - Acts as a high-level UI facade wrapping `IMt5TradingService`.
+   - Normalizes and maps domain models to user-friendly UI DTOs.
+   - Translates raw bridge/socket exceptions (e.g., `TimeoutException` mapped to "Bridge timeout", `SocketException` to "Connection lost", `OperationCanceledException` to "Operation cancelled").
+3. **Operator ViewModels**: Designed professional MVVM logic:
+   - `DesktopPositionViewModel`: Bindable wrapper for active positions, exposing computed helper values like position `Duration` and `Status` dynamically.
+   - `Mt5TradingViewModel`: Orchestrates manual actions (Buy, Sell, Close, Refresh, Clear Error), manages UI/busy/executing states, enforces input validation rules (e.g., volume min 0.01 / max 100), executes structured logging via `IDiagnosticService`, and runs a safe, cancellable, thread-safe background loop for automated 5-second position updates.
+4. **WPF UI Operator Panel View**: Designed and built the visual control dashboard:
+   - `Mt5TradingPanel.xaml` and `Mt5TradingPanel.xaml.cs` (UserControl).
+   - Designed a beautiful, modern Dark-themed layout consisting of:
+     - **Top**: Connection Status panel displaying current mode (Simulation or Real MT5), connection state, bridge status, last response time, and last successful refresh timestamp.
+     - **Middle**: Interactive Trade Ticket panel with Symbol/Volume textboxes, validation error labels, and large BUY MARKET / SELL MARKET buttons.
+     - **Bottom**: High-speed, responsive DataGrid displaying active terminal positions with instant contextual actions.
+5. **MainWindow & DI Wiring**:
+   - Registered `IMt5OperatorService` / `Mt5OperatorService` and `Mt5TradingViewModel` inside host services collection in `App.xaml.cs`.
+   - Exposed `Mt5TradingViewModel` as a nested property inside `MainViewModel.cs` and bound it directly to the dashboard area of `MainWindow.xaml` once onboarding is completed.
+6. **Robust Unit Tests**:
+   - Created comprehensive unit tests in `tests/Nexus.Tests.Unit/Desktop/Mt5TradingViewModelTests.cs` validating refresh loops, trade execution, validation limits, busy states, cancellation handlers, and logging.
+   - Designed the test suite to build conditionally depending on target OS for compatibility, guaranteeing perfect execution under both Windows and Linux headless environments.
+
+---
+
+## Next Steps: Stage 4 – Real-Time Push Streaming & DLL Optimization
+
+In Stage 4, the focus will shift to:
+- Event-based position streaming from the Expert Advisor using native `OnTradeTransaction` push events instead of polling.
+- Deep integration of local pre-trade risk limitations.
+- DLL and memory optimization on technical technical indicators.
