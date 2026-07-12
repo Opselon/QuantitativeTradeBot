@@ -42,7 +42,7 @@ env:
   INFRASTRUCTURE_PROJECT: src/Nexus.Infrastructure/Nexus.Infrastructure.csproj
 
 # =====================================================================
-# JOB 1: PREPARATION & ARCHITECTURE SCAN (Runs Fast, Passes Data Forward)
+# JOB 1: PREPARATION & ARCHITECTURE SCAN (With Git Commit Summary)
 # =====================================================================
 jobs:
   prep-and-docs:
@@ -51,6 +51,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1 # Required to fetch the latest commit message
 
       - name: Generate Base AI Document with Gorgeous Unicode Tree
         shell: pwsh
@@ -59,13 +61,13 @@ jobs:
           $RootPath = (Get-Location).Path
           $Lines = @()
 
-          # 1. Base Markdown Header (Using safe single quotes to completely disable PowerShell backtick escaping)
+          # Fetch latest commit details dynamically
+          $CommitMsg = (git log -1 --pretty=%B).Trim()
+          $CommitSummary = ($CommitMsg -split "`n")[0]
+          $CommitAuthor = (git log -1 --pretty=%an).Trim()
+
+          # 1. Base Markdown Header
           $HeaderArray = @(
-              '# 00 – Nexus Project Structure & Deep Diagnostics',
-              '',
-              '> 🤖 **AI Agent Info:** This file is assembled dynamically by the Enterprise Pipeline.',
-              '> Use this as your primary map to understand the architecture, full source-code file index, and latest build status.',
-              '',
               '## 🏛️ Nexus Trading Engine (NTE) Architecture Summary',
               '**Style:** Decoupled Hexagonal / Clean Architecture',
               '- **Nexus.Core:** Zero external dependencies. Uses *Zero-Allocation Tick Path*. Contains value objects (`Symbol`, `Money`, `LotSize`) and core interfaces (`IStrategy`, `IRiskManager`).',
@@ -74,10 +76,20 @@ jobs:
               '- **Native C++:** High-performance quantitative engine (EMA calculations) via P/Invoke to bypass JIT.',
               '- **Nexus.WpfUi (WPF Layer):** Rich Desktop UI designed in WPF on .NET 10.',
               '',
+              '### 📊 Latest Build & Commit Metadata',
+              '| Field | Value |',
+              '| --- | --- |',
+              "| **Commit Message** | $CommitSummary |",
+              "| **Author** | $CommitAuthor |",
+              "| **Branch** | `$env:GITHUB_REF_NAME` |",
+              "| **Run Number** | `$env:GITHUB_RUN_NUMBER` |",
+              "| **Commit SHA** | `$env:GITHUB_SHA` |",
+              '| **Generated At** | `' + "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') UTC" + '` |',
+              '',
               '---',
-              '## 📂 Interactive Project Structure Tree',
-              '<details open>',
-              '<summary><b>Click to collapse/expand Project Tree (Filtered with WPF, .NET & C++ files)</b></summary>',
+              '### 📂 Interactive Project Structure Tree',
+              '<details>',
+              '<summary><b>Click to expand Project Tree (Filtered with WPF, .NET & C++ files)</b></summary>',
               '',
               '```text'
           )
@@ -85,7 +97,7 @@ jobs:
           # Merge the header array into $Lines
           $Lines += $HeaderArray
 
-          # Global exclusions (Skipping completely to avoid littering the tree)
+          # Global exclusions
           $GlobalExcludes = @(".git", "bin", "obj", ".vs", "TestResults", "publish", "artifacts", "node_modules", "packages", "tmp", "log")
           
           # WPF, C# and C++ Code Inclusions
@@ -134,13 +146,12 @@ jobs:
           $TreeOutput = Get-ProjectTree (Get-Location).Path
           $Lines += $TreeOutput
 
-          # Enforced Single Quotes to fully bypass PowerShell parsing and escape sequence issues
           $Lines += '```'
           $Lines += '</details>'
           $Lines += ''
 
           # 3. Append Calculated Source File Counts
-          $Lines += "## 📈 Source File Counts"
+          $Lines += "### 📈 Source File Counts"
           $Lines += ""
           $CS_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -Filter *.cs -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "bin|obj|packages" }).Count
           $XAML_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -Filter *.xaml -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "bin|obj|packages" }).Count
@@ -203,10 +214,10 @@ jobs:
         shell: bash
         run: |
           FILE="ci_logs_summary.md"
-          echo "## 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)" > "$FILE"
+          echo "### 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)" > "$FILE"
           echo "- **Job Status:** ${{ job.status }}" >> "$FILE"
           
-          echo "### 🔴 Errors" >> "$FILE"
+          echo "#### 🔴 Errors" >> "$FILE"
           echo '```text' >> "$FILE"
           if [ -f ci_build.log ]; then
             grep -E "error CS|fatal error" ci_build.log | tail -n 20 >> "$FILE" || echo "No explicit C# errors." >> "$FILE"
@@ -215,7 +226,7 @@ jobs:
           fi
           echo '```' >> "$FILE"
 
-          echo "### 🟡 Warnings" >> "$FILE"
+          echo "#### 🟡 Warnings" >> "$FILE"
           echo '```text' >> "$FILE"
           if [ -f ci_build.log ]; then
             grep -E "warning CS" ci_build.log | tail -n 20 >> "$FILE" || echo "No explicit C# warnings." >> "$FILE"
@@ -256,6 +267,7 @@ jobs:
         id: version
         run: |
           $version = if ($env:GITHUB_EVENT_NAME -eq "workflow_dispatch") { "${{ inputs.version }}".Trim() } else { "0.64.$env:GITHUB_RUN_NUMBER" }
+          $numericVersion = ($version -split '-')[0]
           "version=$version" >> $env:GITHUB_OUTPUT
           "tag=v$version" >> $env:GITHUB_OUTPUT
 
@@ -275,9 +287,9 @@ jobs:
           $ErrorActionPreference = "Continue"
           $file = "win_logs_summary.md"
           
-          "## 🚀 Pipeline Diagnostics (Release Stage - Windows)`n- **Job Status:** ${{ job.status }}`n" | Set-Content $file
+          "### 🚀 Pipeline Diagnostics (Release Stage - Windows)`n- **Job Status:** ${{ job.status }}`n" | Set-Content $file
           
-          "### 🔴 Errors" | Add-Content $file
+          "#### 🔴 Errors" | Add-Content $file
           '```text' | Add-Content $file
           if (Test-Path win_build.log) {
             $errs = Select-String -Path win_build.log -Pattern "error CS" -SimpleMatch | Select-Object -Last 20
@@ -285,7 +297,7 @@ jobs:
           } else { Add-Content $file "Build log not found." }
           '```' | Add-Content $file
 
-          "### 🟡 Warnings" | Add-Content $file
+          "#### 🟡 Warnings" | Add-Content $file
           '```text' | Add-Content $file
           if (Test-Path win_build.log) {
             $warns = Select-String -Path win_build.log -Pattern "warning CS" -SimpleMatch | Select-Object -Last 20
@@ -336,10 +348,10 @@ jobs:
           files: artifacts/release/*
 
 # =====================================================================
-# JOB 4: FINALIZE AI DOCUMENT & PUSH (Only runs once at the very end)
+# JOB 4: MERGE DIAGNOSTICS & UPDATE ROOT README.MD (Zero Clutter)
 # =====================================================================
   finalize-ai-doc:
-    name: 📝 Merge Docs & Commit
+    name: 📝 Update README & Commit
     needs: [prep-and-docs, ci-ubuntu, release-windows]
     if: always()
     runs-on: ubuntu-latest
@@ -370,29 +382,59 @@ jobs:
           name: ai-doc-win
           path: docs_merge/
 
-      - name: Assemble Final Document
+      - name: Assemble Diagnostics Section and Inject into README
         shell: bash
         run: |
-          FINAL_FILE="00_PROJECT_STRUCTURE.md"
-          rm -f "$FINAL_FILE"
+          set -euo pipefail
           
+          # 1. Ensure README.md exists
+          if [ ! -f README.md ]; then
+            echo "# Nexus Trading Engine" > README.md
+          fi
+
+          # 2. Inject Placeholder Markers if missing from README.md
+          if ! grep -q "<!-- NEXUS_AUTO_DOC_START -->" README.md; then
+            echo -e "\n\n<!-- NEXUS_AUTO_DOC_START -->\n<!-- NEXUS_AUTO_DOC_END -->" >> README.md
+          fi
+
+          # 3. Assemble the new dynamic content block
+          TEMP_CONTENT="temp_new_section.md"
+          rm -f "$TEMP_CONTENT"
+
           if [ -f "docs_merge/base_structure.md" ]; then
-            cat docs_merge/base_structure.md >> "$FINAL_FILE"
-          else
-            echo "# 00 – Nexus Project Structure (Base generation failed)" > "$FINAL_FILE"
+            cat docs_merge/base_structure.md >> "$TEMP_CONTENT"
           fi
           
           if [ -f "docs_merge/ci_logs_summary.md" ]; then
-            echo "" >> "$FINAL_FILE"
-            cat docs_merge/ci_logs_summary.md >> "$FINAL_FILE"
+            echo "" >> "$TEMP_CONTENT"
+            cat docs_merge/ci_logs_summary.md >> "$TEMP_CONTENT"
           fi
           
           if [ -f "docs_merge/win_logs_summary.md" ]; then
-            echo "" >> "$FINAL_FILE"
-            cat docs_merge/win_logs_summary.md >> "$FINAL_FILE"
+            echo "" >> "$TEMP_CONTENT"
+            cat docs_merge/win_logs_summary.md >> "$TEMP_CONTENT"
           fi
 
-      - name: Commit and Push
+          # 4. Safely split original README around placeholders and inject new content
+          sed -n '1,/<!-- NEXUS_AUTO_DOC_START -->/p' README.md > temp_before.md
+          sed -n '/<!-- NEXUS_AUTO_DOC_END -->/,$p' README.md > temp_after.md
+
+          # Reconstruct README.md
+          cat temp_before.md > README.md
+          echo "" >> README.md
+          cat "$TEMP_CONTENT" >> README.md
+          echo "" >> README.md
+          cat temp_after.md >> README.md
+
+          # Clean up old standalone 00_PROJECT_STRUCTURE.md file if it exists to avoid clutter
+          if [ -f 00_PROJECT_STRUCTURE.md ]; then
+            git rm -f 00_PROJECT_STRUCTURE.md || rm -f 00_PROJECT_STRUCTURE.md
+          fi
+
+          # Clean temporary files
+          rm -f temp_before.md temp_after.md "$TEMP_CONTENT"
+
+      - name: Commit and Push to Repository
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
@@ -402,12 +444,16 @@ jobs:
 
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add 00_PROJECT_STRUCTURE.md
+          
+          git add README.md
+          
+          # Stage deletion of 00_PROJECT_STRUCTURE.md if it was removed
+          git rm --cached 00_PROJECT_STRUCTURE.md 2>/dev/null || true
           
           if git diff --staged --quiet; then
-            echo "No changes to AI Doc. Skip commit."
+            echo "No changes to README.md. Skip commit."
           else
-            echo "Changes detected in AI Doc. Committing to repo..."
-            git commit -m "docs(ai): update project structure & logs [skip ci]"
+            echo "Changes detected in README.md. Committing to repo..."
+            git commit -m "docs(ai): auto-sync architecture & logs into README [skip ci]"
             git push origin HEAD:${{ github.ref_name }}
           fi
