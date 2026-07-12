@@ -38,6 +38,8 @@ namespace Nexus.Desktop.ViewModels
         private readonly IMt5TradeService _tradeService;
         private IMt5Session? _session;
 
+        public Mt5TradingViewModel Mt5Trading { get; }
+
         private readonly SelectPersistenceProviderCommand _selectProviderCmd;
         private readonly InitializeDatabaseCommand _initDbCmd;
         private readonly MigrateDatabaseCommand _migrateDbCmd;
@@ -145,13 +147,15 @@ namespace Nexus.Desktop.ViewModels
             IMt5ConnectionService connectionService,
             IMt5AccountService accountService,
             IMt5TradeService tradeService,
-            IDiagnosticService diagnosticService)
+            IDiagnosticService diagnosticService,
+            Mt5TradingViewModel mt5Trading)
         {
             _configService = configService;
             _secretStore = secretStore;
             _diagnosticService = diagnosticService;
             _connectionService = connectionService;
             _tradeService = tradeService;
+            Mt5Trading = mt5Trading ?? throw new ArgumentNullException(nameof(mt5Trading));
 
             // Instantiating application-layer commands
             _selectProviderCmd = new SelectPersistenceProviderCommand(_configService);
