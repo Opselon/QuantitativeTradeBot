@@ -47,189 +47,108 @@ env:
 jobs:
   prep-and-docs:
     name: 🔍 Scan & Generate Architecture Base
-    runs-on: windows-latest # Windows ensures your exact regex-based script runs perfectly
+    runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Generate Base AI Document with Pro Tree Indexer
+      - name: Generate Base AI Document with Gorgeous Unicode Tree
         shell: pwsh
         run: |
           $OutputFile = "base_structure.md"
-          $RootPath = (Get-Location).Path
+          $Lines = @()
 
-          # Global exclusions (Your custom configuration)
-          $ExcludeGlobalPathsRaw = @(
-              ".git\objects",
-              ".git\logs",
-              ".git\refs",
-              ".vs\.tmp",
-              ".vs\cache",
-              "TestResults",
-              "publish",
-              "tmp",
-              "log",
-              ".DS_Store",
-              "thumbs.db",
-              "artifacts"
-          )
+          # 1. Base Markdown Header & Architecture Context
+          $Lines += "# 00 – Nexus Project Structure & Deep Diagnostics"
+          $Lines += ""
+          $Lines += "> 🤖 **AI Agent Info:** This file is assembled dynamically by the Enterprise Pipeline."
+          $Lines += "> Use this as your primary map to understand the architecture, full source-code file index, and latest build status."
+          $Lines += ""
+          $Lines += "## 🏛️ Nexus Trading Engine (NTE) Architecture Summary"
+          $Lines += "**Style:** Decoupled Hexagonal / Clean Architecture"
+          $Lines += "- **Nexus.Core:** Zero external dependencies. Uses *Zero-Allocation Tick Path*. Contains value objects (\`Symbol\`, \`Money\`, \`LotSize\`) and core interfaces (\`IStrategy\`, \`IRiskManager\`)."
+          $Lines += "- **Nexus.Application:** Implements execution logic, \`IExecutionGateway\`, \`ExecutionCoordinator\`, and the \`IMt5TradingService\` with Simulated vs Real Routing adapters."
+          $Lines += "- **Nexus.Infrastructure:** Adapters (EF Core, Background Workers, Time-Series tick copy)."
+          $Lines += "- **Native C++:** High-performance quantitative engine (EMA calculations) via P/Invoke to bypass JIT."
+          $Lines += "- **Nexus.WpfUi (WPF Layer):** Rich Desktop UI designed in WPF on .NET 10."
+          $Lines += ""
+          $Lines += "---"
+          $Lines += "## 📂 Interactive Project Structure Tree"
+          $Lines += "<details open>"
+          $Lines += "<summary><b>Click to collapse/expand Project Tree (Filtered with WPF, .NET & C++ files)</b></summary>"
+          $Lines += ""
+          $Lines += "```text"
 
-          # Do Not Recurse Folder Patterns (Your custom configuration)
-          $DoNotRecurseFolderPatternsRaw = @(
-              "bin\Debug\net",
-              "bin\Release\net",
-              "obj\Debug\net",
-              "obj\Release\net",
-              "node_modules",
-              "target",
-              "build",
-              ".gradle",
-              "vendor",
-              "migrations",
-              "env",
-              "venv",
-              ".venv"
-          )
-
-          # Specific file extensions (Including critical WPF / C++ / Config files)
-          $IncludeFileExtensions = @(
-              ".cs",
-              ".xaml",
-              ".json",
-              ".csproj",
-              ".sln",
-              ".yml",
-              ".yaml",
-              ".md",
-              ".config",
-              ".xml",
-              ".ps1",
-              ".sh",
-              ".cpp",
-              ".h",
-              ".hpp"
-          )
-
-          # 1. Print Pro Header & Architecture Context
-          $HeaderContent = @"
-          # 00 – Nexus Project Structure & Deep Diagnostics
-
-          > 🤖 **AI Agent Info:** This file is assembled dynamically by the Enterprise Pipeline.
-          > Use this as your primary map to understand the architecture, full source-code file index, and latest build status.
-
-          ## 🏛️ Nexus Trading Engine (NTE) Architecture Summary
-          **Style:** Decoupled Hexagonal / Clean Architecture
-          - **Nexus.Core:** Zero external dependencies. Uses *Zero-Allocation Tick Path*. Contains value objects (\`Symbol\`, \`Money\`, \`LotSize\`) and core interfaces (\`IStrategy\`, \`IRiskManager\`).
-          - **Nexus.Application:** Implements execution logic, \`IExecutionGateway\`, \`ExecutionCoordinator\`, and the \`IMt5TradingService\` with Simulated vs Real Routing adapters.
-          - **Nexus.Infrastructure:** Adapters (EF Core, Background Workers, Time-Series tick copy).
-          - **Native C++:** High-performance quantitative engine (EMA calculations) via P/Invoke to bypass JIT.
-          - **Nexus.WpfUi (WPF Layer):** Rich Desktop UI designed in WPF on .NET 10.
+          # Global exclusions (Skipping completely to avoid littering the tree)
+          $GlobalExcludes = @(".git", "bin", "obj", ".vs", "TestResults", "publish", "artifacts", "node_modules", "packages", "tmp", "log")
           
-          ---
-          ## 📂 Interactive Project Structure Tree
-          <details open>
-          <summary><b>Click to collapse/expand Project Tree (Filtered with WPF, .NET & C++ files)</b></summary>
+          # WPF, C# and C++ Code Inclusions
+          $IncludeFileExtensions = @(".cs", ".xaml", ".json", ".csproj", ".sln", ".yml", ".yaml", ".md", ".config", ".xml", ".ps1", ".sh", ".cpp", ".h", ".hpp")
 
-          ```text
-          "@
-
-          $HeaderContent | Set-Content $OutputFile -Encoding utf8
-
-          # 2. Recursive Tree Generation Logic (Your exact hierarchical algorithm)
-          try {
-              $absoluteRootPath = (Get-Item -LiteralPath $RootPath).FullName
-
-              # Construct Regex Patterns
-              $finalExcludeGlobalRegex = ($ExcludeGlobalPathsRaw | ForEach-Object {
-                  $escaped = [regex]::Escape($_.Trim())
-                  ".*\\$escaped.*"
-              }) -join '|'
-
-              $finalDoNotRecurseRegex = ($DoNotRecurseFolderPatternsRaw | ForEach-Object {
-                  $trimmed = $_.Trim()
-                  if ($trimmed -like "*net") {
-                      $escaped = [regex]::Escape($trimmed)
-                      "\\$escaped[\d.]+\.\d+$"
-                  } else {
-                      $escaped = [regex]::Escape($trimmed)
-                      "\\$escaped$"
+          # Recursive Unicode Tree Builder Function
+          function Get-ProjectTree ($Path, $Prefix = "") {
+              $TreeLines = @()
+              $Items = Get-ChildItem -LiteralPath $Path -Force | Where-Object {
+                  $name = $_.Name
+                  $shouldExclude = $false
+                  foreach ($ex in $GlobalExcludes) {
+                      if ($name -eq $ex) { $shouldExclude = $true; break }
                   }
-              }) -join '|'
-
-              # Recursive processing function
-              function Process-Directory ($currentPath, $currentPrefix) {
-                  $items = Get-ChildItem -LiteralPath $currentPath -Force | Where-Object {
-                      if ($_.FullName -match $finalExcludeGlobalRegex) { $false } else { $true }
-                  } | Sort-Object { -not $_.PSIsContainer }, Name
-
-                  for ($i = 0; $i -lt $items.Count; $i++) {
-                      $item = $items[$i]
-                      $isLastItem = ($i -eq ($items.Count - 1))
-
-                      $lineIndicator = if ($isLastItem) {'└─── '} else {'├─── '}
-                      $nextPrefix = if ($isLastItem) {$currentPrefix + '    '} else {$currentPrefix + '|   '}
-
-                      if ($item.PSIsContainer) {
-                          Add-Content -Path $OutputFile -Value "$currentPrefix$lineIndicator$($item.Name)/"
-                          $shouldRecurse = -not ($item.FullName -match $finalDoNotRecurseRegex)
-                          if ($shouldRecurse) {
-                              Process-Directory $item.FullName $nextPrefix
-                          }
-                      } else {
-                          if ($IncludeFileExtensions -contains $item.Extension.ToLower()) {
-                              Add-Content -Path $OutputFile -Value "$currentPrefix$lineIndicator$($item.Name)"
-                          }
-                      }
-                  }
-              }
-
-              # Initial top-level children call
-              $topLevelItems = Get-ChildItem -LiteralPath $absoluteRootPath -Force | Where-Object {
-                  if ($_.FullName -match $finalExcludeGlobalRegex) { $false } else { $true }
+                  -not $shouldExclude
               } | Sort-Object { -not $_.PSIsContainer }, Name
 
-              for ($i = 0; $i -lt $topLevelItems.Count; $i++) {
-                  $item = $topLevelItems[$i]
-                  $isLastItem = ($i -eq ($topLevelItems.Count - 1))
+              $Count = $Items.Count
+              for ($i = 0; $i -lt $Count; $i++) {
+                  $Item = $Items[$i]
+                  $IsLast = ($i -eq ($Count - 1))
+                  
+                  # Gorgeous Unicode Connectors
+                  $Connector = if ($IsLast) { "└── " } else { "├── " }
+                  $NextPrefix = if ($IsLast) { "$Prefix    " } else { "$Prefix│   " }
 
-                  $lineIndicator = if ($isLastItem) {'└─── '} else {'├─── '}
-                  $nextPrefix = if ($isLastItem) {'    '} else {'|   '}
-
-                  if ($item.PSIsContainer) {
-                      Add-Content -Path $OutputFile -Value "$lineIndicator$($item.Name)/"
-                      $shouldRecurse = -not ($item.FullName -match $finalDoNotRecurseRegex)
-                      if ($shouldRecurse) {
-                          Process-Directory $item.FullName $nextPrefix
+                  if ($Item.PSIsContainer) {
+                      # Prune empty directories (only recurse if they contain targeted files deeply)
+                      $hasValidFiles = (Get-ChildItem -LiteralPath $Item.FullName -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
+                          $IncludeFileExtensions -contains $_.Extension.ToLower()
+                      })
+                      if ($hasValidFiles) {
+                          $TreeLines += "$Prefix$Connector$($Item.Name)/"
+                          $TreeLines += Get-ProjectTree $Item.FullName $NextPrefix
                       }
                   } else {
-                      if ($IncludeFileExtensions -contains $item.Extension.ToLower()) {
-                          Add-Content -Path $OutputFile -Value "$lineIndicator$($item.Name)"
+                      if ($IncludeFileExtensions -contains $Item.Extension.ToLower()) {
+                          $TreeLines += "$Prefix$Connector$($Item.Name)"
                       }
                   }
               }
-
-          } catch {
-              Write-Error ('An error occurred during tree generation: {0}' -f $_.Exception.Message)
-              exit 1
+              return $TreeLines
           }
 
-          # Close code block and details toggle
-          Add-Content -Path $OutputFile -Value '```'
-          Add-Content -Path $OutputFile -Value "</details>"
+          # 2. Start Recursive Generation
+          $TreeOutput = Get-ProjectTree (Get-Location).Path
+          $Lines += $TreeOutput
 
-          # 3. Append Calculated Source File Counts (Safely)
-          Add-Content -Path $OutputFile -Value "`n## 📈 Source File Counts"
-          $CS_COUNT = (Get-ChildItem -Path $RootPath -Recurse -Filter *.cs -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "bin|obj|packages" }).Count
-          $XAML_COUNT = (Get-ChildItem -Path $RootPath -Recurse -Filter *.xaml -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "bin|obj|packages" }).Count
-          $CPP_COUNT = (Get-ChildItem -Path $RootPath -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match "\.(c|cpp|h|hpp)$" -and $_.FullName -notmatch "bin|obj" }).Count
-          $PROJ_COUNT = (Get-ChildItem -Path $RootPath -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match "\.(csproj|vcxproj|sln)$" -and $_.FullName -notmatch "bin|obj" }).Count
+          $Lines += "```"
+          $Lines += "</details>"
+          $Lines += ""
 
-          "| File Type | Count |" | Add-Content $OutputFile
-          "| --- | ---: |" | Add-Content $OutputFile
-          "| C# (.cs) | $CS_COUNT |" | Add-Content $OutputFile
-          "| WPF (.xaml) | $XAML_COUNT |" | Add-Content $OutputFile
-          "| C/C++ Source | $CPP_COUNT |" | Add-Content $OutputFile
-          "| Projects (.sln, .csproj) | $PROJ_COUNT |" | Add-Content $OutputFile
+          # 3. Append Calculated Source File Counts
+          $Lines += "## 📈 Source File Counts"
+          $Lines += ""
+          $CS_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -Filter *.cs -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "bin|obj|packages" }).Count
+          $XAML_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -Filter *.xaml -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "bin|obj|packages" }).Count
+          $CPP_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match "\.(c|cpp|h|hpp)$" -and $_.FullName -notmatch "bin|obj" }).Count
+          $PROJ_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match "\.(csproj|vcxproj|sln)$" -and $_.FullName -notmatch "bin|obj" }).Count
+
+          $Lines += "| File Type | Count |"
+          $Lines += "| --- | ---: |"
+          $Lines += "| C# (.cs) | $CS_COUNT |"
+          $Lines += "| WPF (.xaml) | $XAML_COUNT |"
+          $Lines += "| C/C++ Source | $CPP_COUNT |"
+          $Lines += "| Projects (.sln, .csproj) | $PROJ_COUNT |"
+
+          # 4. Safe Single-Write to File (Enforces unified UTF-8 encoding & CRLF line breaks)
+          $Lines | Out-File -FilePath $OutputFile -Encoding utf8
 
       - name: Upload Base Document Artifact
         uses: actions/upload-artifact@v4
