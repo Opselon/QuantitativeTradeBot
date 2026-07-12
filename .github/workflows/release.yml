@@ -167,6 +167,235 @@ jobs:
 
           EOF
 
+      - name: Generate AI project structure document (CI)
+        if: always()
+        shell: bash
+        env:
+          FINAL_STATUS: ${{ job.status }}
+          DOC_DIR: QuantitativeTradeBot/.nexus_docs
+          OUTPUT_FILE: QuantitativeTradeBot/.nexus_docs/000_PROJECT_STRUCTURE.md
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$DOC_DIR"
+          rm -f "$OUTPUT_FILE"
+
+          if [ "$FINAL_STATUS" = "success" ]; then
+            STATUS_ICON="✅"
+            STATUS_TEXT="Successful CI run (build + tests + native)"
+          else
+            STATUS_ICON="❌"
+            STATUS_TEXT="CI run failed"
+          fi
+
+          REPO_NAME="${GITHUB_REPOSITORY:-unknown}"
+          BRANCH_NAME="${GITHUB_REF_NAME:-unknown}"
+          COMMIT_SHA="${GITHUB_SHA:-unknown}"
+          RUN_ID="${GITHUB_RUN_ID:-unknown}"
+          RUN_NUMBER="${GITHUB_RUN_NUMBER:-unknown}"
+          ACTOR="${GITHUB_ACTOR:-unknown}"
+          NOW_UTC="$(date -u '+%Y-%m-%d %H:%M:%S')"
+
+          cat << 'HEADER' > "$OUTPUT_FILE"
+          # 14 – Nexus Project Structure (Latest Build)
+
+          > این فایل به صورت خودکار توسط GitHub Actions ساخته می‌شود.  
+          > در هر اجرای CI، محتوای قبلی پاک شده و با snapshot جدید جایگزین می‌شود.
+
+          ## Build / Pipeline Result
+          HEADER
+
+          {
+            echo
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Status | ${STATUS_ICON} ${STATUS_TEXT} |"
+            echo "| Job | ci (.NET + Unit Tests + Native, Ubuntu) |"
+            echo "| Repository | \`${REPO_NAME}\` |"
+            echo "| Branch | \`${BRANCH_NAME}\` |"
+            echo "| Commit | \`${COMMIT_SHA}\` |"
+            echo "| Workflow Run ID | \`${RUN_ID}\` |"
+            echo "| Workflow Run Number | \`${RUN_NUMBER}\` |"
+            echo "| Triggered By | \`${ACTOR}\` |"
+            echo "| Generated At (UTC) | \`${NOW_UTC}\` |"
+            echo "| Output Path | \`${OUTPUT_FILE}\` |"
+            echo
+            echo "## Purpose"
+            echo
+            echo "این سند یک نمای AI-friendly از ساختار سورس کد است."
+            echo "هدف: راه‌اندازی سریع Agent برای معماری، دیباگ، Refactor و تحلیل."
+            echo
+            echo "### Includes"
+            echo "- Solutions/Projects: .sln, .csproj, .vcxproj, .props, .targets"
+            echo "- Source: C#, C/C++, XAML, Razor"
+            echo "- Config: JSON, YAML, XML, Dockerfile, GitHub Workflows"
+            echo "- Scripts: .sh, .ps1, .cmd, .bat"
+            echo "- Docs & SQL: .md, .sql"
+            echo
+            echo "### Excludes (noise reduction)"
+            echo "- Directories: bin, obj, packages, node_modules, TestResults, coverage, publish, artifacts, .git"
+            echo "- Binaries: *.dll, *.exe, *.pdb, *.so, *.dylib, *.nupkg"
+            echo
+            echo "## Agent Reading Guide"
+            echo
+            echo "1. از solution اصلی (مثلاً NexusTradingEngine.sln) شروع کن."
+            echo "2. لایه‌ها را روی فولدرهای Domain / Application / Infrastructure / Desktop / Native / Tests ببین."
+            echo "3. Configها، Dockerfileها و YAMLهای CI/CD را به‌عنوان behavior runtime و release در نظر بگیر."
+            echo "4. این فایل نقشه است؛ برای تصمیم‌گیری نهایی همیشه خود سورس را بخوان."
+          } >> "$OUTPUT_FILE"
+
+          cat << 'TREE_HEADER' >> "$OUTPUT_FILE"
+
+          ## High-Level Directory Tree (QuantitativeTradeBot)
+
+          ```text
+          TREE_HEADER
+
+          if [ -d "QuantitativeTradeBot" ]; then
+            find QuantitativeTradeBot \
+              \( \
+                -path '*/.git' -o \
+                -path '*/bin' -o \
+                -path '*/obj' -o \
+                -path '*/packages' -o \
+                -path '*/node_modules' -o \
+                -path '*/TestResults' -o \
+                -path '*/coverage' -o \
+                -path '*/publish' -o \
+                -path '*/artifacts' \
+              \) -prune -o \
+              -type d \
+              | sed 's#^QuantitativeTradeBot/##' \
+              | sed 's#^QuantitativeTradeBot$#.#' \
+              | sort >> "$OUTPUT_FILE"
+          else
+            echo "(QuantitativeTradeBot directory not found in repo root.)" >> "$OUTPUT_FILE"
+          fi
+
+          cat << 'TREE_FOOTER' >> "$OUTPUT_FILE"
+          ```
+
+          TREE_FOOTER
+
+          cat << 'FILES_HEADER' >> "$OUTPUT_FILE"
+
+          ## Important Files
+
+          ```text
+          FILES_HEADER
+
+          if [ -d "QuantitativeTradeBot" ]; then
+            find QuantitativeTradeBot \
+              \( \
+                -path '*/.git' -o \
+                -path '*/bin' -o \
+                -path '*/obj' -o \
+                -path '*/packages' -o \
+                -path '*/node_modules' -o \
+                -path '*/TestResults' -o \
+                -path '*/coverage' -o \
+                -path '*/publish' -o \
+                -path '*/artifacts' \
+              \) -prune -o \
+              -type f \
+              \( \
+                -name '*.sln' -o \
+                -name '*.csproj' -o \
+                -name '*.vcxproj' -o \
+                -name '*.props' -o \
+                -name '*.targets' -o \
+                -name '*.cs' -o \
+                -name '*.fs' -o \
+                -name '*.vb' -o \
+                -name '*.xaml' -o \
+                -name '*.razor' -o \
+                -name '*.json' -o \
+                -name '*.jsonc' -o \
+                -name '*.xml' -o \
+                -name '*.yml' -o \
+                -name '*.yaml' -o \
+                -name '*.md' -o \
+                -name '*.sql' -o \
+                -name '*.sh' -o \
+                -name '*.ps1' -o \
+                -name '*.cmd' -o \
+                -name '*.bat' -o \
+                -name '*.cpp' -o \
+                -name '*.c' -o \
+                -name '*.h' -o \
+                -name '*.hpp' -o \
+                -name '*.natvis' -o \
+                -name '.editorconfig' -o \
+                -name 'Dockerfile' -o \
+                -name '.dockerignore' -o \
+                -name '.gitignore' -o \
+                -name 'Directory.Build.props' -o \
+                -name 'Directory.Build.targets' -o \
+                -name 'Directory.Packages.props' -o \
+                -name 'NuGet.config' \
+              \) \
+              ! -name '*.dll' \
+              ! -name '*.exe' \
+              ! -name '*.pdb' \
+              ! -name '*.so' \
+              ! -name '*.dylib' \
+              ! -name '*.nupkg' \
+              | sed 's#^QuantitativeTradeBot/##' \
+              | sort >> "$OUTPUT_FILE"
+          else
+            echo "(QuantitativeTradeBot directory not found in repo root.)" >> "$OUTPUT_FILE"
+          fi
+
+          cat << 'FILES_FOOTER' >> "$OUTPUT_FILE"
+          ```
+
+          FILES_FOOTER
+
+          cat << 'COUNTS_HEADER' >> "$OUTPUT_FILE"
+
+          ## Source File Counts
+
+          COUNTS_HEADER
+
+          if [ -d "QuantitativeTradeBot" ]; then
+            CS_COUNT=$(find QuantitativeTradeBot \( -path '*/bin' -o -path '*/obj' -o -path '*/.git' \) -prune -o -type f -name '*.cs' | wc -l || echo 0)
+            XAML_COUNT=$(find QuantitativeTradeBot \( -path '*/bin' -o -path '*/obj' -o -path '*/.git' \) -prune -o -type f -name '*.xaml' | wc -l || echo 0)
+            CPP_COUNT=$(find QuantitativeTradeBot \( -path '*/bin' -o -path '*/obj' -o -path '*/.git' \) -prune -o -type f \( -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) | wc -l || echo 0)
+            PROJ_COUNT=$(find QuantitativeTradeBot \( -path '*/bin' -o -path '*/obj' -o -path '*/.git' \) -prune -o -type f \( -name '*.csproj' -o -name '*.vcxproj' -o -name '*.sln' \) | wc -l || echo 0)
+            MD_COUNT=$(find QuantitativeTradeBot \( -path '*/bin' -o -path '*/obj' -o -path '*/.git' \) -prune -o -type f -name '*.md' | wc -l || echo 0)
+            SQL_COUNT=$(find QuantitativeTradeBot \( -path '*/bin' -o -path '*/obj' -o -path '*/.git' \) -prune -o -type f -name '*.sql' | wc -l || echo 0)
+            YAML_COUNT=$(find QuantitativeTradeBot \( -path '*/bin' -o -path '*/obj' -o -path '*/.git' \) -prune -o -type f \( -name '*.yml' -o -name '*.yaml' \) | wc -l || echo 0)
+
+            {
+              echo "| Type | Count |"
+              echo "| --- | ---: |"
+              echo "| C# files | ${CS_COUNT} |"
+              echo "| XAML files | ${XAML_COUNT} |"
+              echo "| C/C++ source files | ${CPP_COUNT} |"
+              echo "| Project files | ${PROJ_COUNT} |"
+              echo "| Markdown docs | ${MD_COUNT} |"
+              echo "| SQL files | ${SQL_COUNT} |"
+              echo "| YAML files | ${YAML_COUNT} |"
+            } >> "$OUTPUT_FILE"
+          else
+            echo "(No counts – QuantitativeTradeBot directory not found.)" >> "$OUTPUT_FILE"
+          fi
+
+          {
+            echo
+            echo "## Final Result"
+            echo
+            echo "${STATUS_ICON} ${STATUS_TEXT}"
+          } >> "$OUTPUT_FILE"
+
+      - name: Upload AI project structure document
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-project-structure
+          path: QuantitativeTradeBot/.nexus_docs/000_PROJECT_STRUCTURE.md
+          if-no-files-found: ignore
+
   # ============================================================
   # 2) Release – Windows (.NET + Native + EF Bundle + ZIP + GH Release)
   # ============================================================
