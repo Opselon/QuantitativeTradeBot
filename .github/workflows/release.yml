@@ -113,7 +113,8 @@ jobs:
         run: dotnet restore "${{ env.SOLUTION_PATH }}"
 
       - name: Build solution (Capture Logs Natively)
-        run: dotnet build "${{ env.SOLUTION_PATH }}" --configuration "${BUILD_CONFIGURATION}" --no-restore -fl -flp:logfile=ci_build.log;verbosity=normal
+        # Added quotes around the -flp argument to protect the semicolon
+        run: dotnet build "${{ env.SOLUTION_PATH }}" --configuration "${BUILD_CONFIGURATION}" --no-restore -fl "-flp:logfile=ci_build.log;verbosity=normal"
 
       - name: Run unit tests
         run: |
@@ -197,22 +198,33 @@ jobs:
       - name: Build Solution (Capture Logs Natively)
         run: |
           dotnet restore "${{ env.SOLUTION_PATH }}"
-          # Using Native MSBuild logger saves the output to win_build.log safely
-          dotnet build "${{ env.SOLUTION_PATH }}" --configuration Release --no-restore -fl -flp:logfile=win_build.log;verbosity=normal
+          # Quotes added around -flp to safely pass semicolon in PowerShell
+          dotnet build "${{ env.SOLUTION_PATH }}" --configuration Release --no-restore -fl "-flp:logfile=win_build.log;verbosity=normal"
 
       - name: Extract Windows Errors for AI
         if: always()
         run: |
           $ErrorActionPreference = "Continue"
           $file = "win_logs_summary.md"
+          
           "## 🚀 Pipeline Diagnostics (Release Stage - Windows)`n- **Job Status:** ${{ job.status }}`n" | Set-Content $file
           
-          "### 🔴 Errors`n```text" | Add-Content $file
+          "### 🔴 Errors" | Add-Content $file
+          # Used single quotes for backticks to prevent PowerShell escape errors
+          '```text' | Add-Content $file
           if (Test-Path win_build.log) {
             $errs = Select-String -Path win_build.log -Pattern "error CS" -SimpleMatch | Select-Object -Last 20
             if ($errs) { $errs | ForEach-Object { Add-Content $file $_.Line.Trim() } } else { Add-Content $file "No C# errors." }
+          } else { Add-Content $file "Build log not found." }
+          '```' | Add-Content $file
+
+          "### 🟡 Warnings" | Add-Content $file
+          '```text' | Add-Content $file
+          if (Test-Path win_build.log) {
+            $warns = Select-String -Path win_build.log -Pattern "warning CS" -SimpleMatch | Select-Object -Last 20
+            if ($warns) { $warns | ForEach-Object { Add-Content $file $_.Line.Trim() } } else { Add-Content $file "No C# warnings." }
           }
-          "```" | Add-Content $file
+          '```' | Add-Content $file
 
       - name: Upload Windows Logs Artifact
         if: always()
