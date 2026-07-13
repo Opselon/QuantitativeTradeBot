@@ -277,13 +277,13 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Revise README.md for clarity and structure |
+| **Commit Message** | Merge pull request #13 from Opselon/jules-16049454016234857646-88ec380f |
 | **Author** | Capsizer |
 | **Branch** | $env:GITHUB_REF_NAME |
 | **Run Number** | $env:GITHUB_RUN_NUMBER |
 | **Commit SHA** | $env:GITHUB_SHA |
 | **Generated At** | `
-2026-07-12 22:02:46 UTC
+2026-07-13 00:04:17 UTC
 ` |
 
 ---
@@ -323,12 +323,30 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── 25_DECISIONS.md
 │   ├── 26_CHANGELOG.md
 │   └── 30_PROJECT_STATE.md
+├── docs/
+│   ├── 01_ARCHITECTURE.md
+│   ├── 02_AI_ARCHITECTURE.md
+│   ├── 03_DATA_FLOW.md
+│   ├── 04_NATIVE_CORE_DESIGN.md
+│   ├── 05_NEURAL_ENGINE_DESIGN.md
+│   ├── 06_TRAINING_PIPELINE.md
+│   ├── 07_MODEL_DEPLOYMENT.md
+│   ├── 08_PERFORMANCE.md
+│   ├── 09_TESTING_STRATEGY.md
+│   ├── 10_DECISIONS.md
+│   ├── 11_ROADMAP.md
+│   ├── ACCUMULATOR_DESIGN.md
+│   ├── AI_TRAINING_PIPELINE.md
+│   └── PATTERN_MEMORY.md
 ├── native/
 │   ├── Nexus.Native/
 │   │   ├── NexusNative.cpp
 │   │   └── NexusNative.h
 │   └── build.sh
 ├── src/
+│   ├── Nexus.AI/
+│   │   ├── NeuralModelService.cs
+│   │   └── Nexus.AI.csproj
 │   ├── Nexus.Application/
 │   │   ├── Analytics/
 │   │   │   ├── IIndicatorEngine.cs
@@ -336,6 +354,13 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── ManagedIndicatorEngine.cs
 │   │   │   ├── NativeAnalyticsEngine.cs
 │   │   │   └── NativeIndicatorEngine.cs
+│   │   ├── Intelligence/
+│   │   │   ├── AccumulatorService.cs
+│   │   │   ├── CurrencyStrengthEngine.cs
+│   │   │   ├── DecisionEngine.cs
+│   │   │   ├── NativeMarketIntelligenceService.cs
+│   │   │   ├── PatternMemory.cs
+│   │   │   └── ScenarioEvaluationEngine.cs
 │   │   ├── Mt5/
 │   │   │   ├── ClosePositionResult.cs
 │   │   │   ├── IMt5TradingService.cs
@@ -439,12 +464,28 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   └── OrderExecutedEvent.cs
 │   │   ├── Entities/
 │   │   │   ├── Account.cs
+│   │   │   ├── AccumulatorState.cs
 │   │   │   ├── Bar.cs
+│   │   │   ├── EvaluationResult.cs
+│   │   │   ├── FeatureDelta.cs
+│   │   │   ├── MarketState.cs
+│   │   │   ├── MarketVector.cs
 │   │   │   ├── Order.cs
+│   │   │   ├── PatternMatchResult.cs
 │   │   │   ├── Position.cs
-│   │   │   └── Tick.cs
+│   │   │   ├── RiskState.cs
+│   │   │   ├── ScenarioScore.cs
+│   │   │   ├── Tick.cs
+│   │   │   └── TradeDecision.cs
 │   │   ├── Interfaces/
+│   │   │   ├── IAccumulatorService.cs
+│   │   │   ├── ICurrencyStrengthEngine.cs
+│   │   │   ├── IDecisionEngine.cs
+│   │   │   ├── INativeCoreService.cs
+│   │   │   ├── INeuralModelService.cs
+│   │   │   ├── IPatternMemory.cs
 │   │   │   ├── IRiskManager.cs
+│   │   │   ├── IScenarioEvaluationEngine.cs
 │   │   │   ├── IStrategy.cs
 │   │   │   └── ITrailingManager.cs
 │   │   ├── ValueObjects/
@@ -469,11 +510,14 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── DesktopPositionViewModel.cs
 │   │   │   ├── MainViewModel.cs
 │   │   │   ├── Mt5TradingViewModel.cs
+│   │   │   ├── NexusIntelligenceViewModel.cs
 │   │   │   ├── RelayCommand.cs
 │   │   │   └── ViewModelBase.cs
 │   │   ├── Views/
 │   │   │   ├── Mt5TradingPanel.xaml
-│   │   │   └── Mt5TradingPanel.xaml.cs
+│   │   │   ├── Mt5TradingPanel.xaml.cs
+│   │   │   ├── NexusIntelligenceDashboard.xaml
+│   │   │   └── NexusIntelligenceDashboard.xaml.cs
 │   │   ├── App.xaml
 │   │   ├── App.xaml.cs
 │   │   ├── MainWindow.xaml
@@ -532,6 +576,26 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── RecoveryStartupService.cs
 │   │   │   └── StrategyDispatchWorker.cs
 │   │   └── Nexus.Infrastructure.csproj
+│   ├── Nexus.Infrastructure.Native/
+│   │   ├── NativeCoreInterop.cs
+│   │   ├── NativeCoreSafeHandle.cs
+│   │   ├── NativeCoreService.cs
+│   │   └── Nexus.Infrastructure.Native.csproj
+│   ├── Nexus.Native.Core/
+│   │   ├── include/
+│   │   │   └── nexus_core/
+│   │   │       ├── accumulator.h
+│   │   │       ├── core_runtime.h
+│   │   │       ├── interop_abi.h
+│   │   │       ├── market_state.h
+│   │   │       └── market_vector.h
+│   │   ├── src/
+│   │   │   ├── accumulator.cpp
+│   │   │   ├── core_runtime.cpp
+│   │   │   ├── market_state.cpp
+│   │   │   └── market_vector.cpp
+│   │   ├── tests/
+│   │   │   └── native_tests.cpp
 │   └── Nexus.WpfUi/
 │       ├── App.xaml
 │       ├── App.xaml.cs
@@ -563,6 +627,9 @@ To get started, please review the contribution guidelines outlined above, explor
 │       │   ├── AccountTests.cs
 │       │   ├── OrderAndPositionTests.cs
 │       │   └── TickAndBarTests.cs
+│       ├── Intelligence/
+│       │   ├── MarketIntelligenceTests.cs
+│       │   └── NativeBridgeTests.cs
 │       ├── ValueObjects/
 │       │   ├── MoneyAndLotSizeTests.cs
 │       │   └── SymbolTests.cs
@@ -578,10 +645,10 @@ To get started, please review the contribution guidelines outlined above, explor
 
 | File Type | Count |
 | --- | ---: |
-| C# (.cs) | 178 |
-| WPF (.xaml) | 5 |
-| C/C++ Source | 2 |
-| Projects (.sln, .csproj) | 9 |
+| C# (.cs) | 208 |
+| WPF (.xaml) | 6 |
+| C/C++ Source | 12 |
+| Projects (.sln, .csproj) | 11 |
 
 ### 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)
 - **Job Status:** success
@@ -604,7 +671,7 @@ No C# errors.
 ```
 #### 🟡 Warnings
 ```text
-5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 ```
 
