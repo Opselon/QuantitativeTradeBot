@@ -39,6 +39,8 @@ namespace Nexus.Desktop
 
                     // Register MT5 Bridge Components & Adapters
                     services.AddSingleton<IMt5BridgeClient, TcpMt5BridgeClient>();
+                    services.AddSingleton<IMt5BridgeService, Mt5BridgeService>();
+                    services.AddSingleton<MarketDataPipeline>();
 
                     // Register concrete underlying implementations
                     services.AddSingleton<SimulatedMt5ConnectionService>();
@@ -74,6 +76,8 @@ namespace Nexus.Desktop
                     services.AddSingleton<Nexus.Application.Intelligence.NativeMarketIntelligenceService>();
                     services.AddSingleton<NexusIntelligenceViewModel>();
 
+                    services.AddSingleton<IMt5BridgeOperatorService, Mt5BridgeOperatorService>();
+
                     // Register ViewModels & Windows
                     services.AddSingleton<MainViewModel>();
                     services.AddSingleton<MainWindow>();
@@ -84,6 +88,9 @@ namespace Nexus.Desktop
         protected override async void OnStartup(StartupEventArgs e)
         {
             await Host.StartAsync();
+
+            // Explicitly resolve pipeline to register real-time tick routing subscription
+            Host.Services.GetRequiredService<MarketDataPipeline>();
 
             var mainWindow = Host.Services.GetRequiredService<MainWindow>();
             mainWindow.Show();

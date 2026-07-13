@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using Nexus.Application.Security;
 using Nexus.Application.Workflows;
 using Nexus.Application.Workflows.DTOs;
 using Nexus.Desktop.Services;
+using Nexus.Infrastructure.Mt5Bridge;
 
 namespace Nexus.Desktop.ViewModels
 {
@@ -31,6 +33,7 @@ namespace Nexus.Desktop.ViewModels
                 return versionStr;
             }
         }
+        private readonly CancellationTokenSource _cts = new();
         private readonly IAppConfigurationService _configService;
         private readonly ISecretStore _secretStore;
         private readonly IDiagnosticService _diagnosticService;
@@ -38,7 +41,11 @@ namespace Nexus.Desktop.ViewModels
         private readonly IMt5TradeService _tradeService;
         private IMt5Session? _session;
 
+        private readonly IMt5BridgeService _bridgeService;
+        private readonly MarketDataPipeline _pipeline;
+
         public Mt5TradingViewModel Mt5Trading { get; }
+        public NexusIntelligenceViewModel Intelligence { get; }
 
         private readonly SelectPersistenceProviderCommand _selectProviderCmd;
         private readonly InitializeDatabaseCommand _initDbCmd;
@@ -85,6 +92,40 @@ namespace Nexus.Desktop.ViewModels
         private string _testOutcome = "Not Tested";
         private bool _testSuccess;
         private AccountSnapshotDto? _accountSnapshot;
+
+        private int _selectedTabIndex;
+        public int SelectedTabIndex
+        {
+            get => _selectedTabIndex;
+            set => SetProperty(ref _selectedTabIndex, value);
+        }
+
+        // MT5 Localhost Bridge Active Status / Telemetry
+        public bool IsBridgeConnected => _bridgeService.IsConnected;
+        public bool IsBridgeAuthenticated => _bridgeService.IsAuthenticated;
+        public string BridgeConnectionStatusText => _bridgeService.ConnectionStatusText;
+        public double BridgePingLatencyMs => _bridgeService.PingLatencyMs;
+        public string BridgeLastHeartbeatText => _bridgeService.LastHeartbeatUtc == DateTime.MinValue ? "Never" : _bridgeService.LastHeartbeatUtc.ToLocalTime().ToString("HH:mm:ss");
+        public string BridgeLastErrorMessage => _bridgeService.LastErrorMessage;
+
+        // MarketDataPipeline stats
+        public long ProcessedTickCount => _pipeline.ProcessedTickCount;
+        public double LastProcessingLatencyMs => _pipeline.LastProcessingLatencyMs;
+        public string LastProcessedSymbol => _pipeline.LastProcessedSymbol;
+        public string LastProcessedTimestampText => _pipeline.LastProcessedTimestamp == DateTime.MinValue ? "Never" : _pipeline.LastProcessedTimestamp.ToLocalTime().ToString("HH:mm:ss.fff");
+
+        // Primary Symbols Subscription Watchlist
+        public ObservableCollection<DesktopSymbolViewModel> SubscribedSymbolsList { get; } = new()
+        {
+            new DesktopSymbolViewModel { SymbolName = "XAUUSD" },
+            new DesktopSymbolViewModel { SymbolName = "EURUSD" },
+            new DesktopSymbolViewModel { SymbolName = "GBPUSD" },
+            new DesktopSymbolViewModel { SymbolName = "USDJPY" },
+            new DesktopSymbolViewModel { SymbolName = "USDCHF" },
+            new DesktopSymbolViewModel { SymbolName = "USDCAD" },
+            new DesktopSymbolViewModel { SymbolName = "AUDUSD" },
+            new DesktopSymbolViewModel { SymbolName = "NZDUSD" }
+        };
 
         // Trade Panel Public Properties
         public string TradeSymbol
@@ -135,10 +176,27 @@ namespace Nexus.Desktop.ViewModels
         public ICommand LaunchWorkspaceCmd { get; }
         public ICommand BackCommand { get; }
 
+        public ICommand SelectDashboardCommand { get; }
+        public ICommand SelectMt5BridgeCommand { get; }
+        public ICommand SelectMarketWatchCommand { get; }
+        public ICommand SelectManualDeskCommand { get; }
+        public ICommand SelectAccountMetricsCommand { get; }
+        public ICommand SelectNativeEngineCommand { get; }
+        public ICommand SelectDiagnosticsCommand { get; }
+        public ICommand SelectSettingsCommand { get; }
+        public ICommand SelectTestConsoleCommand { get; }
+
         // Trade Commands
         public ICommand PlaceOrderUICommand { get; }
         public ICommand ClosePositionUICommand { get; }
         public ICommand RefreshPositionsUICommand { get; }
+
+        public IAsyncRelayCommand BridgeConnectCommand { get; }
+        public IAsyncRelayCommand BridgeDisconnectCommand { get; }
+        public IAsyncRelayCommand BridgeLoginCommand { get; }
+        public IAsyncRelayCommand BridgeRefreshAccountCommand { get; }
+        public IAsyncRelayCommand BridgePingCommand { get; }
+        public ICommand ToggleSubscriptionCommand { get; }
 
         public MainViewModel(
             IAppConfigurationService configService,
@@ -148,7 +206,10 @@ namespace Nexus.Desktop.ViewModels
             IMt5AccountService accountService,
             IMt5TradeService tradeService,
             IDiagnosticService diagnosticService,
-            Mt5TradingViewModel mt5Trading)
+            Mt5TradingViewModel mt5Trading,
+            NexusIntelligenceViewModel intelligence,
+            IMt5BridgeService bridgeService,
+            MarketDataPipeline pipeline)
         {
             _configService = configService;
             _secretStore = secretStore;
@@ -156,6 +217,23 @@ namespace Nexus.Desktop.ViewModels
             _connectionService = connectionService;
             _tradeService = tradeService;
             Mt5Trading = mt5Trading ?? throw new ArgumentNullException(nameof(mt5Trading));
+            Intelligence = intelligence ?? throw new ArgumentNullException(nameof(intelligence));
+            _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
+            _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
+
+            // Wire Bridge Connection Commands
+            BridgeConnectCommand = new AsyncRelayCommand(OnBridgeConnectAsync);
+            BridgeDisconnectCommand = new AsyncRelayCommand(OnBridgeDisconnectAsync);
+            BridgeLoginCommand = new AsyncRelayCommand(OnBridgeLoginAsync);
+            BridgeRefreshAccountCommand = new AsyncRelayCommand(OnBridgeRefreshAccountAsync);
+            BridgePingCommand = new AsyncRelayCommand(OnBridgePingAsync);
+            ToggleSubscriptionCommand = new AsyncRelayCommand<DesktopSymbolViewModel>(OnToggleSubscriptionAsync);
+
+            // Wire tick stream listener for Market Watch symbols
+            _pipeline.OnPipelineTickProcessed += OnPipelineTickProcessed;
+
+            // Start passive UI telemetry update loop
+            Task.Run(() => StartTelemetryRefreshLoopAsync(_cts.Token));
 
             // Instantiating application-layer commands
             _selectProviderCmd = new SelectPersistenceProviderCommand(_configService);
@@ -194,6 +272,18 @@ namespace Nexus.Desktop.ViewModels
             AccountNextCommand = new RelayCommand(OnAccountNext);
             LaunchWorkspaceCmd = new AsyncRelayCommand(OnLaunchWorkspaceAsync);
             BackCommand = new RelayCommand(OnBack, () => _currentStep > 1);
+
+            SelectDashboardCommand = new RelayCommand(() => SelectedTabIndex = 0);
+            SelectMt5BridgeCommand = new RelayCommand(() => SelectedTabIndex = 1);
+            SelectMarketWatchCommand = new RelayCommand(() => SelectedTabIndex = 2);
+            SelectManualDeskCommand = new RelayCommand(() => SelectedTabIndex = 3);
+            SelectAccountMetricsCommand = new RelayCommand(() => SelectedTabIndex = 4);
+            SelectNativeEngineCommand = new RelayCommand(() => SelectedTabIndex = 5);
+            SelectDiagnosticsCommand = new RelayCommand(() => SelectedTabIndex = 6);
+            SelectSettingsCommand = new RelayCommand(() => SelectedTabIndex = 7);
+            SelectTestConsoleCommand = new RelayCommand(() => SelectedTabIndex = 8);
+
+            RunSmokeTestCommand = new AsyncRelayCommand(OnRunSmokeTestAsync);
 
             // Wire Trade Commands
             PlaceOrderUICommand = new AsyncRelayCommand(OnPlaceOrderUIAsync);
@@ -714,6 +804,249 @@ namespace Nexus.Desktop.ViewModels
             if (CurrentStep > 1)
             {
                 CurrentStep--;
+            }
+        }
+
+        // --- AUTOMATED SMOKE TEST ACTIONS ---
+
+        private ObservableCollection<string> _smokeTestLogList = new();
+        public ObservableCollection<string> SmokeTestLogList => _smokeTestLogList;
+
+        public IAsyncRelayCommand RunSmokeTestCommand { get; }
+
+        private async Task OnRunSmokeTestAsync()
+        {
+            _smokeTestLogList.Clear();
+            AddSmokeLog("Starting automated Real Smoke Test workflow...");
+
+            try
+            {
+                // Step 1: Connect
+                AddSmokeLog("Step 1: Connecting to localhost bridge...");
+                await _bridgeService.ConnectAsync(Mt5BridgeHost, Mt5BridgePort, _cts.Token);
+                await Task.Delay(1000); // Wait for initialization
+                AddSmokeLog($"Status: Connected={_bridgeService.IsConnected}");
+
+                // Step 2: Login
+                AddSmokeLog($"Step 2: Authenticating Account ID '{LoginAccountId}'...");
+                bool loginOk = await _bridgeService.LoginAsync(LoginAccountId, Password, BrokerServer, _cts.Token);
+                AddSmokeLog($"Status: Authenticated={_bridgeService.IsAuthenticated}, Message={_bridgeService.LastErrorMessage}");
+
+                if (loginOk)
+                {
+                    // Step 3: Ping
+                    AddSmokeLog("Step 3: Sending heartbeat ping...");
+                    var sw = Stopwatch.StartNew();
+                    var snap = await _bridgeService.GetAccountSnapshotAsync(_cts.Token);
+                    sw.Stop();
+                    AddSmokeLog($"Status: Ping completed in {sw.ElapsedMilliseconds} ms. Latency={_bridgeService.PingLatencyMs} ms");
+
+                    // Step 4: Subscribe symbol EURUSD
+                    AddSmokeLog("Step 4: Subscribing to symbol EURUSD...");
+                    await _bridgeService.SubscribeSymbolAsync("EURUSD", _cts.Token);
+                    AddSmokeLog("Status: Subscription request sent EURUSD.");
+
+                    // Step 5: Verify live ticks
+                    AddSmokeLog("Step 5: Monitoring live ticks for 5 seconds...");
+                    long startTicks = _pipeline.ProcessedTickCount;
+                    await Task.Delay(5000);
+                    long endTicks = _pipeline.ProcessedTickCount;
+                    AddSmokeLog($"Status: Ticks Ingested={endTicks - startTicks}, Total Processed={_pipeline.ProcessedTickCount}");
+
+                    // Step 6: Fetch Account Metrics
+                    AddSmokeLog("Step 6: Querying live account metrics snapshot...");
+                    if (snap != null)
+                    {
+                        AccountSnapshot = snap;
+                        AddSmokeLog($"Status: Account verified. Balance: {snap.Balance:C2}, Equity: {snap.Equity:C2}, Currency: {snap.Currency}");
+                    }
+
+                    // Step 7: Unsubscribe symbol
+                    AddSmokeLog("Step 7: Unsubscribing from EURUSD...");
+                    await _bridgeService.UnsubscribeSymbolAsync("EURUSD", _cts.Token);
+                    AddSmokeLog("Status: Unsubscribed EURUSD.");
+                }
+
+                // Step 8: Disconnect
+                AddSmokeLog("Step 8: Gracefully disconnecting bridge listener...");
+                await _bridgeService.DisconnectAsync(_cts.Token);
+                AddSmokeLog("Status: Disconnected.");
+
+                AddSmokeLog("Automated Real Smoke Test completed successfully!");
+            }
+            catch (Exception ex)
+            {
+                AddSmokeLog($"ERROR: Smoke Test failed: {ex.Message}");
+            }
+        }
+
+        private void AddSmokeLog(string message)
+        {
+            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+            {
+                _smokeTestLogList.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
+            });
+            if (System.Windows.Application.Current == null)
+            {
+                _smokeTestLogList.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
+            }
+        }
+
+        // --- LOCALHOST BRIDGE COMMAND ACTIONS ---
+
+        private async Task OnBridgeConnectAsync()
+        {
+            _diagnosticService.Log("Mt5Bridge", "INFO", $"Connecting to MetaTrader 5 localhost bridge server at {Mt5BridgeHost}:{Mt5BridgePort}...");
+            try
+            {
+                await _bridgeService.ConnectAsync(Mt5BridgeHost, Mt5BridgePort, _cts.Token);
+                _diagnosticService.Log("Mt5Bridge", "INFO", "Bridge TCP listener started. Waiting for MT5 Expert Advisor to connect...");
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Log("Mt5Bridge", "ERROR", $"Failed to start bridge listener: {ex.Message}");
+            }
+        }
+
+        private async Task OnBridgeDisconnectAsync()
+        {
+            _diagnosticService.Log("Mt5Bridge", "INFO", "Disconnecting active MT5 bridge session...");
+            try
+            {
+                await _bridgeService.DisconnectAsync(_cts.Token);
+                _diagnosticService.Log("Mt5Bridge", "INFO", "Bridge disconnected cleanly.");
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Log("Mt5Bridge", "ERROR", $"Error disconnecting bridge: {ex.Message}");
+            }
+        }
+
+        private async Task OnBridgeLoginAsync()
+        {
+            _diagnosticService.Log("Mt5Bridge", "INFO", $"Submitting secure login authentication credentials for Account ID '{LoginAccountId}'...");
+            try
+            {
+                bool success = await _bridgeService.LoginAsync(LoginAccountId, Password, BrokerServer, _cts.Token);
+                if (success)
+                {
+                    _diagnosticService.Log("Mt5Bridge", "INFO", "Authentication succeeded! Real MT5 bridge session is now authorized.");
+                    // Retrieve initial account info
+                    await OnBridgeRefreshAccountAsync();
+                }
+                else
+                {
+                    _diagnosticService.Log("Mt5Bridge", "WARN", $"Login credentials rejected: {_bridgeService.LastErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Log("Mt5Bridge", "ERROR", $"Login threw an exception: {ex.Message}");
+            }
+        }
+
+        private async Task OnBridgeRefreshAccountAsync()
+        {
+            _diagnosticService.Log("Mt5Bridge", "INFO", "Retrieving live MetaTrader 5 account snap statistics via bridge...");
+            try
+            {
+                var snapshot = await _bridgeService.GetAccountSnapshotAsync(_cts.Token);
+                if (snapshot != null)
+                {
+                    AccountSnapshot = snapshot;
+                    _diagnosticService.Log("Mt5Bridge", "INFO", $"Snapshot refreshed successfully. Balance: {snapshot.Balance:C2} {snapshot.Currency}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Log("Mt5Bridge", "ERROR", $"Failed to fetch live account snapshot: {ex.Message}");
+            }
+        }
+
+        private async Task OnBridgePingAsync()
+        {
+            _diagnosticService.Log("Mt5Bridge", "INFO", "Executing diagnostic ping/heartbeat command to Expert Advisor...");
+            try
+            {
+                // Measure ping using GetAccountSnapshot to execute real round-trip message
+                var sw = Stopwatch.StartNew();
+                await _bridgeService.GetAccountSnapshotAsync(_cts.Token);
+                sw.Stop();
+                _diagnosticService.Log("Mt5Bridge", "INFO", $"Ping diagnostic response received. Live round-trip duration: {sw.Elapsed.TotalMilliseconds:F1} ms");
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Log("Mt5Bridge", "ERROR", $"Ping handshake diagnostic failed: {ex.Message}");
+            }
+        }
+
+        private async Task OnToggleSubscriptionAsync(DesktopSymbolViewModel item)
+        {
+            if (item == null) return;
+            try
+            {
+                if (item.IsSubscribed)
+                {
+                    await _bridgeService.UnsubscribeSymbolAsync(item.SymbolName, _cts.Token);
+                    item.IsSubscribed = false;
+                    _diagnosticService.Log("Mt5Bridge", "INFO", $"Unsubscribed symbol '{item.SymbolName}' cleanly.");
+                }
+                else
+                {
+                    await _bridgeService.SubscribeSymbolAsync(item.SymbolName, _cts.Token);
+                    item.IsSubscribed = true;
+                    _diagnosticService.Log("Mt5Bridge", "INFO", $"Subscribed symbol '{item.SymbolName}' via localhost bridge.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Log("Mt5Bridge", "ERROR", $"Failed to toggle symbol subscription for '{item.SymbolName}': {ex.Message}");
+            }
+        }
+
+        private void OnPipelineTickProcessed(PriceTickEnvelope tick)
+        {
+            if (tick == null) return;
+
+            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+            {
+                foreach (var item in SubscribedSymbolsList)
+                {
+                    if (string.Equals(item.SymbolName, tick.SymbolName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        item.Bid = tick.Bid;
+                        item.Ask = tick.Ask;
+                        item.Spread = tick.Ask - tick.Bid;
+                        item.LastUpdateTimeText = tick.Timestamp.ToLocalTime().ToString("HH:mm:ss.fff");
+                        item.TickCount++;
+                        break;
+                    }
+                }
+            });
+        }
+
+        private async Task StartTelemetryRefreshLoopAsync(CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(1000, token);
+
+                    OnPropertyChanged(nameof(IsBridgeConnected));
+                    OnPropertyChanged(nameof(IsBridgeAuthenticated));
+                    OnPropertyChanged(nameof(BridgeConnectionStatusText));
+                    OnPropertyChanged(nameof(BridgePingLatencyMs));
+                    OnPropertyChanged(nameof(BridgeLastHeartbeatText));
+                    OnPropertyChanged(nameof(BridgeLastErrorMessage));
+
+                    OnPropertyChanged(nameof(ProcessedTickCount));
+                    OnPropertyChanged(nameof(LastProcessingLatencyMs));
+                    OnPropertyChanged(nameof(LastProcessedSymbol));
+                    OnPropertyChanged(nameof(LastProcessedTimestampText));
+                }
+                catch (OperationCanceledException) { break; }
+                catch { }
             }
         }
     }

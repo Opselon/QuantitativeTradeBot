@@ -508,6 +508,8 @@ namespace Nexus.Tests.Unit.Desktop
         {
             private readonly BridgeMessageEnvelope? _responseToReturn;
 
+            public event Action<BridgeMessageEnvelope>? OnMessageReceived;
+
             public StubBridgeClient(BridgeMessageEnvelope? responseToReturn)
             {
                 _responseToReturn = responseToReturn;
