@@ -32,3 +32,15 @@ The desktop shell contains a persistent, real-time structured logging panel. Pay
 - **Subsystem**: Component identifier (e.g., `Persistence`, `Gateway`, `Security`).
 - **Level**: Diagnostic severity (e.g., `INFO`, `WARN`, `ERROR`).
 - **Message**: Sanitized and redacted log templates.
+
+## 6. Multi-Tab Institutional Workstation (Stage B)
+To facilitate real-time monitoring and diagnostics, the client workstation contains 9 centralized views:
+1. **Dashboard**: General welcome and live telemetry summary cards.
+2. **MT5 Bridge**: Sockets connection listener control, authorization, and standard EA installation help.
+3. **Market Watch**: Interactive symbol subscription manager (EURUSD, XAUUSD, etc.) with live bid/ask spreads.
+4. **Manual Desk**: Operational manual trading desk with readiness warnings.
+5. **Account Metrics**: Real-time balance, equity, leverage, and currency snapshots.
+6. **Native Engine**: Ingested tick count, performance latency, and live MarketState / MarketVector variables.
+7. **Diagnostics**: Real-time bounded diagnostics logs grid.
+8. **Settings**: General database persistence summary.
+9. **Test Console**: Automated "Real Smoke Test Workflow" script with step-by-step progress logging.

@@ -28,6 +28,8 @@ namespace Nexus.Infrastructure.Mt5Bridge
 
         public bool IsConnected => _activeClient != null && _activeClient.Connected;
 
+        public event Action<BridgeMessageEnvelope>? OnMessageReceived;
+
         public TcpMt5BridgeClient(IAppConfigurationService configService)
         {
             _configService = configService ?? throw new ArgumentNullException(nameof(configService));
@@ -279,11 +281,9 @@ namespace Nexus.Infrastructure.Mt5Bridge
                         tcs.TrySetResult(envelope);
                     }
                 }
-                else
-                {
-                    // If we receive a Request from the EA, we could handle it here if needed in the future.
-                    Console.WriteLine($"[TcpMt5BridgeClient] Unhandled message type: {envelope.MessageType}");
-                }
+
+                // Always raise OnMessageReceived for any message to support push notifications like streaming ticks.
+                OnMessageReceived?.Invoke(envelope);
             }
             catch (Exception ex)
             {

@@ -14,11 +14,48 @@ input string   InpBridgeHost = "127.0.0.1";  // Bridge Host IP Address
 input int      InpBridgePort = 5000;         // Bridge Port
 input int      InpPollIntervalMs = 250;      // Message Polling Interval (ms)
 
+//--- structures
+struct SubscribedSymbolState
+{
+   string symbol;
+   datetime last_time;
+   double last_bid;
+   double last_ask;
+};
+
 //--- global variables
 int      g_socket = INVALID_HANDLE;          // Direct network socket handle
 bool     g_is_connected = false;             // Active connection flag
 string   g_incoming_buffer = "";             // Buffer for stream assembly
 datetime g_last_recon_time = 0;              // Last reconnect attempt timestamp
+
+SubscribedSymbolState g_symbols_state[20];   // active subscribed symbols states
+int      g_symbols_count = 0;                // subscribed symbols counter
+
+//--- function declarations
+bool ConnectToBridge();
+void DisconnectFromBridge();
+void PollBridgeMessages();
+void ProcessIncomingJson(const string json);
+void HandleGetAccountSnapshot(const string requestId);
+void HandlePing(const string requestId);
+void HandleLogin(const string requestId, const string json);
+void HandleSubscribeSymbol(const string requestId, const string json);
+void HandleUnsubscribeSymbol(const string requestId, const string json);
+void HandlePlaceOrder(const string requestId, const string json);
+void HandleClosePosition(const string requestId, const string json);
+void HandleGetOpenPositions(const string requestId);
+void HandleUnknownCommand(const string requestId, const string command);
+string BuildEnvelopeJson(const string messageType, const string requestId, const string command, const string payloadJson, const string errorJson);
+void SendResponse(const string responseJson);
+void StreamLiveTicks();
+
+//--- simple JSON helpers
+string GetJsonStringValue(const string json, const string key);
+double GetJsonDoubleValue(const string json, const string key);
+long GetJsonIntValue(const string json, const string key);
+string EscapeJsonString(const string text);
+string StringTrim(const string text);
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -26,6 +63,9 @@ datetime g_last_recon_time = 0;              // Last reconnect attempt timestamp
 int OnInit()
 {
    Print("NexusBridge: Initializing Expert Advisor...");
+
+   // Clear subscriptions
+   g_symbols_count = 0;
 
    // Attempt to open initial bridge socket
    if(!ConnectToBridge())
@@ -81,6 +121,9 @@ void OnTimer()
 
    // Consume stream and parse discrete newline-terminated lines
    PollBridgeMessages();
+
+   // Stream ticks for subscribed symbols
+   StreamLiveTicks();
 }
 
 //+------------------------------------------------------------------+
@@ -204,6 +247,18 @@ void ProcessIncomingJson(const string json)
    {
       HandlePing(requestId);
    }
+   else if(command == "Login")
+   {
+      HandleLogin(requestId, json);
+   }
+   else if(command == "SubscribeSymbol")
+   {
+      HandleSubscribeSymbol(requestId, json);
+   }
+   else if(command == "UnsubscribeSymbol")
+   {
+      HandleUnsubscribeSymbol(requestId, json);
+   }
    else if(command == "PlaceOrder")
    {
       HandlePlaceOrder(requestId, json);
@@ -286,6 +341,136 @@ void HandlePing(const string requestId)
 
    string responseEnvelopeJson = BuildEnvelopeJson("Response", requestId, "Ping", payload, "null");
 
+   SendResponse(responseEnvelopeJson);
+}
+
+//+------------------------------------------------------------------+
+//| Command: Login - validates requested account with terminal      |
+//+------------------------------------------------------------------+
+void HandleLogin(const string requestId, const string json)
+{
+   string accountId = GetJsonStringValue(json, "accountId");
+   string brokerServer = GetJsonStringValue(json, "brokerServer");
+
+   long current_login = AccountInfoInteger(ACCOUNT_LOGIN);
+
+   bool success = true;
+   string error_msg = "";
+
+   if(accountId != "" && StringToInteger(accountId) != current_login)
+   {
+      success = false;
+      error_msg = "Account login mismatch. Requested: " + accountId + ", active login: " + IntegerToString(current_login);
+   }
+
+   string payload = "{"
+      "\"success\":" + (success ? "true" : "false") + ","
+      "\"errorMessage\":\"" + EscapeJsonString(error_msg) + "\""
+   "}";
+
+   string responseEnvelopeJson = BuildEnvelopeJson("Response", requestId, "Login", payload, "null");
+   SendResponse(responseEnvelopeJson);
+}
+
+//+------------------------------------------------------------------+
+//| Command: SubscribeSymbol - add a symbol to streaming watch list  |
+//+------------------------------------------------------------------+
+void HandleSubscribeSymbol(const string requestId, const string json)
+{
+   string symbol = GetJsonStringValue(json, "symbol");
+   string error_msg = "";
+   bool success = true;
+
+   if(symbol == "")
+   {
+      success = false;
+      error_msg = "Symbol is required.";
+   }
+   else
+   {
+      // Select the symbol in terminal Market Watch
+      if(!SymbolSelect(symbol, true))
+      {
+         success = false;
+         error_msg = "Symbol " + symbol + " could not be selected in Market Watch.";
+      }
+      else
+      {
+         // Add to tracking array if not already present
+         bool exists = false;
+         for(int i = 0; i < g_symbols_count; i++)
+         {
+            if(g_symbols_state[i].symbol == symbol)
+            {
+               exists = true;
+               break;
+            }
+         }
+
+         if(!exists)
+         {
+            if(g_symbols_count < 20)
+            {
+               g_symbols_state[g_symbols_count].symbol = symbol;
+               g_symbols_state[g_symbols_count].last_time = 0;
+               g_symbols_state[g_symbols_count].last_bid = 0;
+               g_symbols_state[g_symbols_count].last_ask = 0;
+               g_symbols_count++;
+               Print("NexusBridge: Subscribed to symbol '", symbol, "'. Current active count: ", g_symbols_count);
+            }
+            else
+            {
+               success = false;
+               error_msg = "Subscription limit of 20 symbols reached.";
+            }
+         }
+      }
+   }
+
+   string payload = "{"
+      "\"success\":" + (success ? "true" : "false") + ","
+      "\"errorMessage\":\"" + EscapeJsonString(error_msg) + "\""
+   "}";
+
+   string responseEnvelopeJson = BuildEnvelopeJson("Response", requestId, "SubscribeSymbol", payload, "null");
+   SendResponse(responseEnvelopeJson);
+}
+
+//+------------------------------------------------------------------+
+//| Command: UnsubscribeSymbol - remove symbol from stream watch    |
+//+------------------------------------------------------------------+
+void HandleUnsubscribeSymbol(const string requestId, const string json)
+{
+   string symbol = GetJsonStringValue(json, "symbol");
+   bool success = false;
+   string error_msg = "Symbol not subscribed.";
+
+   if(symbol != "")
+   {
+      for(int i = 0; i < g_symbols_count; i++)
+      {
+         if(g_symbols_state[i].symbol == symbol)
+         {
+            // Remove by shifting remaining elements
+            for(int j = i; j < g_symbols_count - 1; j++)
+            {
+               g_symbols_state[j] = g_symbols_state[j + 1];
+            }
+            g_symbols_count--;
+            success = true;
+            error_msg = "";
+            Print("NexusBridge: Unsubscribed from symbol '", symbol, "'. Current active count: ", g_symbols_count);
+            break;
+         }
+      }
+   }
+
+   string payload = "{"
+      "\"success\":" + (success ? "true" : "false") + ","
+      "\"errorMessage\":\"" + EscapeJsonString(error_msg) + "\""
+   "}";
+
+   string responseEnvelopeJson = BuildEnvelopeJson("Response", requestId, "UnsubscribeSymbol", payload, "null");
    SendResponse(responseEnvelopeJson);
 }
 
@@ -693,6 +878,49 @@ void SendResponse(const string responseJson)
    {
       Print("NexusBridge: SocketWrite failed. Error code: ", GetLastError());
       DisconnectFromBridge();
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Loop active subscriptions and stream changed ticks back to C#   |
+//+------------------------------------------------------------------+
+void StreamLiveTicks()
+{
+   if(!g_is_connected || g_symbols_count == 0) return;
+
+   for(int i = 0; i < g_symbols_count; i++)
+   {
+      string symbol = g_symbols_state[i].symbol;
+      MqlTick tick;
+      if(SymbolInfoTick(symbol, tick))
+      {
+         // Check if bid or ask changed
+         if(tick.bid != g_symbols_state[i].last_bid || tick.ask != g_symbols_state[i].last_ask)
+         {
+            g_symbols_state[i].last_time = tick.time;
+            g_symbols_state[i].last_bid = tick.bid;
+            g_symbols_state[i].last_ask = tick.ask;
+
+            // Format tick JSON payload matching C# TickNotification class
+            MqlDateTime mqlTime;
+            TimeToStruct(tick.time, mqlTime);
+            string time_str = StringFormat("%04d-%02d-%02dT%02d:%02d:%02dZ", mqlTime.year, mqlTime.mon, mqlTime.day, mqlTime.hour, mqlTime.min, mqlTime.sec);
+
+            string payload = "{"
+               "\"symbol\":\"" + EscapeJsonString(symbol) + "\","
+               "\"timestamp\":\"" + time_str + "\","
+               "\"bid\":" + DoubleToString(tick.bid, 5) + ","
+               "\"ask\":" + DoubleToString(tick.ask, 5) + ","
+               "\"spread\":" + DoubleToString(tick.ask - tick.bid, 5) + ","
+               "\"volume\":" + DoubleToString((double)tick.volume, 2) +
+            "}";
+
+            string requestId = "tick-" + symbol + "-" + IntegerToString(TimeLocal());
+            string envelopeJson = BuildEnvelopeJson("Request", requestId, "ReceiveTickStream", payload, "null");
+
+            SendResponse(envelopeJson);
+         }
+      }
    }
 }
 
