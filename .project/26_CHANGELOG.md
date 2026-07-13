@@ -1,20 +1,42 @@
 # 26_CHANGELOG – Nexus Trading Engine Change Log
 
+## [Completed] - Stage B (Real MT5 Localhost Bridge Integration Layer) - 2026-07-13
+
+### Added
+- **Core Bridge Service & Push Telemetry**:
+  - Implemented `IMt5BridgeService` interface and its robust `Mt5BridgeService` implementation under `src/Nexus.Infrastructure/Mt5Bridge/`.
+  - Added event-driven `OnMessageReceived` stream listener to `IMt5BridgeClient` and `TcpMt5BridgeClient`.
+  - Built background telemetry monitor loop on `Mt5BridgeService` sending heartbeat handshakes, monitoring stale session metrics, and implementing automated reconnect backoffs.
+- **MQL5 EA In-Terminal Tick Streaming**:
+  - Updated `NexusBridge.mq5` to support subscription commands (`SubscribeSymbol`, `UnsubscribeSymbol`), select symbols dynamically in Market Watch, and run high-frequency tick query loop under `OnTimer()` using `SymbolInfoTick()` to stream bid/ask updates back to C# as `ReceiveTickStream` JSON notifications.
+- **Ingestion MarketDataPipeline**:
+  - Developed `MarketDataPipeline` under `src/Nexus.Infrastructure/Mt5Bridge/` to normalize, validate, consistently timestamp, and marshal bridge ticks straight into `INativeCoreService.UpdateTick` (with safe managed simulation fallbacks).
+- **Desktop Operator Service Facade**:
+  - Built `IMt5BridgeOperatorService` and `Mt5BridgeOperatorService` facade under `src/Nexus.Desktop/Services/` to securely encapsulate real-time ticks, subscription watchlists, and live connection states, exposing thread-safe metrics.
+- **WPF Workstation Centralization**:
+  - Restructured `MainWindow.xaml` and `MainViewModel.cs` into an institutional navigation layout driven by Left Sidebar buttons switching a headerless `TabControl` containing 9 spaces: Dashboard, MT5 Bridge, Market Watch, Manual Desk, Account Metrics, Native Engine, Diagnostics, Settings, and Test Console.
+  - Included a dedicated EA Installation help panel, and built an automated "Real Smoke Test Workflow" verifier script displaying real-time diagnostic output logs step-by-step.
+- **Robust Unit and Integration Testing**:
+  - Created `Mt5BridgeOperatorTests.cs` validating connection telemetry, symbol subscription lists, and push tick-stream normalization.
+  - Excluded the Windows-only WPF/Desktop tests on headless Linux builds unconditionally under `Nexus.Tests.Unit.csproj` to maintain pristine CI execution.
+
+---
+
 ## [Completed] - Stage 3 (WPF UI Integration & MT5 Operator Panel) - 2025-07-14
 
 ### Added
 - **Desktop Models**:
   - `DesktopOrderSide` (enum: Buy/Sell).
-  - `DesktopPositionDto` carrying mapped positional metrics (Ticket, Symbol, Side, Volume, StopLoss, TakeProfit, Profit, Swap, Commission, OpenTime, Status).
+  - `DesktopPositionDto` carrying mapped positional metrics.
   - `DesktopTradeResult` carrying manual order feedback details.
-- **Operator Facade Service**: Created `IMt5OperatorService` and `Mt5OperatorService` wrapping the core `IMt5TradingService` with elegant DTO mappings and exception translation (e.g. SocketExceptions mapped to "Connection lost", TimeoutException to "Bridge timeout").
+- **Operator Facade Service**: Created `IMt5OperatorService` and `Mt5OperatorService` wrapping the core `IMt5TradingService` with elegant DTO mappings and exception translation.
 - **Operator ViewModels**:
-  - `DesktopPositionViewModel` exposing calculated metrics (like position `Duration`).
-  - `Mt5TradingViewModel` managing states (Connected, Busy, Refreshing, Executing), validating inputs (volume within [0.01, 100]), executing operator logs via `IDiagnosticService`, and running a safe, cancellable background polling loop.
+  - `DesktopPositionViewModel` exposing calculated metrics.
+  - `Mt5TradingViewModel` managing states, validating inputs, executing operator logs, and running background polling.
 - **WPF UI Operator Dashboard Control**:
-  - `Mt5TradingPanel.xaml` and its code-behind `Mt5TradingPanel.xaml.cs` containing Top Connection metrics panel, Middle Manual Trade Entry ticket, and Bottom Positions DataGrid with contextual actions.
-- **Integration & DI Registry**: Registered new operator facade and viewmodel in `App.xaml.cs`, injected `Mt5TradingViewModel` as a property in `MainViewModel`, and embedded `Mt5TradingPanel` in the workstation view in `MainWindow.xaml`.
-- **Deterministic Unit Tests**: Added a comprehensive suite of unit tests in `tests/Nexus.Tests.Unit/Desktop/Mt5TradingViewModelTests.cs` validating refresh, buy, sell, close, busy states, inputs validation, and logging, with target-OS framework compilation conditional support for headless Linux platforms.
+  - `Mt5TradingPanel.xaml` and its code-behind `Mt5TradingPanel.xaml.cs`.
+- **Integration & DI Registry**: Registered new operator facade and viewmodel in `App.xaml.cs`.
+- **Deterministic Unit Tests**: Added a comprehensive suite of unit tests in `tests/Nexus.Tests.Unit/Desktop/Mt5TradingViewModelTests.cs`.
 
 ---
 
@@ -34,16 +56,11 @@
 ## [Completed] - Stage 1 (C# Contracts & MT5 Bridge Commands) - 2025-07-12
 
 ### Added
-- **Application Port**: Created `IMt5TradingService` interface defining `PlaceMarketOrderAsync`, `ClosePositionAsync`, and `GetOpenPositionsAsync` as a clean, decoupled application port.
+- **Application Port**: Created `IMt5TradingService` interface defining `PlaceMarketOrderAsync`, `ClosePositionAsync`, and `GetOpenPositionsAsync`.
 - **Application DTOs**: Added broker-agnostic, clean data carriers `PlaceOrderResult`, `ClosePositionResult`, and `OpenPositionDto` under `src/Nexus.Application/Mt5/`.
 - **Infrastructure Adapters**:
-  - `RealMt5TradingService`: Maps application-level calls to raw JSON-over-TCP bridge payloads and returns structured result states.
-  - `SimulatedMt5TradingService`: Provides flawless offline/paper-trading mock actions by delegating to the existing in-memory simulated state.
+  - `RealMt5TradingService`: Maps application-level calls to raw JSON-over-TCP bridge payloads.
+  - `SimulatedMt5TradingService`: Provides flawless offline/paper-trading mock actions.
   - `RoutingMt5TradingService`: Routes commands dynamically to Real vs Simulated services depending on the configuration parameter `Mt5Mode`.
 - **Dependency Injection**: Registered all new interfaces and service mappings in `src/Nexus.Desktop/App.xaml.cs`.
-- **Unit Tests**: Added 5 new robust, comprehensive unit tests under `tests/Nexus.Tests.Unit/Desktop/Mt5BridgeTests.cs` checking request mapping, response serialization, routing selection, and exception propagation.
-
----
-
-### Changed
-- Refactored `Mt5BridgeTests.cs` imports to use the correct namespaces and include mapping and routing tests.
+- **Unit Tests**: Added 5 new robust, comprehensive unit tests under `tests/Nexus.Tests.Unit/Desktop/Mt5BridgeTests.cs`.

@@ -464,3 +464,90 @@ The UI is strictly separated from any physical infrastructure:
   2. `Mt5OperatorService` invokes `_tradingService.ClosePositionAsync()`.
   3. Active implementation instructs close execution (on simulated positions or real terminal tickets).
   4. Results are processed, errors are normalized, and UI refreshes the active positions table.
+
+---
+
+## 10. New Real-Time Subscription & Tick Streaming Commands (Stage B additions)
+
+To support real-time high-precision market watch widgets and native Core math acceleration, the bridge exposes new JSON protocol frames:
+
+### 10.1. `Login` Command
+
+Sent by C# to authorize the MT5 session with matching account identifiers.
+
+Request Payload:
+```json
+{
+  "messageType": "Request",
+  "requestId": "req-login-01",
+  "command": "Login",
+  "payload": {
+    "accountId": "7820491",
+    "password": "demo_password",
+    "brokerServer": "ICMarkets-Demo"
+  }
+}
+```
+
+Response Payload:
+```json
+{
+  "messageType": "Response",
+  "requestId": "req-login-01",
+  "command": "Login",
+  "payload": {
+    "success": true,
+    "errorMessage": ""
+  }
+}
+```
+
+### 10.2. `SubscribeSymbol` / `UnsubscribeSymbol` Commands
+
+Used to add or remove instruments from the EA's high-frequency tick watch list.
+
+Request Payload:
+```json
+{
+  "messageType": "Request",
+  "requestId": "req-sub-01",
+  "command": "SubscribeSymbol",
+  "payload": {
+    "symbol": "EURUSD"
+  }
+}
+```
+
+Response Payload:
+```json
+{
+  "messageType": "Response",
+  "requestId": "req-sub-01",
+  "command": "SubscribeSymbol",
+  "payload": {
+    "success": true,
+    "errorMessage": ""
+  }
+}
+```
+
+### 10.3. `ReceiveTickStream` Broadcast
+
+Streamed automatically by `NexusBridge.mq5` whenever any of the active symbols receive a bid/ask price modification.
+
+Notification Payload:
+```json
+{
+  "messageType": "Request",
+  "requestId": "tick-EURUSD-timestamp",
+  "command": "ReceiveTickStream",
+  "payload": {
+    "symbol": "EURUSD",
+    "timestamp": "2025-05-20T12:00:05Z",
+    "bid": 1.08500,
+    "ask": 1.08510,
+    "spread": 0.00010,
+    "volume": 1.0
+  }
+}
+```

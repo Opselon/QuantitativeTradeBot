@@ -54,4 +54,61 @@ namespace Nexus.Desktop.ViewModels
             }
         }
     }
+
+    public class AsyncRelayCommand<T> : IAsyncRelayCommand
+    {
+        private readonly Func<T, Task> _execute;
+        private readonly Func<T, bool>? _canExecute;
+        private bool _isExecuting;
+
+        public AsyncRelayCommand(Func<T, Task> execute, Func<T, bool>? canExecute = null)
+        {
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute;
+        }
+
+        public event EventHandler? CanExecuteChanged
+        {
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
+        }
+
+        public bool CanExecute(object? parameter)
+        {
+            if (_isExecuting) return false;
+            if (parameter is T val)
+            {
+                return _canExecute == null || _canExecute(val);
+            }
+            return _canExecute == null;
+        }
+
+        public async void Execute(object? parameter)
+        {
+            await ExecuteAsync(parameter);
+        }
+
+        public async Task ExecuteAsync(object? parameter)
+        {
+            _isExecuting = true;
+            CommandManager.InvalidateRequerySuggested();
+
+            try
+            {
+                if (parameter is T val)
+                {
+                    await _execute(val);
+                }
+                else
+                {
+                    await _execute(default!);
+                }
+            }
+            finally
+            {
+                _isExecuting = false;
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
 }
