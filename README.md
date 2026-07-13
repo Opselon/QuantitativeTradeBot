@@ -277,13 +277,13 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Merge pull request #13 from Opselon/jules-16049454016234857646-88ec380f |
+| **Commit Message** | Merge pull request #14 from Opselon/real-mt5-localhost-bridge-4695754023516361130 |
 | **Author** | Capsizer |
 | **Branch** | $env:GITHUB_REF_NAME |
 | **Run Number** | $env:GITHUB_RUN_NUMBER |
 | **Commit SHA** | $env:GITHUB_SHA |
 | **Generated At** | `
-2026-07-13 00:04:17 UTC
+2026-07-13 01:28:52 UTC
 ` |
 
 ---
@@ -417,6 +417,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── IMarketDataRepository.cs
 │   │   │   ├── IMt5AccountService.cs
 │   │   │   ├── IMt5BridgeClient.cs
+│   │   │   ├── IMt5BridgeService.cs
 │   │   │   ├── IMt5ConnectionService.cs
 │   │   │   ├── IMt5Session.cs
 │   │   │   ├── IMt5TradeService.cs
@@ -503,11 +504,14 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   ├── Services/
 │   │   │   ├── DiagnosticService.cs
 │   │   │   ├── IDiagnosticService.cs
+│   │   │   ├── IMt5BridgeOperatorService.cs
 │   │   │   ├── IMt5OperatorService.cs
+│   │   │   ├── Mt5BridgeOperatorService.cs
 │   │   │   └── Mt5OperatorService.cs
 │   │   ├── ViewModels/
 │   │   │   ├── AsyncRelayCommand.cs
 │   │   │   ├── DesktopPositionViewModel.cs
+│   │   │   ├── DesktopSymbolViewModel.cs
 │   │   │   ├── MainViewModel.cs
 │   │   │   ├── Mt5TradingViewModel.cs
 │   │   │   ├── NexusIntelligenceViewModel.cs
@@ -542,6 +546,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │       ├── SimulatedMt5TradingService.cs
 │   │   │       └── SimulatedTradingPlatformConnector.cs
 │   │   ├── Mt5Bridge/
+│   │   │   ├── MarketDataPipeline.cs
+│   │   │   ├── Mt5BridgeService.cs
 │   │   │   └── TcpMt5BridgeClient.cs
 │   │   ├── Persistence/
 │   │   │   ├── Configurations/
@@ -621,6 +627,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   └── Nexus.Tests.Unit/
 │       ├── Desktop/
 │       │   ├── DesktopTests.cs
+│       │   ├── Mt5BridgeOperatorTests.cs
 │       │   ├── Mt5BridgeTests.cs
 │       │   └── Mt5TradingViewModelTests.cs
 │       ├── Entities/
@@ -645,7 +652,7 @@ To get started, please review the contribution guidelines outlined above, explor
 
 | File Type | Count |
 | --- | ---: |
-| C# (.cs) | 208 |
+| C# (.cs) | 215 |
 | WPF (.xaml) | 6 |
 | C/C++ Source | 12 |
 | Projects (.sln, .csproj) | 11 |
@@ -658,8 +665,10 @@ No explicit C# errors.
 ```
 #### 🟡 Warnings
 ```text
-     6>/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Desktop/Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
-         /home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Desktop/Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
+     6>/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Desktop/Mt5BridgeTests.cs(511,57): warning CS0067: The event 'Mt5BridgeTests.StubBridgeClient.OnMessageReceived' is never used [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
+     6>/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Desktop/Mt5BridgeTests.cs(535,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
+         /home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Desktop/Mt5BridgeTests.cs(511,57): warning CS0067: The event 'Mt5BridgeTests.StubBridgeClient.OnMessageReceived' is never used [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
+         /home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Desktop/Mt5BridgeTests.cs(535,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
 ```
 
 ### 🚀 Pipeline Diagnostics (Release Stage - Windows)
@@ -671,8 +680,10 @@ No C# errors.
 ```
 #### 🟡 Warnings
 ```text
-7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(533,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(511,57): warning CS0067: The event 'Mt5BridgeTests.StubBridgeClient.OnMessageReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(535,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(511,57): warning CS0067: The event 'Mt5BridgeTests.StubBridgeClient.OnMessageReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5BridgeTests.cs(535,59): warning CS0067: The event 'Mt5BridgeTests.StubSession.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 ```
 
 <!-- NEXUS_AUTO_DOC_END -->
