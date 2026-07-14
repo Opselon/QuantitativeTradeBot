@@ -37,6 +37,7 @@ bool ConnectToBridge();
 void DisconnectFromBridge();
 void PollBridgeMessages();
 void ProcessIncomingJson(const string json);
+void HandleHandshake(const string requestId);
 void HandleGetAccountSnapshot(const string requestId);
 void HandlePing(const string requestId);
 void HandleLogin(const string requestId, const string json);
@@ -239,7 +240,11 @@ void ProcessIncomingJson(const string json)
 
    Print("NexusBridge: Received command '", command, "' with Request ID: ", requestId);
 
-   if(command == "GetAccountSnapshot")
+   if(command == "Handshake")
+   {
+      HandleHandshake(requestId);
+   }
+   else if(command == "GetAccountSnapshot")
    {
       HandleGetAccountSnapshot(requestId);
    }
@@ -275,6 +280,20 @@ void ProcessIncomingJson(const string json)
    {
       HandleUnknownCommand(requestId, command);
    }
+}
+
+//+------------------------------------------------------------------+
+//| Command: Handshake - responds with EA metadata details           |
+//+------------------------------------------------------------------+
+void HandleHandshake(const string requestId)
+{
+   string payload = StringFormat(
+      "{\"eaName\":\"NexusBridge\",\"eaVersion\":\"1.00\",\"accountId\":%lld,\"brokerServer\":\"%s\",\"subscribedSymbols\":[\"%s\"],\"isInitialized\":true,\"chartSymbol\":\"%s\"}",
+      AccountInfoInteger(ACCOUNT_LOGIN), AccountInfoString(ACCOUNT_SERVER), _Symbol, _Symbol
+   );
+   string responseEnvelopeJson = BuildEnvelopeJson("Response", requestId, "Handshake", payload, "null");
+   SendResponse(responseEnvelopeJson);
+   Print("NexusBridge: Handshake complete.");
 }
 
 //+------------------------------------------------------------------+

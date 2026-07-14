@@ -36,4 +36,11 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="../../MQL5/Experts/Nexus/NexusBridge.mq5">
+      <Link>Mt5Bridge/NexusBridge.mq5</Link>
+      <LogicalName>Nexus.Infrastructure.Mt5Bridge.NexusBridge.mq5</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

@@ -35,18 +35,17 @@ namespace Nexus.Infrastructure.Mt5Bridge
         // Stateful Smoke Tests Manager
         private static readonly ConcurrentDictionary<string, SmokeTestSession> SmokeTests = new();
 
+        public static bool IsAuthorized(HttpContext context)
+        {
+            if (!context.Request.Headers.TryGetValue("X-Nexus-Token", out var tokenValues))
+            {
+                return false;
+            }
+            return string.Equals(tokenValues.ToString(), AuthToken, StringComparison.Ordinal);
+        }
+
         public static void Map(IEndpointRouteBuilder endpoints)
         {
-            // Middleware helper for token validation
-            bool IsAuthorized(HttpContext context)
-            {
-                if (!context.Request.Headers.TryGetValue("X-Nexus-Token", out var tokenValues))
-                {
-                    return false;
-                }
-                return string.Equals(tokenValues.ToString(), AuthToken, StringComparison.Ordinal);
-            }
-
             IResult UnauthorizedResult()
             {
                 return Results.Json(new
@@ -580,7 +579,7 @@ namespace Nexus.Infrastructure.Mt5Bridge
 
         private void AddLog(string msg)
         {
-            Logs.Add($"[{DateTime.UtcNow:HH:mm:ss.fffZ}] {msg}");
+            Logs.Add($"[{DateTime.UtcNow:HH:mm:ss.fffZ}] {LogSanitizer.Sanitize(msg)}");
         }
 
         private async Task RunTestAsync()

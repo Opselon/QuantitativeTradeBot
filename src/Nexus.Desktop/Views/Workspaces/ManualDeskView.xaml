@@ -14,11 +14,11 @@
         </Grid.RowDefinitions>
 
         <!-- Readiness Indicator Banner -->
-        <Border Grid.Row="0" Background="#3E2723" BorderBrush="#D65A31" BorderThickness="1" CornerRadius="4" Padding="15">
+        <Border Grid.Row="0" Background="{Binding Mt5Trading.WarningBannerColor, FallbackValue='#C62828'}" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="⚠" Foreground="#D65A31" FontSize="20" FontWeight="Bold" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                <TextBlock Text="⚡" Foreground="White" FontSize="20" FontWeight="Bold" Margin="0,0,15,0" VerticalAlignment="Center"/>
                 <StackPanel>
-                    <TextBlock Text="MANUAL OPERATOR DESK - PARTIAL READINESS" Foreground="White" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Mt5Trading.WarningBannerText, FallbackValue='Bridge Offline: Manual Execution Disabled'}" Foreground="White" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="Manual executing operations are enabled. Order execution parameters (StopLoss, TakeProfit) bypass strategy automation." Foreground="#CCCCCC" FontSize="11" Margin="0,3,0,0"/>
                 </StackPanel>
             </StackPanel>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -27,6 +28,20 @@ namespace Nexus.Infrastructure.Mt5Bridge
         private double _pingLatencyMs;
         private DateTime _lastHeartbeatUtc = DateTime.MinValue;
         private string _lastErrorMessage = string.Empty;
+
+        private BridgeLifecycleState _currentState = BridgeLifecycleState.Stopped;
+        public BridgeLifecycleState CurrentState
+        {
+            get => _currentState;
+            private set
+            {
+                if (_currentState != value)
+                {
+                    _currentState = value;
+                    OnStatusChanged?.Invoke(ConnectionStatusText);
+                }
+            }
+        }
 
         // EA status & file properties
         public bool IsEaPresentInRepository { get; private set; }
@@ -121,6 +136,51 @@ namespace Nexus.Infrastructure.Mt5Bridge
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             _bridgeClient.OnMessageReceived += HandleIncomingBridgeMessage;
+
+            // Auto-discover NexusBridge.mq5 by checking parent paths
+            string relativePath = Path.Combine("MQL5", "Experts", "Nexus", "NexusBridge.mq5");
+            string? currentDir = AppContext.BaseDirectory;
+            string? foundPath = null;
+            while (currentDir != null)
+            {
+                string testPath = Path.Combine(currentDir, relativePath);
+                if (File.Exists(testPath))
+                {
+                    foundPath = testPath;
+                    break;
+                }
+                currentDir = Directory.GetParent(currentDir)?.FullName;
+            }
+
+            if (foundPath == null)
+            {
+                string workDirTest = Path.Combine(Directory.GetCurrentDirectory(), relativePath);
+                if (File.Exists(workDirTest))
+                {
+                    foundPath = workDirTest;
+                }
+            }
+
+            if (foundPath != null)
+            {
+                IsEaPresentInRepository = true;
+                EaRepositoryFilePath = foundPath;
+                try
+                {
+                    var fileInfo = new FileInfo(foundPath);
+                    EaRepositoryFileSize = fileInfo.Length;
+                    EaRepositoryFileLastModifiedUtc = fileInfo.LastWriteTimeUtc;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[Mt5BridgeService] Found EA but failed to read its file info.");
+                }
+            }
+            else
+            {
+                IsEaPresentInRepository = false;
+                EaRepositoryFilePath = relativePath;
+            }
         }
 
         public async Task ConnectAsync(string host, int port, CancellationToken ct = default)
@@ -140,6 +200,7 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 await _bridgeClient.ConnectAsync(ct);
                 IsConnected = true;
                 LastErrorMessage = string.Empty;
+                CurrentState = BridgeLifecycleState.Listening;
                 _logger.LogInformation("[Mt5BridgeService] TCP bridge server listener started successfully.");
 
                 // Start background health check and push-telemetry monitoring loop
@@ -188,6 +249,13 @@ namespace Nexus.Infrastructure.Mt5Bridge
 
             IsConnected = false;
             IsAuthenticated = false;
+            IsHandshakeSucceeded = false;
+            EaName = string.Empty;
+            EaVersion = string.Empty;
+            ChartSymbol = string.Empty;
+            HandshakeAccountId = string.Empty;
+            HandshakeBrokerServer = string.Empty;
+            CurrentState = BridgeLifecycleState.Stopped;
             _logger.LogInformation("[Mt5BridgeService] Bridge disconnected cleanly.");
         }
 
@@ -241,6 +309,7 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 {
                     IsAuthenticated = true;
                     LastErrorMessage = string.Empty;
+                    CurrentState = BridgeLifecycleState.Authenticated;
                     _logger.LogInformation("[Mt5BridgeService] Login verified successfully. Session Authenticated.");
                     return true;
                 }
@@ -349,6 +418,99 @@ namespace Nexus.Infrastructure.Mt5Bridge
             }
         }
 
+        public async Task<string> AutoDetectAndInstallEaAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("[Mt5BridgeService] Auto-detecting MT5 data directory...");
+
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string mt5Path = Path.Combine(appData, "MetaQuotes", "Terminal");
+
+            if (!Directory.Exists(mt5Path))
+            {
+                throw new DirectoryNotFoundException($"MetaQuotes Terminal directory was not found at {mt5Path}");
+            }
+
+            string? bestExpertsPath = null;
+            DateTime latestTime = DateTime.MinValue;
+
+            foreach (var dir in Directory.GetDirectories(mt5Path))
+            {
+                string dirName = Path.GetFileName(dir);
+                if (dirName.Length == 32)
+                {
+                    string expertsPath = Path.Combine(dir, "MQL5", "Experts");
+                    if (Directory.Exists(expertsPath))
+                    {
+                        var dirInfo = new DirectoryInfo(dir);
+                        if (dirInfo.LastWriteTimeUtc > latestTime)
+                        {
+                            latestTime = dirInfo.LastWriteTimeUtc;
+                            bestExpertsPath = expertsPath;
+                        }
+                    }
+                }
+            }
+
+            if (bestExpertsPath == null)
+            {
+                bestExpertsPath = Path.Combine(appData, "MetaQuotes", "Terminal", "Common", "MQL5", "Experts");
+            }
+
+            string targetDir = Path.Combine(bestExpertsPath, "Nexus");
+            await ExportEaAsync(targetDir, cancellationToken);
+
+            try
+            {
+                System.Diagnostics.Process.Start("explorer.exe", targetDir);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[Mt5BridgeService] Failed to launch explorer.exe for path: {Path}", targetDir);
+            }
+
+            return targetDir;
+        }
+
+        public async Task ExportEaAsync(string destinationDirectory, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(destinationDirectory))
+            {
+                throw new ArgumentException("Destination directory cannot be empty.", nameof(destinationDirectory));
+            }
+
+            _logger.LogInformation("[Mt5BridgeService] Exporting embedded EA to {Dest}...", destinationDirectory);
+
+            try
+            {
+                if (!Directory.Exists(destinationDirectory))
+                {
+                    Directory.CreateDirectory(destinationDirectory);
+                }
+
+                string destFilePath = Path.Combine(destinationDirectory, "NexusBridge.mq5");
+
+                var assembly = typeof(Mt5BridgeService).Assembly;
+                using var stream = assembly.GetManifestResourceStream("Nexus.Infrastructure.Mt5Bridge.NexusBridge.mq5");
+                if (stream == null)
+                {
+                    throw new FileNotFoundException("Embedded NexusBridge.mq5 was not found in assembly resources.");
+                }
+
+                using (var destStream = new FileStream(destFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                {
+                    await stream.CopyToAsync(destStream, cancellationToken);
+                }
+
+                IsEaInstalledConfirmed = true;
+                _logger.LogInformation("[Mt5BridgeService] Embedded EA successfully exported to {Path}", destFilePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[Mt5BridgeService] Failed to export embedded EA to {Dest}", destinationDirectory);
+                throw;
+            }
+        }
+
         private async Task SendSubscriptionCommandAsync(string symbol, string command, CancellationToken ct)
         {
             string requestId = Guid.NewGuid().ToString();
@@ -440,6 +602,43 @@ namespace Nexus.Infrastructure.Mt5Bridge
                         continue;
                     }
 
+                    if (IsConnected && !IsHandshakeSucceeded)
+                    {
+                        _logger.LogInformation("[Mt5BridgeService] Executing bidirectional handshake with EA...");
+                        CurrentState = BridgeLifecycleState.Handshaking;
+                        string hsRequestId = Guid.NewGuid().ToString();
+                        var hsRequest = BridgeMessageEnvelope.CreateRequest(hsRequestId, "Handshake", null);
+                        try
+                        {
+                            var hsResponse = await _bridgeClient.SendAsync(hsRequest, token);
+                            if (hsResponse != null && hsResponse.Error == null && hsResponse.Payload != null)
+                            {
+                                var payloadJson = JsonSerializer.Serialize(hsResponse.Payload);
+                                var hsPayload = JsonSerializer.Deserialize<HandshakePayload>(payloadJson);
+                                if (hsPayload != null)
+                                {
+                                    EaName = hsPayload.EaName;
+                                    EaVersion = hsPayload.EaVersion;
+                                    ChartSymbol = hsPayload.ChartSymbol;
+                                    HandshakeAccountId = hsPayload.AccountId.ToString();
+                                    HandshakeBrokerServer = hsPayload.BrokerServer;
+                                    IsHandshakeSucceeded = true;
+                                    CurrentState = BridgeLifecycleState.HandshakeSuccess;
+                                    _logger.LogInformation("[Mt5BridgeService] Handshake succeeded! EA: {EaName} v{EaVersion}, Account: {AccountId}, Server: {BrokerServer}",
+                                        EaName, EaVersion, HandshakeAccountId, HandshakeBrokerServer);
+
+                                    // Trigger status changed
+                                    OnStatusChanged?.Invoke(ConnectionStatusText);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "[Mt5BridgeService] Handshake attempt failed. Will retry...");
+                            continue; // Skip the rest of loop until handshake is done
+                        }
+                    }
+
                     // Execute ping handshake to measure latency
                     string requestId = Guid.NewGuid().ToString();
                     var envelope = BridgeMessageEnvelope.CreateRequest(requestId, "Ping", null);
@@ -512,8 +711,15 @@ namespace Nexus.Infrastructure.Mt5Bridge
         {
             IsConnected = false;
             IsAuthenticated = false;
+            IsHandshakeSucceeded = false;
+            EaName = string.Empty;
+            EaVersion = string.Empty;
+            ChartSymbol = string.Empty;
+            HandshakeAccountId = string.Empty;
+            HandshakeBrokerServer = string.Empty;
             PingLatencyMs = 0;
             LastErrorMessage = "Bridge connection lost.";
+            CurrentState = BridgeLifecycleState.ConnectionError;
 
             // Attempt reconnect logic with retry backoff in background
             _ = Task.Run(async () =>
@@ -562,6 +768,30 @@ namespace Nexus.Infrastructure.Mt5Bridge
         }
 
         // Internal contracts classes
+        private class HandshakePayload
+        {
+            [JsonPropertyName("eaName")]
+            public string EaName { get; set; } = string.Empty;
+
+            [JsonPropertyName("eaVersion")]
+            public string EaVersion { get; set; } = string.Empty;
+
+            [JsonPropertyName("accountId")]
+            public long AccountId { get; set; }
+
+            [JsonPropertyName("brokerServer")]
+            public string BrokerServer { get; set; } = string.Empty;
+
+            [JsonPropertyName("subscribedSymbols")]
+            public List<string> SubscribedSymbols { get; set; } = new();
+
+            [JsonPropertyName("isInitialized")]
+            public bool IsInitialized { get; set; }
+
+            [JsonPropertyName("chartSymbol")]
+            public string ChartSymbol { get; set; } = string.Empty;
+        }
+
         private class LoginRequest
         {
             [JsonPropertyName("accountId")]

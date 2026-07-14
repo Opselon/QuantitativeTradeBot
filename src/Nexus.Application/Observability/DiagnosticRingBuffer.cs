@@ -30,6 +30,11 @@ namespace Nexus.Application.Observability
         {
             if (entry == null) return;
 
+            // Sanitize sensitive credentials from the diagnostic log entry
+            entry.Message = LogSanitizer.Sanitize(entry.Message);
+            entry.PayloadSummary = LogSanitizer.Sanitize(entry.PayloadSummary);
+            entry.ExceptionSummary = LogSanitizer.Sanitize(entry.ExceptionSummary);
+
             lock (_lock)
             {
                 while (_queue.Count >= _capacity)

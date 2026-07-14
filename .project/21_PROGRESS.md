@@ -51,6 +51,10 @@ We have successfully completed Stage 3 of the WPF manual trading operator dashbo
 We have successfully completed the real local MT5 bridge integration layer (Stage B) and brought it to a clean, fully verified real-debuggable workstation:
 
 ### What was Done
+0. **Automated EA Autolocator & Resource Embedded Wizard**:
+   - Embedded `NexusBridge.mq5` source code as an assembly resource (`Nexus.Infrastructure.csproj`) to avoid missing files.
+   - Implemented automatic `%APPDATA%\MetaQuotes\Terminal` scan to autolocate active MT5 hashes and target Experts directories.
+   - Added visual export controls in `Mt5BridgeView.xaml` and `Mt5BridgeViewModel.cs` with real-time success state feedback, launching explorer.exe directly upon successful auto-deployments.
 1. **Core Bridge Service & Handshake Protocol**:
    - Extended `IMt5BridgeService` and implemented a bidirectional Handshake protocol. When MT5 connects, a Handshake Request is sent and the EA responds with its details (account number, broker server, subscribed symbols, initialized status, chart symbol).
    - The bridge enters "Connected" and "Started" states only when both socket transport and handshake succeed.

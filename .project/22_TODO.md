@@ -24,24 +24,20 @@
 
 ---
 
-## [x] Stage B: Real MT5 Localhost Bridge Integration Layer (Completed)
-- **[x] Connect & Login Handshake**
-  - Implement full TCP connection establishment, secure authorization credential submissions, and heartbeats.
-- **[x] In-Terminal Tick Streaming**
-  - Overwrite `NexusBridge.mq5` to support symbol subscriptions and stream high-precision bid/ask ticks under `OnTimer()`.
-- **[x] Ingestion MarketDataPipeline**
-  - Implement real tick normalization, consistency validation, and direct `INativeCoreService.UpdateTick` ingestion into `Nexus.Native.Core`.
-- **[x] Bounded Diagnostics Logs**
-  - Implement bounded logging storage to eliminate memory leaks under fast live traffic.
-- **[x] Left Sidebar Workstation Navigation**
-  - Design 9 modern, fully active panels (Dashboard, MT5 Bridge, Market Watch, Manual Desk, Account Metrics, Native Engine, Diagnostics, Settings, Test Console) switcher.
-- **[x] Automated Smoke Test Verifier**
-  - Provide a one-click automated verifier progress log running full end-to-end checks.
-
 ---
 
-## [ ] Stage 4: Real-Time Push Streaming & Technical Indicator Optimizations (Backlog)
-- **[ ] Real-time Streaming Push**: Replace polling loops with TCP push broadcasts from MT5 terminal on trade/position events (`OnTradeTransaction` native handlers).
-- **[ ] Event-Based Position Updates**: Update client collection using real-time pushed streams.
-- **[ ] Latency Monitoring**: Capture, measure, and display granular socket round-trip propagation times for every transaction.
-- **[ ] C++ Core Connector / DLL Optimizations**: Optimize rolling technical indicator computation times via native C++ analytics engine bypasses.
+## [ ] Phase C: Multi-Strategy Portfolio Optimization & AI/ONNX Live Execution (Active Roadmap)
+
+### Phase C.1: Quantitative Performance & Streaming Optimizations
+- **[ ] Real-time Streaming Push**: Optimize MT5 Terminal with `OnTradeTransaction` native handlers for real-time pushed event-based updates on trades and positions, eliminating polling.
+- **[ ] High-Speed Ingestion Pipeline**: Optimize the `MarketDataPipeline` push paths to C++ native core libraries, achieving sub-microsecond rolling indicator updates.
+- **[ ] Latency Monitoring**: Measure and display granular TCP socket round-trip and native DLL execution times inside the Workstation view.
+
+### Phase C.2: Strategy Supervisor & Execution Orchestration
+- **[ ] Dynamic Strategy Sandbox**: Implement thread-safe multi-strategy containers within `StrategySupervisor` for hot-reloading custom strategy scripts.
+- **[ ] Signal Router Concurrency**: Optimize the `SignalRouter` and `ExecutionCoordinator` to route high-frequency signals with lock-free concurrent queues.
+- **[ ] Risk Control Bounds**: Implement post-handshake, pre-execution risk limits verification on real trade lots allocation.
+
+### Phase C.3: AI Neural Evaluator Integration
+- **[ ] ONNX Model Evaluator**: Streamline the `Nexus.AI` module utilizing ONNX Runtime to evaluate rolling technical matrices using neural model checkpoints.
+- **[ ] Deterministic Fallback Math**: Align ONNX prediction boundaries with mathematically exact managed fallbacks under restricted execution profiles.

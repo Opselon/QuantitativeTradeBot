@@ -7,8 +7,14 @@
   - Implemented `IMt5BridgeService` interface and its robust `Mt5BridgeService` implementation under `src/Nexus.Infrastructure/Mt5Bridge/`.
   - Added event-driven `OnMessageReceived` stream listener to `IMt5BridgeClient` and `TcpMt5BridgeClient`.
   - Built background telemetry monitor loop on `Mt5BridgeService` sending heartbeat handshakes, monitoring stale session metrics, and implementing automated reconnect backoffs.
+- **MQL5 EA Bidirectional Handshake**:
+  - Updated `NexusBridge.mq5` to support Handshake request/response processing, formatting JSON metadata envelopes containing EA name, version, broker server, login account, and active chart symbols.
 - **MQL5 EA In-Terminal Tick Streaming**:
   - Updated `NexusBridge.mq5` to support subscription commands (`SubscribeSymbol`, `UnsubscribeSymbol`), select symbols dynamically in Market Watch, and run high-frequency tick query loop under `OnTimer()` using `SymbolInfoTick()` to stream bid/ask updates back to C# as `ReceiveTickStream` JSON notifications.
+- **Local Secure Kestrel API Hosting**:
+  - Hosted a secure, local-only ASP.NET Core Kestrel minimal API server on `127.0.0.1:5005` inside `Nexus.Infrastructure` as an `IHostedService`, exposing 18 endpoints for monitoring and control. Secured mutating routes using bearer-style `X-Nexus-Token` validation.
+- **Diagnostics Ring Buffer & Secret Sanitization**:
+  - Implemented a thread-safe `DiagnosticRingBuffer` capped at 1,000 entries and fully integrated with `LogSanitizer` to automatically redact sensitive connection credentials/passwords.
 - **Ingestion MarketDataPipeline**:
   - Developed `MarketDataPipeline` under `src/Nexus.Infrastructure/Mt5Bridge/` to normalize, validate, consistently timestamp, and marshal bridge ticks straight into `INativeCoreService.UpdateTick` (with safe managed simulation fallbacks).
 - **Desktop Operator Service Facade**:
