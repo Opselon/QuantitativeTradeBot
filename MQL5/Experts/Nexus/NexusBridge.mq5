@@ -110,7 +110,7 @@ void OnTimer()
    // Handle automatic reconnection if offline
    if(!g_is_connected)
    {
-      datetime now = TimeCurrent();
+      datetime now = TimeLocal();
       if(now - g_last_recon_time >= 5) // retry every 5 seconds
       {
          Print("NexusBridge: Connection offline. Attempting automatic reconnect...");
@@ -131,7 +131,7 @@ void OnTimer()
 //+------------------------------------------------------------------+
 bool ConnectToBridge()
 {
-   g_last_recon_time = TimeCurrent();
+   g_last_recon_time = TimeLocal();
 
    // Create socket using MQL5 Native Network API
    g_socket = SocketCreate();
@@ -177,23 +177,20 @@ void PollBridgeMessages()
 {
    if(g_socket == INVALID_HANDLE) return;
 
-   uint data_ready = 0;
-   // Check if data is pending in socket buffer
-   if(!SocketIsReadable(g_socket, data_ready))
+   // Verify socket is still active
+   if(!SocketIsConnected(g_socket))
    {
-      int err = GetLastError();
-      if(err != 0)
-      {
-         Print("NexusBridge: Socket error checking readability. Code: ", err);
-         DisconnectFromBridge();
-      }
+      Print("NexusBridge: Socket disconnected detected in poll. Disconnecting.");
+      DisconnectFromBridge();
       return;
    }
 
+   // Fetch total readable bytes
+   uint data_ready = SocketIsReadable(g_socket);
    if(data_ready == 0) return;
 
    uchar buffer[];
-   ArrayResize(buffer, data_ready);
+   ArrayResize(buffer, (int)data_ready);
 
    int bytes_read = SocketRead(g_socket, buffer, data_ready, 100);
    if(bytes_read <= 0)
@@ -290,7 +287,7 @@ void HandleGetAccountSnapshot(const string requestId)
    double balance     = AccountInfoDouble(ACCOUNT_BALANCE);
    double equity      = AccountInfoDouble(ACCOUNT_EQUITY);
    double margin      = AccountInfoDouble(ACCOUNT_MARGIN);
-   double freeMargin  = AccountInfoDouble(ACCOUNT_FREEMARGIN);
+   double freeMargin  = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
    int    leverage    = (int)AccountInfoInteger(ACCOUNT_LEVERAGE);
 
    int last_err = GetLastError();
@@ -412,7 +409,7 @@ void HandleSubscribeSymbol(const string requestId, const string json)
             if(g_symbols_count < 20)
             {
                g_symbols_state[g_symbols_count].symbol = symbol;
-               g_symbols_state[g_symbols_count].last_time = 0;
+               g_symbols_state[g_symbols_count].last_time = (datetime)0;
                g_symbols_state[g_symbols_count].last_bid = 0;
                g_symbols_state[g_symbols_count].last_ask = 0;
                g_symbols_count++;
@@ -873,10 +870,10 @@ void SendResponse(const string responseJson)
    int bytes_converted = StringToCharArray(outbound_data, buffer, 0, WHOLE_ARRAY, CP_UTF8);
 
    // We skip the null-terminator byte added by StringToCharArray (bytes_converted - 1)
-   int bytes_sent = SocketWrite(g_socket, buffer, bytes_converted - 1);
+   int bytes_sent = SocketSend(g_socket, buffer, (uint)(bytes_converted - 1));
    if(bytes_sent < 0)
    {
-      Print("NexusBridge: SocketWrite failed. Error code: ", GetLastError());
+      Print("NexusBridge: SocketSend failed. Error code: ", GetLastError());
       DisconnectFromBridge();
    }
 }
