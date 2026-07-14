@@ -4,26 +4,68 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:views="clr-namespace:Nexus.Desktop.Views"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="600" d:DesignWidth="1100">
     <Grid>
         <Grid.RowDefinitions>
+            <!-- 1. Alert Banner -->
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="10"/>
+            <RowDefinition Height="15"/>
+            <!-- 2. Embedded Trading panel -->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Readiness Indicator Banner -->
-        <Border Grid.Row="0" Background="#3E2723" BorderBrush="#D65A31" BorderThickness="1" CornerRadius="4" Padding="15">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="⚠" Foreground="#D65A31" FontSize="20" FontWeight="Bold" Margin="0,0,15,0" VerticalAlignment="Center"/>
-                <StackPanel>
-                    <TextBlock Text="MANUAL OPERATOR DESK - PARTIAL READINESS" Foreground="White" FontSize="13" FontWeight="Bold"/>
-                    <TextBlock Text="Manual executing operations are enabled. Order execution parameters (StopLoss, TakeProfit) bypass strategy automation." Foreground="#CCCCCC" FontSize="11" Margin="0,3,0,0"/>
+        <!-- Premium Alert / Readiness Indicator Banner -->
+        <materialDesign:Card Grid.Row="0" Padding="18" materialDesign:ShadowAssist.ShadowDepth="Depth1">
+            <materialDesign:Card.Style>
+                <Style TargetType="materialDesign:Card">
+                    <Setter Property="Background" Value="#2A1E1E"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                    <Setter Property="UniformCornerRadius" Value="8"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                            <Setter Property="Background" Value="#FEE2E2"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource LightErrorBrush}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </materialDesign:Card.Style>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <materialDesign:PackIcon Kind="HelpCircle" Width="28" Height="28" Foreground="{DynamicResource ErrorBrush}" VerticalAlignment="Center" Margin="0,0,15,0">
+                    <materialDesign:PackIcon.Style>
+                        <Style TargetType="materialDesign:PackIcon">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource LightErrorBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </materialDesign:PackIcon.Style>
+                </materialDesign:PackIcon>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="MANUAL OPERATOR DESK - PARTIAL READINESS PROTOCOL" FontWeight="Bold" Foreground="{DynamicResource ErrorBrush}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource NteTitleMedium}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource LightErrorBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="Direct operator manual trading executions are fully enabled. Please note: order execution boundaries and safety lot volumes bypass active automated neural strategies. Exercise operational caution." Style="{StaticResource NteBodyMedium}" Margin="0,3,0,0"/>
                 </StackPanel>
-            </StackPanel>
-        </Border>
+            </Grid>
+        </materialDesign:Card>
 
+        <!-- Redesigned Trading panel -->
         <views:Mt5TradingPanel Grid.Row="2" DataContext="{Binding Mt5Trading}"/>
     </Grid>
 </UserControl>

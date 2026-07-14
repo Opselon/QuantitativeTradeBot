@@ -3,340 +3,367 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:converters="clr-namespace:Nexus.Desktop.Converters"
         xmlns:views="clr-namespace:Nexus.Desktop.Views"
+        xmlns:workspaces="clr-namespace:Nexus.Desktop.Views.Workspaces"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="{Binding AppVersion, StringFormat='Nexus Trading Engine - Desktop Workstation v{0}'}"
-        Height="780" Width="1120"
-        Background="#121212"
-        WindowStartupLocation="CenterScreen">
+        Height="900" Width="1440"
+        Background="{DynamicResource BackgroundBrush}"
+        WindowStyle="None"
+        WindowStartupLocation="CenterScreen"
+        Tag="False">
+
+    <!-- Leverage standard WPF WindowChrome to fully support window resizing, maximizing, and standard frame borders -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="64" ResizeBorderThickness="8" CornerRadius="16" GlassFrameThickness="0" UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
 
     <Window.Resources>
-        <!-- Professional Dark Theme Styles & Converters -->
         <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
         <converters:EqualityToBooleanConverter x:Key="EqualityToBooleanConverter"/>
-
-        <Style x:Key="EnterpriseHeader" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-            <Setter Property="FontSize" Value="20"/>
-            <Setter Property="Foreground" Value="#00ADB5"/>
-            <Setter Property="Margin" Value="0,0,0,15"/>
-        </Style>
-
-        <Style x:Key="EnterpriseSubHeader" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Foreground" Value="#EEEEEE"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
-        </Style>
-
-        <Style x:Key="EnterpriseBodyText" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#BBBBBB"/>
-        </Style>
-
-        <Style x:Key="EnterpriseLabel" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#888888"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="0,0,10,0"/>
-        </Style>
-
-        <Style x:Key="EnterpriseTextBox" TargetType="TextBox">
-            <Setter Property="Background" Value="#222831"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#393E46"/>
-            <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="FontSize" Value="13"/>
-        </Style>
-
-        <Style x:Key="ActionButton" TargetType="Button">
-            <Setter Property="Background" Value="#00ADB5"/>
-            <Setter Property="Foreground" Value="#EEEEEE"/>
-            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-            <Setter Property="Padding" Value="15,6"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#00C4CC"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#393E46"/>
-                    <Setter Property="Foreground" Value="#777777"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="SecondaryButton" TargetType="Button">
-            <Setter Property="Background" Value="#393E46"/>
-            <Setter Property="Foreground" Value="#EEEEEE"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="Padding" Value="12,6"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#4F5661"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#222831"/>
-                    <Setter Property="Foreground" Value="#555555"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
     </Window.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <!-- 1. Top Status Bar / Header -->
-            <RowDefinition Height="Auto"/>
-            <!-- 2. Main Workspace/Wizard Work Area -->
-            <RowDefinition Height="*"/>
-            <!-- 3. Bottom Diagnostics & Structured Log Panel -->
-            <RowDefinition Height="180"/>
-        </Grid.RowDefinitions>
+    <Border BorderThickness="1.5" BorderBrush="{DynamicResource GlassBorderBrush}" CornerRadius="16" ClipToBounds="True">
+        <Grid Background="{DynamicResource BackgroundBrush}">
+            <Grid.RowDefinitions>
+                <!-- 1. Elegant Title Bar & App Header -->
+                <RowDefinition Height="64"/>
+                <!-- 2. Onboarding Progress or Action Indicator -->
+                <RowDefinition Height="Auto"/>
+                <!-- 3. Workstation main dashboard workspace body -->
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <!-- =================================================================== -->
-        <!-- TOP STATUS BAR / Badge Bar                                          -->
-        <!-- =================================================================== -->
-        <Border Grid.Row="0" Background="#1A1A1A" BorderBrush="#393E46" BorderThickness="0,0,0,1" Padding="12,8">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <!-- =================================================================== -->
+            <!-- 1. CUSTOM SYSTEM TITLE BAR                                          -->
+            <!-- =================================================================== -->
+            <Border Grid.Row="0" Background="{DynamicResource SurfaceContainerBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid Margin="20,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Left: Application Brand Logo -->
-                <StackPanel Orientation="Horizontal" Grid.Column="0">
-                    <TextBlock Text="⚡" Foreground="#00ADB5" FontSize="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBlock Text="NEXUS" Foreground="#EEEEEE" FontFamily="Segoe UI" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"/>
-                    <TextBlock Text="TRADING ENGINE" Foreground="#888888" FontFamily="Segoe UI" FontSize="12" Margin="5,0,0,0" VerticalAlignment="Center"/>
-                </StackPanel>
-
-                <!-- Right: Status / Badges -->
-                <StackPanel Orientation="Horizontal" Grid.Column="2" VerticalAlignment="Center">
-                    <!-- Environment Badge -->
-                    <Border Background="#D65A31" CornerRadius="3" Padding="6,2" Margin="0,0,8,0">
-                        <TextBlock Text="DEVELOPMENT / SIMULATION" Foreground="White" FontSize="10" FontWeight="Bold"/>
-                    </Border>
-                    <!-- Connection Status Badge -->
-                    <Border CornerRadius="3" Padding="6,2" Margin="0,0,8,0">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="Background" Value="#2E7D32"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Mt5Mode}" Value="Real">
-                                        <Setter Property="Background" Value="#00ADB5"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <StackPanel Orientation="Horizontal">
-                            <Ellipse Width="6" Height="6" Fill="#4CAF50" Margin="0,0,4,0"/>
-                            <TextBlock Foreground="White" FontSize="10" FontWeight="Bold">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="SIMULATOR ACTIVE"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Mt5Mode}" Value="Real">
-                                                <Setter Property="Text" Value="REAL MT5 BRIDGE ACTIVE"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </StackPanel>
-                    </Border>
-                    <!-- Chosen Provider Badge -->
-                    <Border Background="#00ADB5" CornerRadius="3" Padding="6,2">
-                        <TextBlock Text="{Binding SelectedProvider}" Foreground="Black" FontSize="10" FontWeight="Bold"/>
-                    </Border>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- =================================================================== -->
-        <!-- MAIN WORKSPACE                                                      -->
-        <!-- =================================================================== -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <!-- Left Navigation Bar -->
-                <ColumnDefinition Width="180"/>
-                <!-- Central Panel Workspace -->
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- LEFT NAVIGATION PANEL -->
-            <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="0,0,1,0">
-                <Grid Margin="10,20">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Navigation Items -->
-                    <StackPanel Grid.Row="0">
-                        <!-- Navigation Item Header -->
-                        <TextBlock Text="WORKSPACE" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="5,0,0,10"/>
-
-                        <!-- Onboarding Menu Link (Active during onboarding) -->
-                        <Button Content="Onboarding Wizard" HorizontalContentAlignment="Left" Padding="8,6" Margin="0,0,0,4" IsEnabled="True" Background="#00ADB5" Foreground="Black" FontWeight="Bold">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsOnboarded}" Value="True">
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="Foreground" Value="#888888"/>
-                                            <Setter Property="FontWeight" Value="Normal"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <!-- Dashboard Menu Link -->
-                        <Button Content="Dashboard" Command="{Binding SelectDashboardCommand}" HorizontalContentAlignment="Left" Padding="8,6" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedTabIndex}" Value="0">
-                                            <Setter Property="Background" Value="#222831"/>
-                                            <Setter Property="Foreground" Value="#00ADB5"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <Button Content="MT5 Bridge" Command="{Binding SelectMt5BridgeCommand}" HorizontalContentAlignment="Left" Padding="8,6" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedTabIndex}" Value="1">
-                                            <Setter Property="Background" Value="#222831"/>
-                                            <Setter Property="Foreground" Value="#00ADB5"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <Button Content="Market Watch" Command="{Binding SelectMarketWatchCommand}" HorizontalContentAlignment="Left" Padding="8,6" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedTabIndex}" Value="2">
-                                            <Setter Property="Background" Value="#222831"/>
-                                            <Setter Property="Foreground" Value="#00ADB5"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <Button Content="Manual Desk" Command="{Binding SelectManualDeskCommand}" HorizontalContentAlignment="Left" Padding="8,6" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedTabIndex}" Value="3">
-                                            <Setter Property="Background" Value="#222831"/>
-                                            <Setter Property="Foreground" Value="#00ADB5"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <Button Content="Account Metrics" Command="{Binding SelectAccountMetricsCommand}" HorizontalContentAlignment="Left" Padding="8,6" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedTabIndex}" Value="4">
-                                            <Setter Property="Background" Value="#222831"/>
-                                            <Setter Property="Foreground" Value="#00ADB5"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <Button Content="Native Engine" Command="{Binding SelectNativeEngineCommand}" HorizontalContentAlignment="Left" Padding="8,6" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedTabIndex}" Value="5">
-                                            <Setter Property="Background" Value="#222831"/>
-                                            <Setter Property="Foreground" Value="#00ADB5"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <Button Content="Diagnostics" Command="{Binding SelectDiagnosticsCommand}" HorizontalContentAlignment="Left" Padding="8,6" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedTabIndex}" Value="6">
-                                            <Setter Property="Background" Value="#222831"/>
-                                            <Setter Property="Foreground" Value="#00ADB5"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <Button Content="Settings" Command="{Binding SelectSettingsCommand}" HorizontalContentAlignment="Left" Padding="8,6" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedTabIndex}" Value="7">
-                                            <Setter Property="Background" Value="#222831"/>
-                                            <Setter Property="Foreground" Value="#00ADB5"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <Button Content="Test Console" Command="{Binding SelectTestConsoleCommand}" HorizontalContentAlignment="Left" Padding="8,6" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedTabIndex}" Value="8">
-                                            <Setter Property="Background" Value="#222831"/>
-                                            <Setter Property="Foreground" Value="#00ADB5"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
+                    <!-- Left: Institutional Branding Logo -->
+                    <StackPanel Orientation="Horizontal" Grid.Column="0" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="ChartTimelineVariant" Width="26" Height="26" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="NEXUS" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Style="{StaticResource NteDisplayLarge}"/>
+                        <TextBlock Text="INTELLIGENCE TERMINAL" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center" Style="{StaticResource NteBodyMedium}"/>
                     </StackPanel>
 
-                    <!-- Footer Details -->
-                    <StackPanel Grid.Row="1" Margin="5,0">
-                        <TextBlock Text="SYSTEM READY" Foreground="#4CAF50" FontSize="10" FontWeight="Bold"/>
-                        <TextBlock Text="{Binding AppVersion, StringFormat='N NTE v{0}'}" Foreground="#444444" FontSize="9" Margin="0,2,0,0"/>
+                    <!-- Center: System Badges / Live connection health -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border Background="{DynamicResource PrimaryContainerBrush}" CornerRadius="20" Padding="12,6" Margin="0,0,12,0" BorderThickness="1" BorderBrush="{DynamicResource PrimaryBrush}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Server" Width="14" Height="14" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="{Binding SelectedProvider}" Foreground="{DynamicResource PrimaryBrush}" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border CornerRadius="20" Padding="12,6" BorderThickness="1">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="#102515"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Mt5Mode}" Value="Real">
+                                            <Setter Property="Background" Value="{DynamicResource PrimaryContainerBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                            <!-- Light Theme Trigger -->
+                                            <Setter Property="Background" Value="#DCFCE7"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}"/>
+                                        </DataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True"/>
+                                                <Condition Binding="{Binding Mt5Mode}" Value="Real"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Background" Value="{DynamicResource PrimaryContainerBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" Margin="0,0,8,0">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Mt5Mode}" Value="Real">
+                                                    <Setter Property="Fill" Value="{DynamicResource PrimaryBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                                <TextBlock FontSize="11" FontWeight="Bold" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="SIMULATOR ACTIVE"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Mt5Mode}" Value="Real">
+                                                    <Setter Property="Text" Value="REAL MT5 BRIDGE ACTIVE"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Right: Window controls + Theme Toggle -->
+                    <!-- Elements are marked with WindowChrome.IsHitTestVisibleInChrome="True" so they receive user click/touch events in Custom Titlebar -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True">
+                        <!-- Theme Toggle Button -->
+                        <ToggleButton x:Name="ThemeToggle" Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}" ToolTip="Toggle Visual Palette Theme" Margin="0,0,15,0" Checked="ThemeToggle_Checked" Unchecked="ThemeToggle_Unchecked">
+                            <materialDesign:PackIcon Kind="WeatherSunny" Width="20" Height="20" x:Name="ThemeIcon"/>
+                        </ToggleButton>
+
+                        <Button Width="32" Height="32" Padding="0" Style="{StaticResource MaterialDesignIconButton}" Click="Minimize_Click" Margin="0,0,4,0">
+                            <materialDesign:PackIcon Kind="WindowMinimize" Width="18" Height="18" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        </Button>
+                        <Button Width="32" Height="32" Padding="0" Style="{StaticResource MaterialDesignIconButton}" Click="Maximize_Click" Margin="0,0,4,0">
+                            <materialDesign:PackIcon Kind="WindowMaximize" Width="18" Height="18" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        </Button>
+                        <Button Width="32" Height="32" Padding="0" Style="{StaticResource MaterialDesignIconButton}" Click="Close_Click" materialDesign:RippleAssist.Feedback="#EF4444">
+                            <materialDesign:PackIcon Kind="Close" Width="18" Height="18" Foreground="#EF4444"/>
+                        </Button>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- CENTRAL WORKSPACE PANEL -->
-            <Border Grid.Column="1" Background="#222831" Padding="30,25">
-                <Grid>
+            <!-- =================================================================== -->
+            <!-- 2. MAIN WORKSPACE ASSEMBLY                                          -->
+            <!-- =================================================================== -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <!-- Sidebar Navigation Drawer -->
+                    <ColumnDefinition Width="260"/>
+                    <!-- Central Panel Workspace -->
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- LEFT GLASS-LIKE NAVIGATION DRAWER -->
+                <Border Grid.Column="0" Background="{DynamicResource SurfaceContainerBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="0,0,1,0">
+                    <Grid Margin="15,25">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Navigation Items -->
+                        <StackPanel Grid.Row="0">
+                            <TextBlock Text="QUANT WORKSTATION" Style="{StaticResource NteLabelSmall}" Margin="12,0,0,15"/>
+
+                            <!-- Onboarding Wizard Button -->
+                            <Button HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,6" IsEnabled="True">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsOnboarded}" Value="True">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="HelpCircle" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="Onboarding Wizard" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Navigation Tabs Mapping -->
+                            <!-- Dashboard -->
+                            <Button Command="{Binding SelectDashboardCommand}" HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="0">
+                                                <Setter Property="Background" Value="{DynamicResource SurfaceVariantBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ViewDashboard" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="Dashboard" VerticalAlignment="Center" Style="{StaticResource NteBodyLarge}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- MT5 Bridge -->
+                            <Button Command="{Binding SelectMt5BridgeCommand}" HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="1">
+                                                <Setter Property="Background" Value="{DynamicResource SurfaceVariantBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Bridge" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="MT5 Bridge" VerticalAlignment="Center" Style="{StaticResource NteBodyLarge}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Market Watch -->
+                            <Button Command="{Binding SelectMarketWatchCommand}" HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="2">
+                                                <Setter Property="Background" Value="{DynamicResource SurfaceVariantBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Eye" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="Market Watch" VerticalAlignment="Center" Style="{StaticResource NteBodyLarge}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Manual Desk -->
+                            <Button Command="{Binding SelectManualDeskCommand}" HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="3">
+                                                <Setter Property="Background" Value="{DynamicResource SurfaceVariantBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="AttachMoney" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="Manual Desk" VerticalAlignment="Center" Style="{StaticResource NteBodyLarge}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Account Metrics -->
+                            <Button Command="{Binding SelectAccountMetricsCommand}" HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="4">
+                                                <Setter Property="Background" Value="{DynamicResource SurfaceVariantBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Account" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="Account Metrics" VerticalAlignment="Center" Style="{StaticResource NteBodyLarge}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Native Engine -->
+                            <Button Command="{Binding SelectNativeEngineCommand}" HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="5">
+                                                <Setter Property="Background" Value="{DynamicResource SurfaceVariantBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Analytics" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="Native Engine" VerticalAlignment="Center" Style="{StaticResource NteBodyLarge}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Diagnostics -->
+                            <Button Command="{Binding SelectDiagnosticsCommand}" HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="6">
+                                                <Setter Property="Background" Value="{DynamicResource SurfaceVariantBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ShieldCheck" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="Diagnostics" VerticalAlignment="Center" Style="{StaticResource NteBodyLarge}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Settings -->
+                            <Button Command="{Binding SelectSettingsCommand}" HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="7">
+                                                <Setter Property="Background" Value="{DynamicResource SurfaceVariantBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Cog" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="Settings" VerticalAlignment="Center" Style="{StaticResource NteBodyLarge}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Test Console -->
+                            <Button Command="{Binding SelectTestConsoleCommand}" HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="8">
+                                                <Setter Property="Background" Value="{DynamicResource SurfaceVariantBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Console" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="Test Console" VerticalAlignment="Center" Style="{StaticResource NteBodyLarge}"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Footer metadata -->
+                        <StackPanel Grid.Row="1" Margin="10,0">
+                            <TextBlock Text="SYSTEM SECURE" Foreground="{DynamicResource SuccessBrush}" FontSize="11" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding AppVersion, StringFormat='N NTE Core v{0}'}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="10" Margin="0,4,0,0" Style="{StaticResource NteLabelSmall}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- CENTRAL MAIN WORKSPACE -->
+                <Grid Grid.Column="1" Margin="30,25">
                     <!-- =============================================================== -->
-                    <!-- ONBOARDING WIZARD SCREENS                                       -->
+                    <!-- ONBOARDING WIZARD INTERFACES                                    -->
                     <!-- =============================================================== -->
                     <Grid>
                         <Grid.Style>
@@ -352,102 +379,102 @@
 
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Wizard Progress Header -->
-                        <StackPanel Grid.Row="0" Margin="0,0,0,20">
-                            <TextBlock Text="{Binding CurrentStep, StringFormat='ONBOARDING WIZARD - STEP {0} OF 6'}" Foreground="#888888" FontSize="11" FontWeight="Bold"/>
-                            <ProgressBar Value="{Binding CurrentStep}" Minimum="1" Maximum="6" Height="4" Margin="0,6,0,0" Foreground="#00ADB5" Background="#393E46" BorderThickness="0"/>
+                        <!-- Wizard Progress Indicator -->
+                        <StackPanel Grid.Row="0" Margin="0,0,0,25">
+                            <TextBlock Text="{Binding CurrentStep, StringFormat='SYSTEM ONBOARDING MODULES - STEP {0} OF 6'}" Style="{StaticResource NteLabelLarge}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10"/>
+                            <ProgressBar Value="{Binding CurrentStep}" Minimum="1" Maximum="6" Height="6" Foreground="{DynamicResource PrimaryBrush}" Background="{DynamicResource SurfaceVariantBrush}"/>
                         </StackPanel>
 
-                        <!-- Wizard Main Content Area (Provider Selection / Profile Input / Snapshot Preview) -->
-                        <Border Grid.Row="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="25">
+                        <!-- Wizard Card Container -->
+                        <materialDesign:Card Grid.Row="1" Style="{StaticResource NtePremiumCard}">
                             <Grid>
-                                <!-- STEP 1: Select Persistence Provider -->
+                                <!-- STEP 1: DB persistence selection -->
                                 <StackPanel Visibility="{Binding IsStep1, Converter={StaticResource BoolToVisConverter}}">
-                                    <TextBlock Text="Select Local Database Persistence Mode" Style="{StaticResource EnterpriseHeader}"/>
-                                    <TextBlock Text="Choose how Nexus stores account credentials, trades, positions, and strategy configuration profiles." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,20"/>
+                                    <TextBlock Text="Select Database Persistence Layer" Style="{StaticResource NteHeadline}" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Select the local persistence provider used for securing algorithmic profiles, MT5 credential snapshots, and audit logs." Style="{StaticResource NteBodyMedium}" Margin="0,0,0,25"/>
 
-                                    <Grid Margin="0,0,0,20">
+                                    <Grid Margin="0,0,0,25">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="10"/>
+                                            <ColumnDefinition Width="20"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <!-- Option A: PostgreSQL (Recommended) -->
-                                        <Border Grid.Column="0" Background="#222831" BorderBrush="#00ADB5" BorderThickness="1" Padding="20,15" CornerRadius="4">
+                                        <!-- Option A: PostgreSQL -->
+                                        <materialDesign:Card Grid.Column="0" Style="{StaticResource NtePremiumCard}">
                                             <StackPanel>
-                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                                    <RadioButton IsChecked="{Binding SelectedProvider, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=PostgreSQL}" GroupName="Provider" Content="PostgreSQL Server" Foreground="White" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
-                                                    <Border Background="#2E7D32" CornerRadius="3" Padding="4,1" Margin="8,0,0,0" VerticalAlignment="Center">
-                                                        <TextBlock Text="RECOMMENDED" Foreground="White" FontSize="8" FontWeight="Bold"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                                    <RadioButton IsChecked="{Binding SelectedProvider, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=PostgreSQL}" GroupName="ProviderGroup" Content="PostgreSQL Server" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                    <Border Background="{DynamicResource SuccessBrush}" CornerRadius="12" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="RECOMMENDED" Foreground="White" FontSize="9" FontWeight="Bold"/>
                                                     </Border>
                                                 </StackPanel>
-                                                <TextBlock Text="• Production grade reliability and scalability." Style="{StaticResource EnterpriseBodyText}" Margin="5,0,0,3"/>
-                                                <TextBlock Text="• Supports high-throughput raw Binary COPY partitioning." Style="{StaticResource EnterpriseBodyText}" Margin="5,0,0,3"/>
-                                                <TextBlock Text="• Retains history across simulated system restarts." Style="{StaticResource EnterpriseBodyText}" Margin="5,0,0,3"/>
+                                                <TextBlock Text="• Production grade reliability and database partitioning." Style="{StaticResource NteBodyMedium}" Margin="0,0,0,6"/>
+                                                <TextBlock Text="• Retains history accurately across system restarts." Style="{StaticResource NteBodyMedium}" Margin="0,0,0,6"/>
+                                                <TextBlock Text="• Supports high-throughput Raw SQL schema mappings." Style="{StaticResource NteBodyMedium}"/>
                                             </StackPanel>
-                                        </Border>
+                                        </materialDesign:Card>
 
-                                        <!-- Option B: SQLite (Quick Start) -->
-                                        <Border Grid.Column="2" Background="#222831" BorderBrush="#393E46" BorderThickness="1" Padding="20,15" CornerRadius="4">
+                                        <!-- Option B: SQLite -->
+                                        <materialDesign:Card Grid.Column="2" Style="{StaticResource NtePremiumCard}">
                                             <StackPanel>
-                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                                    <RadioButton IsChecked="{Binding SelectedProvider, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=SQLite}" GroupName="Provider" Content="SQLite" Foreground="White" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
-                                                    <Border Background="#393E46" CornerRadius="3" Padding="4,1" Margin="8,0,0,0" VerticalAlignment="Center">
-                                                        <TextBlock Text="QUICK START" Foreground="White" FontSize="8" FontWeight="Bold"/>
-                                                </Border>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                                    <RadioButton IsChecked="{Binding SelectedProvider, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=SQLite}" GroupName="ProviderGroup" Content="SQLite" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                    <Border Background="{DynamicResource PrimaryBrush}" CornerRadius="12" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="QUICK START" Foreground="{DynamicResource BackgroundBrush}" FontSize="9" FontWeight="Bold"/>
+                                                    </Border>
                                                 </StackPanel>
-                                                <TextBlock Text="• Local self-contained file database." Style="{StaticResource EnterpriseBodyText}" Margin="5,0,0,3"/>
-                                                <TextBlock Text="• Zero configuration or system requirements." Style="{StaticResource EnterpriseBodyText}" Margin="5,0,0,3"/>
-                                                <TextBlock Text="• Perfect for local evaluation, UI exploration, and debugging." Style="{StaticResource ResourceKey=EnterpriseBodyText}" Margin="5,0,0,3"/>
+                                                <TextBlock Text="• Zero configuration local self-contained database." Style="{StaticResource NteBodyMedium}" Margin="0,0,0,6"/>
+                                                <TextBlock Text="• Ideal for debugging, UI exploration, and offline evaluation." Style="{StaticResource NteBodyMedium}" Margin="0,0,0,6"/>
+                                                <TextBlock Text="• Writes binary schemas with no system server requirements." Style="{StaticResource NteBodyMedium}"/>
                                             </StackPanel>
-                                        </Border>
+                                        </materialDesign:Card>
                                     </Grid>
 
-                                    <TextBlock Text="PostgreSQL is recommended for production enterprise environments. Ensure your database server is running." Foreground="#E2C044" FontSize="11" Margin="0,5,0,0"/>
+                                    <TextBlock Text="Note: Ensure your selected persistence provider database server is running prior to initiating tables." Foreground="{DynamicResource WarningBrush}" FontWeight="Bold" Style="{StaticResource NteBodyMedium}"/>
                                 </StackPanel>
 
-                                <!-- STEP 2: Configure & Initialize Database -->
+                                <!-- STEP 2: DB schema tables initialization -->
                                 <StackPanel Visibility="{Binding IsStep2, Converter={StaticResource BoolToVisConverter}}">
-                                    <TextBlock Text="Initialize Selected Persistence Path" Style="{StaticResource EnterpriseHeader}"/>
-                                    <TextBlock Text="Verify and prepare the tables, indexes, and database schemas required for algorithmic execution." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,20"/>
+                                    <TextBlock Text="Database Tables Schema Initialization" Style="{StaticResource NteHeadline}" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Validate connection string parameters and configure table definitions, indexes, and concurrency mechanisms." Style="{StaticResource NteBodyMedium}" Margin="0,0,0,25"/>
 
-                                    <Grid Margin="0,0,0,20">
+                                    <Grid Margin="0,0,0,25">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="150"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="20"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Connection String:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,15"/>
-                                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ConnectionString, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,15"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Connection String:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ConnectionString, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}"/>
 
-                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Status Indicator:" Style="{StaticResource EnterpriseLabel}"/>
-                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DatabaseStatus}" Foreground="#00ADB5" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Initialization Status:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DatabaseStatus}" Foreground="{DynamicResource PrimaryBrush}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
                                     </Grid>
 
                                     <StackPanel Orientation="Horizontal">
-                                        <Button Content="Initialize Database" Command="{Binding InitializeDbCommand}" Style="{StaticResource ActionButton}" Margin="0,0,10,0"/>
-                                        <Button Content="Apply Migrations" Command="{Binding MigrateDbCommand}" Style="{StaticResource SecondaryButton}"/>
+                                        <Button Content="INITIALIZE DATABASE" Command="{Binding InitializeDbCommand}" Style="{StaticResource NtePremiumButton}" Margin="0,0,15,0"/>
+                                        <Button Content="APPLY SCHEMAS" Command="{Binding MigrateDbCommand}" Style="{StaticResource NteSecondaryButton}"/>
                                     </StackPanel>
                                 </StackPanel>
 
-                                <!-- STEP 3: Create MT5 Connection Profile -->
+                                <!-- STEP 3: MT5 Connection Profile -->
                                 <StackPanel Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisConverter}}">
-                                    <TextBlock Text="MetaTrader 5 Onboarding Credentials" Style="{StaticResource EnterpriseHeader}"/>
-                                    <TextBlock Text="Configure connection details to route orders and download snapshots. Sensitive passwords are saved securely using ISecretStore." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,15"/>
+                                    <TextBlock Text="Configure MetaTrader 5 Connection Profile" Style="{StaticResource NteHeadline}" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Sensitive broker passwords and endpoints are encrypted securely using dynamic WindowsSecretStore APIs." Style="{StaticResource NteBodyMedium}" Margin="0,0,0,20"/>
 
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="150"/>
+                                            <ColumnDefinition Width="130"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="30"/>
                                             <ColumnDefinition Width="130"/>
@@ -455,251 +482,179 @@
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="15"/>
                                             <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="15"/>
                                             <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="15"/>
                                             <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="15"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
-                                        <!-- Row 0: Profile Name & Server -->
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Profile Name:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
-                                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ProfileName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,12"/>
+                                        <!-- Profile Name & Server -->
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Profile Identifier:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ProfileName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}"/>
 
-                                        <TextBlock Grid.Row="0" Grid.Column="3" Text="Server / Broker:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
-                                        <TextBox Grid.Row="0" Grid.Column="4" Text="{Binding BrokerServer, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,12"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="3" Text="Server / Broker:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                        <TextBox Grid.Row="0" Grid.Column="4" Text="{Binding BrokerServer, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}"/>
 
-                                        <!-- Row 1: Login & Password -->
-                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Login / Account ID:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
-                                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LoginAccountId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,12"/>
+                                        <!-- Login & Password -->
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Account Login ID:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding LoginAccountId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}"/>
 
-                                        <TextBlock Grid.Row="1" Grid.Column="3" Text="Password (Masked):" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
-                                        <!-- Using standard textbox with masked binding or direct binding, password is redacted in saved summaries -->
-                                        <TextBox Grid.Row="1" Grid.Column="4" Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,12"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="3" Text="Password (Redacted):" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                        <TextBox Grid.Row="2" Grid.Column="4" Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}"/>
 
-                                        <!-- Row 2: Terminal Path -->
-                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="MT5 Terminal Path:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
-                                        <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="4" Text="{Binding TerminalPath, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,12"/>
+                                        <!-- Terminal Path -->
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="MT5 exe File Path:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                        <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="4" Text="{Binding TerminalPath, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}"/>
 
-                                        <!-- Row 3: Timeout & Reconnect -->
-                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Timeout (Seconds):" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
-                                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding TimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,12"/>
+                                        <!-- Timeout & Auto Reconnect -->
+                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Timeout (Seconds):" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding TimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}"/>
 
-                                        <TextBlock Grid.Row="3" Grid.Column="3" Text="Auto Reconnect:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
-                                        <CheckBox Grid.Row="3" Grid.Column="4" IsChecked="{Binding AutoReconnect}" Foreground="White" VerticalAlignment="Center" Margin="0,0,0,12"/>
-
-                                        <!-- Row 4: Mode Selection (Simulated vs Real Bridge) -->
-                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="MT5 Bridge Mode:" Style="{StaticResource EnterpriseLabel}" Margin="0,0,0,12"/>
-                                        <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
-                                            <RadioButton Content="Simulated MT5" IsChecked="{Binding Mt5Mode, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=Simulated}" Foreground="White" GroupName="Mt5ModeGroup" Margin="0,0,15,0"/>
-                                            <RadioButton Content="Real MT5 Bridge" IsChecked="{Binding Mt5Mode, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=Real}" Foreground="White" GroupName="Mt5ModeGroup"/>
+                                        <TextBlock Grid.Row="6" Grid.Column="3" Text="Gateway Connection:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Row="6" Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <RadioButton Content="Simulation Mode" IsChecked="{Binding Mt5Mode, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=Simulated}" GroupName="WizardMt5Mode" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,15,0"/>
+                                            <RadioButton Content="Real Bridge" IsChecked="{Binding Mt5Mode, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=Real}" GroupName="WizardMt5Mode" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                         </StackPanel>
                                     </Grid>
-
-                                    <!-- Conditional Real Bridge Configuration Fields -->
-                                    <Border Background="#222831" BorderBrush="#393E46" BorderThickness="1" Padding="15" CornerRadius="4" Margin="0,12,0,0">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Mt5Mode}" Value="Real">
-                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                        <StackPanel>
-                                            <TextBlock Text="REAL BRIDGE ENDPOINT CONFIGURATION" Foreground="#00ADB5" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="130"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="30"/>
-                                                    <ColumnDefinition Width="100"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
-
-                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Bridge Host (IP):" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Mt5BridgeHost, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}"/>
-
-                                                <TextBlock Grid.Row="0" Grid.Column="3" Text="Bridge Port:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBox Grid.Row="0" Grid.Column="4" Text="{Binding Mt5BridgePort, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}"/>
-                                            </Grid>
-                                        </StackPanel>
-                                    </Border>
                                 </StackPanel>
 
                                 <!-- STEP 4: Test Connection -->
                                 <StackPanel Visibility="{Binding IsStep4, Converter={StaticResource BoolToVisConverter}}">
-                                    <TextBlock Text="Verify Gateway Communication Session" Style="{StaticResource EnterpriseHeader}"/>
-                                    <TextBlock Text="Run bidirectional heartbeat handshake tests with the terminal connector." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,20"/>
+                                    <TextBlock Text="Verify MT5 Gateway Handshake Connection" Style="{StaticResource NteHeadline}" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Execute end-to-end bidirectional handshake tests targeting terminal sockets and listener ports." Style="{StaticResource NteBodyMedium}" Margin="0,0,0,25"/>
 
-                                    <Border Background="#222831" Padding="20" CornerRadius="4" Margin="0,0,0,20">
+                                    <materialDesign:Card Style="{StaticResource NtePremiumCard}" Margin="0,0,0,25">
                                         <StackPanel>
-                                            <TextBlock Text="VERIFICATION PROTOCOL" Foreground="#888888" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                                            <TextBlock Text="PORT HANDSHAKE CRITERIA" Style="{StaticResource NteLabelLarge}" Margin="0,0,0,15"/>
 
-                                            <Grid Margin="0,0,0,10">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="150"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="Target Broker:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding BrokerServer}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                            <Grid Margin="0,0,0,12">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Server:" Style="{StaticResource NteLabelLarge}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding BrokerServer}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                             </Grid>
 
-                                            <Grid Margin="0,0,0,10">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="150"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="Account ID:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding LoginAccountId}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                            <Grid Margin="0,0,0,12">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Broker ID Account:" Style="{StaticResource NteLabelLarge}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding LoginAccountId}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                             </Grid>
 
                                             <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="150"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="Outcome Status:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding TestOutcome}" Foreground="#E2C044" FontSize="13" FontWeight="Bold"/>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Diagnostic Result:" Style="{StaticResource NteLabelLarge}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding TestOutcome}" Foreground="{DynamicResource WarningBrush}" FontSize="14" FontWeight="Bold"/>
                                             </Grid>
                                         </StackPanel>
-                                    </Border>
+                                    </materialDesign:Card>
 
-                                    <StackPanel Orientation="Horizontal">
-                                        <Button Content="Test MT5 Connection" Command="{Binding TestConnectionCommand}" Style="{StaticResource ActionButton}" Margin="0,0,10,0"/>
-                                        <TextBlock Foreground="#888888" VerticalAlignment="Center" FontSize="11" FontStyle="Italic">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Text" Value="(Simulated connector fallback is active)"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Mt5Mode}" Value="Real">
-                                                            <Setter Property="Text" Value="(Will wait for connection from MQL5 Expert Advisor)"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Content="TEST GATEWAY CONNECTION" Command="{Binding TestConnectionCommand}" Style="{StaticResource NtePremiumButton}" Margin="0,0,15,0"/>
+                                        <TextBlock Text="(Simulation Mode will verify offline. Real Bridge mode executes real socket listens.)" Style="{StaticResource NteBodyMedium}" FontStyle="Italic" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </StackPanel>
 
-                                <!-- STEP 5: Account Preview Snapshot -->
+                                <!-- STEP 5: Account preview metrics -->
                                 <StackPanel Visibility="{Binding IsStep5, Converter={StaticResource BoolToVisConverter}}">
-                                    <TextBlock Text="Broker Account Live Snapshot Preview" Style="{StaticResource EnterpriseHeader}"/>
-                                    <TextBlock Text="Connection successfully verified. Metrics retrieved via application query service." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,15"/>
+                                    <TextBlock Text="Broker Account Active Snapshot" Style="{StaticResource NteHeadline}" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Successfully established gateway socket. Financial metrics snapshot parsed successfully from broker response." Style="{StaticResource NteBodyMedium}" Margin="0,0,0,25"/>
 
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="15"/>
+                                            <ColumnDefinition Width="20"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <!-- Left Grid metrics -->
-                                        <Border Grid.Column="0" Background="#222831" Padding="15" CornerRadius="4">
+                                        <materialDesign:Card Grid.Column="0" Style="{StaticResource NtePremiumCard}">
                                             <StackPanel>
-                                                <TextBlock Text="FINANCIAL METRICS" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="0,0,0,10"/>
+                                                <TextBlock Text="BALANCE ACCOUNT BALANCES" Style="{StaticResource NteLabelLarge}" Margin="0,0,0,15"/>
 
-                                                <Grid Margin="0,0,0,8">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Balance:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Balance, StringFormat={}{0:C2}}" Foreground="#4CAF50" FontSize="13" FontWeight="Bold"/>
+                                                <Grid Margin="0,0,0,12">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Primary Balance:" Style="{StaticResource NteLabelLarge}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Balance, StringFormat={}{0:C2}}" Foreground="{DynamicResource SuccessBrush}" FontSize="15" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
                                                 </Grid>
 
-                                                <Grid Margin="0,0,0,8">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Equity:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Equity, StringFormat={}{0:C2}}" Foreground="#4CAF50" FontSize="13" FontWeight="Bold"/>
-                                                </Grid>
-
-                                                <Grid Margin="0,0,0,8">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Free Margin:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.FreeMargin, StringFormat={}{0:C2}}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                <Grid Margin="0,0,0,12">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Liquidity Equity:" Style="{StaticResource NteLabelLarge}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Equity, StringFormat={}{0:C2}}" Foreground="{DynamicResource SuccessBrush}" FontSize="15" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
                                                 </Grid>
 
                                                 <Grid>
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Currency:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Currency}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Free Margin:" Style="{StaticResource NteLabelLarge}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.FreeMargin, StringFormat={}{0:C2}}" Style="{StaticResource NteTradingDataFont}" FontWeight="SemiBold"/>
                                                 </Grid>
                                             </StackPanel>
-                                        </Border>
+                                        </materialDesign:Card>
 
-                                        <!-- Right Grid metrics -->
-                                        <Border Grid.Column="2" Background="#222831" Padding="15" CornerRadius="4">
+                                        <materialDesign:Card Grid.Column="2" Style="{StaticResource NtePremiumCard}">
                                             <StackPanel>
-                                                <TextBlock Text="METADATA &amp; STATUS" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="0,0,0,10"/>
+                                                <TextBlock Text="BROKER ACCOUNT METADATA" Style="{StaticResource NteLabelLarge}" Margin="0,0,0,15"/>
 
-                                                <Grid Margin="0,0,0,8">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Account ID:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountId}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                <Grid Margin="0,0,0,12">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Account ID:" Style="{StaticResource NteLabelLarge}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountId}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                                 </Grid>
 
-                                                <Grid Margin="0,0,0,8">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Server:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.BrokerServer}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
-                                                </Grid>
-
-                                                <Grid Margin="0,0,0,8">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Leverage:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Leverage, StringFormat='1:{0}'}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                <Grid Margin="0,0,0,12">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Leverage Structure:" Style="{StaticResource NteLabelLarge}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Leverage, StringFormat='1:{0}'}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                                 </Grid>
 
                                                 <Grid>
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Account Mode:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountMode}" Foreground="#00ADB5" FontSize="12" FontWeight="SemiBold"/>
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Account Mode:" Style="{StaticResource NteLabelLarge}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountMode}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="Bold" Style="{StaticResource NteBodyLarge}"/>
                                                 </Grid>
                                             </StackPanel>
-                                        </Border>
+                                        </materialDesign:Card>
                                     </Grid>
                                 </StackPanel>
 
-                                <!-- STEP 6: Launch Workstation Workspace -->
+                                <!-- STEP 6: Launch -->
                                 <StackPanel Visibility="{Binding IsStep6, Converter={StaticResource BoolToVisConverter}}">
-                                    <TextBlock Text="Ready to Launch Trading Station" Style="{StaticResource EnterpriseHeader}"/>
-                                    <TextBlock Text="Onboarding is complete! You can now launch the dashboard workspace. Active credentials, settings, and parameters have been fully persisted." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,20"/>
+                                    <TextBlock Text="Initialize Workstation Dashboard Terminal" Style="{StaticResource NteHeadline}" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Onboarding profiles generated. You are now authorized to initiate core quant analytics engines and ticks subscription routers." Style="{StaticResource NteBodyMedium}" Margin="0,0,0,25"/>
 
-                                    <Border Background="#2E7D32" CornerRadius="4" Padding="15" Margin="0,0,0,20">
+                                    <Border Background="{DynamicResource SuccessBrush}" CornerRadius="8" Padding="20" Margin="0,0,0,25" Opacity="0.9">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="✓" Foreground="White" FontSize="20" FontWeight="Bold" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                                            <materialDesign:PackIcon Kind="ShieldCheck" Width="32" Height="32" Foreground="White" VerticalAlignment="Center" Margin="0,0,15,0"/>
                                             <StackPanel>
-                                                <TextBlock Text="Workspace Ready" Foreground="White" FontSize="14" FontWeight="Bold"/>
-                                                <TextBlock Text="Database initialized and MT5 connection profile configured." Foreground="#BBEEEE" FontSize="11" Margin="0,3,0,0"/>
+                                                <TextBlock Text="Workspace Handshake Completed Successfully" Foreground="White" FontSize="15" FontWeight="Bold"/>
+                                                <TextBlock Text="Configurations stored safely in local AppSettings. Local database persistence layer initialized." Foreground="#E2E8F0" FontSize="11" Margin="0,4,0,0"/>
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
 
-                                    <Button Content="Launch Professional Workspace" Command="{Binding LaunchWorkspaceCmd}" Style="{StaticResource ActionButton}"/>
+                                    <Button Content="LAUNCH TRADING DESK WORKSTATION" Command="{Binding LaunchWorkspaceCmd}" Style="{StaticResource NtePremiumButton}"/>
                                 </StackPanel>
                             </Grid>
-                        </Border>
+                        </materialDesign:Card>
 
-                        <!-- Wizard Footer Navigation Buttons -->
-                        <DockPanel Grid.Row="3" Margin="0,20,0,0">
-                            <Button Content="Back" Command="{Binding BackCommand}" Style="{StaticResource SecondaryButton}" DockPanel.Dock="Left"/>
+                        <!-- Wizard Footer Actions -->
+                        <DockPanel Grid.Row="2" Margin="0,25,0,0">
+                            <Button Content="PREVIOUS STEP" Command="{Binding BackCommand}" Style="{StaticResource NteSecondaryButton}" DockPanel.Dock="Left"/>
 
-                            <!-- Custom Next button logic per step -->
                             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                                <Button Content="Next Step" Command="{Binding SelectProviderNextCommand}" Style="{StaticResource ActionButton}" Visibility="{Binding IsStep1, Converter={StaticResource BoolToVisConverter}}"/>
-                                <Button Content="Next Step" Command="{Binding DbNextCommand}" Style="{StaticResource ActionButton}" Visibility="{Binding IsStep2, Converter={StaticResource BoolToVisConverter}}"/>
-                                <Button Content="Next Step" Command="{Binding CreateProfileNextCommand}" Style="{StaticResource ActionButton}" Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisConverter}}"/>
-                                <Button Content="Next Step" Command="{Binding TestNextCommand}" Style="{StaticResource ActionButton}" Visibility="{Binding IsStep4, Converter={StaticResource BoolToVisConverter}}"/>
-                                <Button Content="Next Step" Command="{Binding AccountNextCommand}" Style="{StaticResource ActionButton}" Visibility="{Binding IsStep5, Converter={StaticResource BoolToVisConverter}}"/>
+                                <Button Content="NEXT STEP" Command="{Binding SelectProviderNextCommand}" Style="{StaticResource NtePremiumButton}" Visibility="{Binding IsStep1, Converter={StaticResource BoolToVisConverter}}"/>
+                                <Button Content="NEXT STEP" Command="{Binding DbNextCommand}" Style="{StaticResource NtePremiumButton}" Visibility="{Binding IsStep2, Converter={StaticResource BoolToVisConverter}}"/>
+                                <Button Content="NEXT STEP" Command="{Binding CreateProfileNextCommand}" Style="{StaticResource NtePremiumButton}" Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisConverter}}"/>
+                                <Button Content="NEXT STEP" Command="{Binding TestNextCommand}" Style="{StaticResource NtePremiumButton}" Visibility="{Binding IsStep4, Converter={StaticResource BoolToVisConverter}}"/>
+                                <Button Content="NEXT STEP" Command="{Binding AccountNextCommand}" Style="{StaticResource NtePremiumButton}" Visibility="{Binding IsStep5, Converter={StaticResource BoolToVisConverter}}"/>
                             </StackPanel>
                         </DockPanel>
                     </Grid>
 
                     <!-- =============================================================== -->
-                    <!-- WORKSPACE TRADING DASHBOARD PANEL (Visible after onboarding)    -->
+                    <!-- ACTIVE WORKSPACE INTERFACE                                      -->
                     <!-- =============================================================== -->
                     <Grid>
                         <Grid.Style>
@@ -713,348 +668,133 @@
                             </Style>
                         </Grid.Style>
 
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <TextBlock Grid.Row="0" Text="QUANT ALGORITHMIC DESK" Style="{StaticResource EnterpriseHeader}"/>
-                        <TextBlock Grid.Row="1" Text="Live algorithmic system monitoring dashboard panel. Real-time market ingestion and native C++ indicator engines active." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,15"/>
-
-                        <TabControl SelectedIndex="{Binding SelectedTabIndex}" Grid.Row="2" Background="Transparent" BorderThickness="0" Padding="0">
+                        <TabControl SelectedIndex="{Binding SelectedTabIndex}" Background="Transparent" BorderThickness="0" Padding="0">
                             <TabControl.Resources>
                                 <Style TargetType="TabItem">
                                     <Setter Property="Visibility" Value="Collapsed"/>
                                 </Style>
                             </TabControl.Resources>
 
-                            <!-- Tab 0: Dashboard (General Welcome and Quick Stats) -->
+                            <!-- Tab 0: Dashboard -->
                             <TabItem>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="15"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- Welcome column -->
-                                    <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
-                                        <StackPanel>
-                                            <TextBlock Text="Welcome to Nexus Trading Engine!" Style="{StaticResource EnterpriseHeader}"/>
-                                            <TextBlock Text="NTE is a real-time, low-latency institutional algorithmic trading desk. Use the left navigation panel to access different terminal views." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,15"/>
-                                            <TextBlock Text="✓ Real MT5 Bridge Ready" Foreground="#4CAF50" FontWeight="Bold" Margin="0,0,0,5"/>
-                                            <TextBlock Text="✓ Native C++ Math Acceleration Active" Foreground="#4CAF50" FontWeight="Bold" Margin="0,0,0,5"/>
-                                            <TextBlock Text="✓ Multi-Instrument Symbol Subscriptions Enabled" Foreground="#4CAF50" FontWeight="Bold" Margin="0,0,0,5"/>
-                                        </StackPanel>
-                                    </Border>
-
-                                    <!-- Quick Stats column -->
-                                    <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
-                                        <StackPanel>
-                                            <TextBlock Text="LIVE TELEMETRY SUMMARY" Style="{StaticResource EnterpriseHeader}"/>
-
-                                            <Grid Margin="0,5,0,8">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Bridge Connection:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding BridgeConnectionStatusText}" Foreground="#00ADB5" FontWeight="Bold"/>
-                                            </Grid>
-
-                                            <Grid Margin="0,0,0,8">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Ping Latency:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding BridgePingLatencyMs, StringFormat={}{0:F2} ms}" Foreground="#E2C044" FontWeight="Bold" FontFamily="Consolas"/>
-                                            </Grid>
-
-                                            <Grid Margin="0,0,0,8">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Total Ticks Ingested:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding ProcessedTickCount}" Foreground="#4CAF50" FontWeight="Bold" FontFamily="Consolas"/>
-                                            </Grid>
-                                        </StackPanel>
-                                    </Border>
-                                </Grid>
+                                <workspaces:DashboardView DataContext="{Binding Dashboard}"/>
                             </TabItem>
 
-                            <!-- Tab 1: MT5 Bridge & Instructions -->
+                            <!-- Tab 1: MT5 Bridge -->
                             <TabItem>
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="10"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
-
-                                    <Border Grid.Row="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel>
-                                                <TextBlock Text="NEXUS MT5 LOCALHOST BRIDGE CONTROL" Style="{StaticResource EnterpriseHeader}" Margin="0,0,0,5"/>
-                                                <TextBlock Text="Establish local bridge sockets, authenticate credentials, and monitor connection health." Style="{StaticResource EnterpriseBodyText}"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-
-                                    <Grid Grid.Row="2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="1.2*"/>
-                                            <ColumnDefinition Width="15"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <!-- Left Panel: Connection Settings -->
-                                        <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
-                                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                                <StackPanel>
-                                                    <TextBlock Text="CONNECTION CONFIGURATION" Style="{StaticResource EnterpriseSubHeader}" Margin="0,0,0,10"/>
-
-                                                    <TextBlock Text="Bridge Endpoint Host:" Style="{StaticResource EnterpriseLabel}" Margin="0,5,0,4"/>
-                                                    <TextBox Text="{Binding Mt5BridgeHost, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,10"/>
-
-                                                    <TextBlock Text="Bridge Endpoint Port:" Style="{StaticResource EnterpriseLabel}" Margin="0,5,0,4"/>
-                                                    <TextBox Text="{Binding Mt5BridgePort, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,15"/>
-
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                                        <Button Content="START BRIDGE LISTENER" Command="{Binding BridgeConnectCommand}" Style="{StaticResource ActionButton}" Margin="0,0,10,0"/>
-                                                        <Button Content="STOP BRIDGE LISTENER" Command="{Binding BridgeDisconnectCommand}" Style="{StaticResource SecondaryButton}"/>
-                                                    </StackPanel>
-
-                                                    <Border BorderBrush="#393E46" BorderThickness="0,1,0,0" Margin="0,5,0,15"/>
-
-                                                    <TextBlock Text="SECURE LOGIN CREDENTIALS" Style="{StaticResource EnterpriseSubHeader}" Margin="0,0,0,10"/>
-
-                                                    <TextBlock Text="Account ID / Login ID:" Style="{StaticResource EnterpriseLabel}" Margin="0,5,0,4"/>
-                                                    <TextBox Text="{Binding LoginAccountId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,10"/>
-
-                                                    <TextBlock Text="Broker Password / Secret:" Style="{StaticResource EnterpriseLabel}" Margin="0,5,0,4"/>
-                                                    <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,10"/>
-
-                                                    <TextBlock Text="Broker Server Name:" Style="{StaticResource EnterpriseLabel}" Margin="0,5,0,4"/>
-                                                    <TextBox Text="{Binding BrokerServer, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}" Margin="0,0,0,15"/>
-
-                                                    <Button Content="SECURE AUTHORIZE" Command="{Binding BridgeLoginCommand}" Style="{StaticResource ActionButton}"/>
-                                                </StackPanel>
-                                            </ScrollViewer>
-                                        </Border>
-
-                                        <!-- Right Panel: EA Installation Guide -->
-                                        <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
-                                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                                <StackPanel>
-                                                    <TextBlock Text="EA INSTALLATION GUIDE / HELP" Style="{StaticResource EnterpriseHeader}"/>
-                                                    <TextBlock Text="Follow these instructions to connect your MetaTrader 5 Terminal to NTE:" Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,12"/>
-
-                                                    <TextBlock Text="1. Open MT5 Terminal Data Folder:" FontWeight="Bold" Foreground="#00ADB5" Margin="0,0,0,3"/>
-                                                    <TextBlock Text="   Go to File -> Open Data Folder inside MT5." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,8"/>
-
-                                                    <TextBlock Text="2. Copy the Expert Advisor file:" FontWeight="Bold" Foreground="#00ADB5" Margin="0,0,0,3"/>
-                                                    <TextBlock Text="   Copy 'NexusBridge.mq5' from 'MQL5/Experts/Nexus/' to the data folder's 'MQL5/Experts/' directory." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,8"/>
-
-                                                    <TextBlock Text="3. Compile the EA in MetaEditor:" FontWeight="Bold" Foreground="#00ADB5" Margin="0,0,0,3"/>
-                                                    <TextBlock Text="   Open the file in MetaEditor and press Compile (F7)." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,8"/>
-
-                                                    <TextBlock Text="4. Attach the EA to a chart:" FontWeight="Bold" Foreground="#00ADB5" Margin="0,0,0,3"/>
-                                                    <TextBlock Text="   Drag 'NexusBridge' onto any chart. Set Host='127.0.0.1' and Port=5000." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,8"/>
-
-                                                    <TextBlock Text="5. Enable Algorithmic Trading:" FontWeight="Bold" Foreground="#00ADB5" Margin="0,0,0,3"/>
-                                                    <TextBlock Text="   Click the 'Algo Trading' button on the MT5 top toolbar." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,8"/>
-
-                                                    <TextBlock Text="6. Verify connection logs:" FontWeight="Bold" Foreground="#00ADB5" Margin="0,0,0,3"/>
-                                                    <TextBlock Text="   Check the 'Journal' and 'Experts' tabs in MT5 terminal toolbox." Style="{StaticResource EnterpriseBodyText}"/>
-                                                </StackPanel>
-                                            </ScrollViewer>
-                                        </Border>
-                                    </Grid>
-                                </Grid>
+                                <workspaces:Mt5BridgeView DataContext="{Binding Mt5Bridge}"/>
                             </TabItem>
 
-                            <!-- Tab 2: Market Watch Symbol Subscription Manager -->
+                            <!-- Tab 2: Market Watch -->
                             <TabItem>
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="10"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
-
-                                    <Border Grid.Row="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
-                                        <StackPanel>
-                                            <TextBlock Text="NEXUS REAL-TIME FEED WATCHLIST" Style="{StaticResource EnterpriseHeader}" Margin="0,0,0,5"/>
-                                            <TextBlock Text="Manage active subscriptions for major currency pairs and spot metals. Ingest live market data continuously." Style="{StaticResource EnterpriseBodyText}"/>
-                                        </StackPanel>
-                                    </Border>
-
-                                    <Border Grid.Row="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
-                                        <DataGrid ItemsSource="{Binding SubscribedSymbolsList}" AutoGenerateColumns="False" IsReadOnly="True" Background="#121212" BorderBrush="#393E46" Foreground="White" RowBackground="#1A1A1A" AlternatingRowBackground="#222222" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#222831" BorderThickness="1">
-                                            <DataGrid.Resources>
-                                                <Style TargetType="DataGridColumnHeader">
-                                                    <Setter Property="Background" Value="#393E46"/>
-                                                    <Setter Property="Foreground" Value="White"/>
-                                                    <Setter Property="Padding" Value="8,6"/>
-                                                    <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-                                                    <Setter Property="FontSize" Value="11"/>
-                                                </Style>
-                                            </DataGrid.Resources>
-                                            <DataGrid.Columns>
-                                                <DataGridTextColumn Header="Instrument Symbol" Binding="{Binding SymbolName}" Width="150"/>
-                                                <DataGridTextColumn Header="Subscribed" Binding="{Binding IsSubscribed}" Width="110"/>
-                                                <DataGridTextColumn Header="Bid price" Binding="{Binding Bid, StringFormat={}{0:F5}}" Width="120"/>
-                                                <DataGridTextColumn Header="Ask price" Binding="{Binding Ask, StringFormat={}{0:F5}}" Width="120"/>
-                                                <DataGridTextColumn Header="Spread" Binding="{Binding Spread, StringFormat={}{0:F5}}" Width="100"/>
-                                                <DataGridTextColumn Header="Ticks Count" Binding="{Binding TickCount}" Width="110"/>
-                                                <DataGridTextColumn Header="Last Updated Time" Binding="{Binding LastUpdateTimeText}" Width="150"/>
-                                                <DataGridTemplateColumn Header="Action Controls" Width="130">
-                                                    <DataGridTemplateColumn.CellTemplate>
-                                                        <DataTemplate>
-                                                            <Button Content="SUBSCRIBE" Command="{Binding DataContext.ToggleSubscriptionCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" FontSize="10" Padding="8,4">
-                                                                <Button.Style>
-                                                                    <Style TargetType="Button" BasedOn="{StaticResource ActionButton}">
-                                                                        <Setter Property="Content" Value="SUBSCRIBE"/>
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding IsSubscribed}" Value="True">
-                                                                                <Setter Property="Content" Value="UNSUBSCRIBE"/>
-                                                                                <Setter Property="Background" Value="#C62828"/>
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </Button.Style>
-                                                            </Button>
-                                                        </DataTemplate>
-                                                    </DataGridTemplateColumn.CellTemplate>
-                                                </DataGridTemplateColumn>
-                                            </DataGrid.Columns>
-                                        </DataGrid>
-                                    </Border>
-                                </Grid>
+                                <workspaces:MarketWatchView DataContext="{Binding MarketWatch}"/>
                             </TabItem>
 
-                            <!-- Tab 3: Manual Trading Desk -->
+                            <!-- Tab 3: Manual Desk -->
                             <TabItem>
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="10"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
-
-                                    <!-- Readiness Indicator Banner -->
-                                    <Border Grid.Row="0" Background="#3E2723" BorderBrush="#D65A31" BorderThickness="1" CornerRadius="4" Padding="15">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="⚠" Foreground="#D65A31" FontSize="20" FontWeight="Bold" Margin="0,0,15,0" VerticalAlignment="Center"/>
-                                            <StackPanel>
-                                                <TextBlock Text="MANUAL OPERATOR DESK - PARTIAL READINESS" Foreground="White" FontSize="13" FontWeight="Bold"/>
-                                                <TextBlock Text="Manual executing operations are enabled. Order execution parameters (StopLoss, TakeProfit) bypass strategy automation." Foreground="#CCCCCC" FontSize="11" Margin="0,3,0,0"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-
-                                    <views:Mt5TradingPanel Grid.Row="2" DataContext="{Binding Mt5Trading}"/>
-                                </Grid>
+                                <workspaces:ManualDeskView DataContext="{Binding ManualDesk}"/>
                             </TabItem>
 
-                            <!-- Tab 4: Account Snapshot Metrics -->
+                            <!-- Tab 4: Account Metrics -->
                             <TabItem>
-                                <Border Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="25">
+                                <materialDesign:Card Style="{StaticResource NtePremiumCard}">
                                     <StackPanel>
-                                        <TextBlock Text="LIVE BROKER ACCOUNT SUMMARY" Style="{StaticResource EnterpriseHeader}"/>
+                                        <TextBlock Text="LIVE BROKER ACCOUNT SUMMARY" Style="{StaticResource NteHeadline}" Margin="0,0,0,25"/>
 
-                                        <Grid Margin="0,15,0,20">
+                                        <Grid Margin="0,0,0,25">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="20"/>
+                                                <ColumnDefinition Width="30"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Left side metrics -->
+                                            <!-- Left side -->
                                             <StackPanel Grid.Column="0">
-                                                <Grid Margin="0,0,0,10">
+                                                <Grid Margin="0,0,0,15">
                                                     <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Account ID Login:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountId}" Foreground="White" FontSize="13" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="Account ID Login:" Style="{StaticResource NteLabelLarge}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountId}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                                 </Grid>
 
-                                                <Grid Margin="0,0,0,10">
+                                                <Grid Margin="0,0,0,15">
                                                     <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Broker Server:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.BrokerServer}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="Broker Server:" Style="{StaticResource NteLabelLarge}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.BrokerServer}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                                 </Grid>
 
-                                                <Grid Margin="0,0,0,10">
+                                                <Grid>
                                                     <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Account Mode:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountMode}" Foreground="#00ADB5" FontSize="12" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="Account Mode:" Style="{StaticResource NteLabelLarge}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountMode}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="Bold" Style="{StaticResource NteBodyLarge}"/>
                                                 </Grid>
                                             </StackPanel>
 
-                                            <!-- Right side metrics -->
+                                            <!-- Right side -->
                                             <StackPanel Grid.Column="2">
-                                                <Grid Margin="0,0,0,10">
+                                                <Grid Margin="0,0,0,15">
                                                     <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Live Account Balance:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Balance, StringFormat={}{0:C2}}" Foreground="#4CAF50" FontSize="14" FontWeight="Bold"/>
+                                                    <TextBlock Text="Live Account Balance:" Style="{StaticResource NteLabelLarge}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Balance, StringFormat={}{0:C2}}" Foreground="{DynamicResource SuccessBrush}" FontSize="16" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
                                                 </Grid>
 
-                                                <Grid Margin="0,0,0,10">
+                                                <Grid Margin="0,0,0,15">
                                                     <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Live Equity value:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Equity, StringFormat={}{0:C2}}" Foreground="#4CAF50" FontSize="14" FontWeight="Bold"/>
+                                                    <TextBlock Text="Live Equity value:" Style="{StaticResource NteLabelLarge}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Equity, StringFormat={}{0:C2}}" Foreground="{DynamicResource SuccessBrush}" FontSize="16" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
                                                 </Grid>
 
-                                                <Grid Margin="0,0,0,10">
+                                                <Grid>
                                                     <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Free Margin:" Style="{StaticResource EnterpriseLabel}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.FreeMargin, StringFormat={}{0:C2}}" Foreground="White" FontSize="13" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="Free Margin:" Style="{StaticResource NteLabelLarge}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.FreeMargin, StringFormat={}{0:C2}}" Style="{StaticResource NteTradingDataFont}" FontWeight="SemiBold"/>
                                                 </Grid>
                                             </StackPanel>
                                         </Grid>
 
-                                        <Button Content="REFRESH METRICS" Command="{Binding BridgeRefreshAccountCommand}" Style="{StaticResource ActionButton}"/>
+                                        <Button Content="REFRESH FINANCIAL SNAPSHOT" Command="{Binding BridgeRefreshAccountCommand}" Style="{StaticResource NtePremiumButton}" HorizontalAlignment="Left"/>
                                     </StackPanel>
-                                </Border>
+                                </materialDesign:Card>
                             </TabItem>
 
-                            <!-- Tab 5: Native Engine / Intel -->
+                            <!-- Tab 5: Native Engine -->
                             <TabItem>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="15"/>
-                                        <ColumnDefinition Width="380"/>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="420"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <!-- Left Panel: Native core telemetry details -->
-                                    <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
+                                    <!-- Left Panel -->
+                                    <materialDesign:Card Grid.Column="0" Style="{StaticResource NtePremiumCard}">
                                         <StackPanel>
-                                            <TextBlock Text="NATIVE ACCELERATION PERFORMANCE DIAGNOSTICS" Style="{StaticResource EnterpriseHeader}"/>
+                                            <TextBlock Text="NATIVE C++ MATH PERFORMANCE DIAGNOSTICS" Style="{StaticResource NteHeadline}" Margin="0,0,0,25"/>
 
-                                            <Grid Margin="0,15,0,8">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Total Processed Ticks:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding ProcessedTickCount}" Foreground="#4CAF50" FontSize="14" FontWeight="Bold" FontFamily="Consolas"/>
+                                            <Grid Margin="0,0,0,15">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Total Ingested Ticks:" Style="{StaticResource NteLabelLarge}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding ProcessedTickCount}" Foreground="{DynamicResource SuccessBrush}" FontSize="16" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
                                             </Grid>
 
-                                            <Grid Margin="0,0,0,8">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Last Processed Symbol:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding LastProcessedSymbol}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                            <Grid Margin="0,0,0,15">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Last Processed Instrument:" Style="{StaticResource NteLabelLarge}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding LastProcessedSymbol}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                             </Grid>
 
-                                            <Grid Margin="0,0,0,8">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Processing Latency:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding LastProcessingLatencyMs, StringFormat={}{0:F4} ms}" Foreground="#00ADB5" FontSize="13" FontWeight="Bold" FontFamily="Consolas"/>
+                                            <Grid Margin="0,0,0,15">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Ingestion Latency Duration:" Style="{StaticResource NteLabelLarge}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding LastProcessingLatencyMs, StringFormat={}{0:F4} ms}" Foreground="{DynamicResource PrimaryBrush}" FontSize="14" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
                                             </Grid>
 
-                                            <Grid Margin="0,0,0,8">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Last update timestamp:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding LastProcessedTimestampText}" Foreground="White" FontSize="11" FontFamily="Consolas"/>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Pipeline Updated Time:" Style="{StaticResource NteLabelLarge}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding LastProcessedTimestampText}" Style="{StaticResource NteTradingDataFont}"/>
                                             </Grid>
                                         </StackPanel>
-                                    </Border>
+                                    </materialDesign:Card>
 
                                     <!-- Right Panel: The Neural view -->
                                     <views:NexusIntelligenceDashboard Grid.Column="2" DataContext="{Binding Intelligence}"/>
@@ -1063,191 +803,22 @@
 
                             <!-- Tab 6: Diagnostics -->
                             <TabItem>
-                                <Border Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="*"/>
-                                        </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Text="SYSTEM DIAGNOSTICS &amp; BOUNDED LOGS" Style="{StaticResource EnterpriseHeader}"/>
-                                        <!-- Displays recent log entries directly in-view -->
-                                        <ListView Grid.Row="1" ItemsSource="{Binding DiagnosticService.Logs}" Background="#121212" BorderBrush="#393E46" Foreground="White" Margin="0,10,0,0">
-                                            <ListView.View>
-                                                <GridView>
-                                                    <GridViewColumn Header="Timestamp" DisplayMemberBinding="{Binding Timestamp, StringFormat='HH:mm:ss.fff'}" Width="120"/>
-                                                    <GridViewColumn Header="Subsystem" DisplayMemberBinding="{Binding Subsystem}" Width="110"/>
-                                                    <GridViewColumn Header="Level" DisplayMemberBinding="{Binding Level}" Width="70"/>
-                                                    <GridViewColumn Header="Diagnostic Message" DisplayMemberBinding="{Binding Message}" Width="520"/>
-                                                </GridView>
-                                            </ListView.View>
-                                        </ListView>
-                                    </Grid>
-                                </Border>
+                                <workspaces:DiagnosticsView DataContext="{Binding Diagnostics}"/>
                             </TabItem>
 
                             <!-- Tab 7: Settings -->
                             <TabItem>
-                                <Border Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
-                                    <StackPanel>
-                                        <TextBlock Text="NEXUS TRADING PLATFORM CONFIGURATION" Style="{StaticResource EnterpriseHeader}"/>
-                                        <TextBlock Text="Manage local database options and general application settings." Style="{StaticResource EnterpriseBodyText}" Margin="0,5,0,20"/>
-
-                                        <Grid>
-                                            <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                            <TextBlock Text="Active Database Provider:" Style="{StaticResource EnterpriseLabel}"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding SelectedProvider}" Foreground="White" FontSize="13" FontWeight="SemiBold"/>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
+                                <workspaces:SettingsView DataContext="{Binding Settings}"/>
                             </TabItem>
 
-                            <!-- Tab 8: Test Console & Real Smoke Test Workflow -->
+                            <!-- Tab 8: Test Console -->
                             <TabItem>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1.2*"/>
-                                        <ColumnDefinition Width="15"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- Left side: Run Smoke Test Controls -->
-                                    <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
-                                        <StackPanel>
-                                            <TextBlock Text="REAL LOCALHOST BRIDGE PIPELINE VERIFIER" Style="{StaticResource EnterpriseHeader}"/>
-                                            <TextBlock Text="Press the button below to run an automated, live integration smoke test that connects, authenticates, pings, subscribes, monitors EURUSD ticks, and disconnects cleanly." Style="{StaticResource EnterpriseBodyText}" Margin="0,5,0,20"/>
-
-                                            <Button Content="RUN AUTOMATED REAL SMOKE TEST" Command="{Binding RunSmokeTestCommand}" Style="{StaticResource ActionButton}" Padding="20,12" FontSize="12" HorizontalAlignment="Left" Margin="0,0,0,15"/>
-
-                                            <Border BorderBrush="#393E46" BorderThickness="0,1,0,0" Margin="0,5,0,15"/>
-
-                                            <TextBlock Text="LIGHTWEIGHT DIAGNOSTICS API" Style="{StaticResource EnterpriseSubHeader}" Margin="0,0,0,10"/>
-                                            <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Connection Status:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding BridgeConnectionStatusText}" Foreground="#00ADB5" FontSize="12" FontWeight="Bold"/>
-                                            </Grid>
-                                            <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Auth Status:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding IsBridgeAuthenticated}" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
-                                            </Grid>
-                                            <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Ping Latency:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding BridgePingLatencyMs, StringFormat={}{0:F2} ms}" Foreground="#E2C044" FontSize="11" FontFamily="Consolas" FontWeight="Bold"/>
-                                            </Grid>
-                                            <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Total Processed Ticks:" Style="{StaticResource EnterpriseLabel}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding ProcessedTickCount}" Foreground="#4CAF50" FontSize="11" FontFamily="Consolas" FontWeight="Bold"/>
-                                            </Grid>
-                                        </StackPanel>
-                                    </Border>
-
-                                    <!-- Right side: Real-time progress logs -->
-                                    <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="*"/>
-                                            </Grid.RowDefinitions>
-                                            <TextBlock Grid.Row="0" Text="SMOKE TEST CONSOLE WORKFLOW LOG" Style="{StaticResource EnterpriseHeader}"/>
-                                            <ListView Grid.Row="1" ItemsSource="{Binding SmokeTestLogList}" Background="#121212" BorderBrush="#393E46" Foreground="#EEEEEE" Margin="0,10,0,0" FontFamily="Consolas" FontSize="11"/>
-                                        </Grid>
-                                    </Border>
-                                </Grid>
+                                <workspaces:TestConsoleView DataContext="{Binding TestConsole}"/>
                             </TabItem>
                         </TabControl>
                     </Grid>
                 </Grid>
-            </Border>
-        </Grid>
-
-        <!-- =================================================================== -->
-        <!-- BOTTOM DIAGNOSTICS & LOG PANEL                                      -->
-        <!-- =================================================================== -->
-        <Border Grid.Row="2" Background="#111111" BorderBrush="#393E46" BorderThickness="0,1,0,0">
-            <Grid Margin="12,10">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <!-- Panel Header -->
-                <DockPanel Grid.Row="0" Margin="0,0,0,6">
-                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                        <TextBlock Text="DIAGNOSTICS &amp; STRUCTURED LOGS" Foreground="#EEEEEE" FontFamily="Segoe UI" FontWeight="Bold" FontSize="11"/>
-                        <TextBlock Text="(Sanitized Payloads / Credentials Redacted)" Foreground="#555555" FontFamily="Segoe UI" FontSize="9" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <TextBlock Text="LIVE" Foreground="#D65A31" FontWeight="Bold" FontSize="9" DockPanel.Dock="Right" VerticalAlignment="Center"/>
-                </DockPanel>
-
-                <!-- Structured Log Grid -->
-                <ListView Grid.Row="1" ItemsSource="{Binding DiagnosticService.Logs}" Background="#1A1A1A" BorderBrush="#393E46" BorderThickness="1" Foreground="#EEEEEE">
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn Header="Timestamp" Width="140">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Timestamp, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" Foreground="#888888" FontSize="11" FontFamily="Consolas"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="Subsystem" Width="110">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Subsystem}" Foreground="#00ADB5" FontSize="11" FontWeight="Bold"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="Level" Width="70">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Level}" FontSize="11" FontWeight="Bold">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Foreground" Value="#EEEEEE"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Level}" Value="ERROR">
-                                                            <Setter Property="Foreground" Value="#D65A31"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Level}" Value="WARN">
-                                                            <Setter Property="Foreground" Value="#E2C044"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Level}" Value="INFO">
-                                                            <Setter Property="Foreground" Value="#4CAF50"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="Message" Width="680">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Message}" Foreground="#DDDDDD" FontSize="11" FontFamily="Consolas"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
             </Grid>
-        </Border>
-
-        <!-- Loading overlay -->
-        <Border Grid.Row="0" Grid.RowSpan="3" Background="#AA121212" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisConverter}}">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="⚡" Foreground="#00ADB5" FontSize="48" HorizontalAlignment="Center">
-                    <TextBlock.RenderTransform>
-                        <RotateTransform Angle="0" x:Name="SpinnerTransform" CenterX="24" CenterY="24"/>
-                    </TextBlock.RenderTransform>
-                </TextBlock>
-                <TextBlock Text="{Binding BusyMessage}" Foreground="White" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,15,0,0"/>
-                <TextBlock Text="Please wait..." Foreground="#888888" FontSize="12" HorizontalAlignment="Center" Margin="0,5,0,0"/>
-            </StackPanel>
-        </Border>
-    </Grid>
+        </Grid>
+    </Border>
 </Window>

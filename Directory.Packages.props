@@ -6,13 +6,13 @@
   <ItemGroup>
     <!-- Production Dependencies -->
     <PackageVersion Include="Dapper" Version="2.1.79" />
+    <PackageVersion Include="MaterialDesignThemes.Wpf" Version="1.0.1" />
     <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.20.1" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.2" />
     <PackageVersion Include="Npgsql" Version="10.0.3" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.2" />
     <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="9.0.2" />
-
     <!-- Microsoft Extensions & Hosting Stack (v10.0.9 for .NET 10 alignment) -->
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.9" />
@@ -27,7 +27,6 @@
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Primitives" Version="10.0.9" />
-
     <!-- Test & Simulation Dependencies -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="xunit" Version="2.9.2" />
@@ -35,7 +34,6 @@
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.13.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.2" />
-
     <!-- SQLite Vulnerability Remediation (Pinning transitives to non-vulnerable versions) -->
     <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
     <PackageVersion Include="SQLitePCLRaw.core" Version="3.0.3" />
