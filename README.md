@@ -285,12 +285,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Refactor CI pipeline for enhanced documentation and logging |
+| **Commit Message** | Improve CI pipeline with error notifications and commits |
 | **Author** | Capsizer |
 | **Branch** | `main` |
-| **Run Number** | `34` |
-| **Commit SHA** | `a8b6c3c0e91f60300390b478af67f1f705890ab5` |
-| **Generated At** | `2026-07-14 18:28:33 UTC` |
+| **Run Number** | `36` |
+| **Commit SHA** | `a37ac5b2bfe1eb2e6406de37dc6ba519d0d1109e` |
+| **Generated At** | `2026-07-14 18:37:46 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
