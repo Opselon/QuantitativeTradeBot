@@ -285,12 +285,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Merge pull request #18 from Opselon/revert-17-jules-17206006294178522431-2b9dd614 |
+| **Commit Message** | Create ReadMe.md for Nexus Trading Engine |
 | **Author** | Capsizer |
 | **Branch** | `main` |
-| **Run Number** | `44` |
-| **Commit SHA** | `26315bc915f4d0bfe94b86140d45649962e8b389` |
-| **Generated At** | `2026-07-14 20:42:01 UTC` |
+| **Run Number** | `45` |
+| **Commit SHA** | `f8b8b3d270f1f3115b16fa6d3a472b8623ee623b` |
+| **Generated At** | `2026-07-14 22:04:11 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -347,7 +347,8 @@ To get started, please review the contribution guidelines outlined above, explor
 ├── MQL5/
 │   └── Experts/
 │       └── Nexus/
-│           └── NexusBridge.mq5
+│           ├── NexusBridge.mq5
+│           └── ReadMe.md
 ├── native/
 │   ├── Nexus.Native/
 │   │   ├── NexusNative.cpp
