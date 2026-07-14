@@ -5,41 +5,66 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <!-- Card Style -->
+        <Style x:Key="ConsoleCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderTranslucentBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="24"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="{DynamicResource ShadowBrush}" BlurRadius="12" Direction="270" ShadowDepth="2" Opacity="0.15"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1.2*"/>
-            <ColumnDefinition Width="15"/>
+            <ColumnDefinition Width="16"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- Left side: Run Smoke Test Controls -->
-        <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
+        <Border Grid.Column="0" Style="{StaticResource ConsoleCard}">
             <StackPanel>
-                <TextBlock Text="REAL LOCALHOST BRIDGE PIPELINE VERIFIER" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5"/>
-                <TextBlock Text="Press the button below to run an automated, live integration smoke test that connects, authenticates, pings, subscribes, monitors EURUSD ticks, and disconnects cleanly." FontSize="12" Foreground="#BBBBBB" TextWrapping="Wrap" Margin="0,5,0,20"/>
+                <TextBlock Text="REAL LOCALHOST BRIDGE PIPELINE VERIFIER" Style="{StaticResource EnterpriseHeader}"/>
+                <TextBlock Text="Press the button below to run an automated, live integration smoke test that connects, authenticates, pings, subscribes, monitors EURUSD ticks, and disconnects cleanly." Style="{StaticResource EnterpriseBodyText}" Margin="0,4,0,24"/>
 
-                <Button Content="RUN AUTOMATED REAL SMOKE TEST" Command="{Binding RunSmokeTestCommand}" Background="#00ADB5" Foreground="Black" FontWeight="Bold" Padding="20,12" FontSize="12" HorizontalAlignment="Left" Margin="0,0,0,15" Cursor="Hand"/>
+                <Button Content="RUN AUTOMATED REAL SMOKE TEST" Command="{Binding RunSmokeTestCommand}" Style="{StaticResource ActionButton}" Padding="24,14" FontSize="13" HorizontalAlignment="Left" Margin="0,0,0,24"/>
 
-                <Border BorderBrush="#393E46" BorderThickness="0,1,0,0" Margin="0,5,0,15"/>
+                <Border BorderBrush="{DynamicResource BorderTranslucentBrush}" BorderThickness="0,1,0,0" Margin="0,4,0,24"/>
 
-                <TextBlock Text="LIGHTWEIGHT DIAGNOSTICS API" FontFamily="Segoe UI" FontSize="14" Foreground="#EEEEEE" Margin="0,0,0,10"/>
-                <Grid Margin="0,0,0,6">
+                <TextBlock Text="LIGHTWEIGHT DIAGNOSTICS API" Style="{StaticResource EnterpriseSubHeader}"/>
+                <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="Test Outcome Status:" FontFamily="Segoe UI Semibold" FontSize="12" Foreground="#888888" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Text="{Binding TestOutcome}" Foreground="#E2C044" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock Text="Test Outcome Status:" Style="{StaticResource EnterpriseLabel}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding TestOutcome}" Foreground="{DynamicResource WarningBrush}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" FontFamily="Consolas"/>
                 </Grid>
             </StackPanel>
         </Border>
 
         <!-- Right side: Real-time progress logs -->
-        <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
+        <Border Grid.Column="2" Style="{StaticResource ConsoleCard}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="12"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="SMOKE TEST CONSOLE WORKFLOW LOG" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5"/>
-                <ListView Grid.Row="1" ItemsSource="{Binding SmokeTestLogList}" Background="#121212" BorderBrush="#393E46" Foreground="#EEEEEE" Margin="0,10,0,0" FontFamily="Consolas" FontSize="11"/>
+                <TextBlock Grid.Row="0" Text="SMOKE TEST CONSOLE WORKFLOW LOG" Style="{StaticResource EnterpriseHeader}"/>
+                <ListView Grid.Row="2" ItemsSource="{Binding SmokeTestLogList}" FontFamily="Consolas" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="Padding" Value="4,2"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
             </Grid>
         </Border>
     </Grid>

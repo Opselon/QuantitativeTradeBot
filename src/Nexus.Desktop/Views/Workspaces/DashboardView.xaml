@@ -5,45 +5,117 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <!-- Glassmorphism Card Style with Hover Scale Action -->
+        <Style x:Key="DashboardCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderTranslucentBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="24"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="{DynamicResource ShadowBrush}" BlurRadius="12" Direction="270" ShadowDepth="2" Opacity="0.15"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.02" Duration="0:0:0.2">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseInOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.02" Duration="0:0:0.2">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseInOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.00" Duration="0:0:0.2">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseInOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.00" Duration="0:0:0.2">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseInOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.ExitActions>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="15"/>
+            <ColumnDefinition Width="16"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- Welcome column -->
-        <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
+        <Border Grid.Column="0" Style="{StaticResource DashboardCard}">
             <StackPanel>
-                <TextBlock Text="Welcome to Nexus Trading Engine!" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5" Margin="0,0,0,15"/>
-                <TextBlock Text="NTE is a real-time, low-latency institutional algorithmic trading desk. Use the left navigation panel to access different terminal views." FontSize="12" Foreground="#BBBBBB" TextWrapping="Wrap" Margin="0,0,0,15"/>
-                <TextBlock Text="✓ Real MT5 Bridge Ready" Foreground="#4CAF50" FontWeight="Bold" Margin="0,0,0,5"/>
-                <TextBlock Text="✓ Native C++ Math Acceleration Active" Foreground="#4CAF50" FontWeight="Bold" Margin="0,0,0,5"/>
-                <TextBlock Text="✓ Multi-Instrument Symbol Subscriptions Enabled" Foreground="#4CAF50" FontWeight="Bold" Margin="0,0,0,5"/>
+                <TextBlock Text="Welcome to Nexus Trading Engine!" Style="{StaticResource EnterpriseHeader}"/>
+                <TextBlock Text="NTE is a real-time, low-latency institutional algorithmic trading desk. Use the left navigation panel to access different terminal views." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,24"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Path Data="M9,16.17 L4.83,12 L3.41,13.41 L9,19 L21,7 L19.59,5.59 Z" Fill="{DynamicResource SuccessBrush}" Width="16" Height="16" Stretch="Uniform" Margin="0,0,10,0"/>
+                    <TextBlock Text="Real MT5 Bridge Ready" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontSize="13"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Path Data="M9,16.17 L4.83,12 L3.41,13.41 L9,19 L21,7 L19.59,5.59 Z" Fill="{DynamicResource SuccessBrush}" Width="16" Height="16" Stretch="Uniform" Margin="0,0,10,0"/>
+                    <TextBlock Text="Native C++ Math Acceleration Active" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontSize="13"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="M9,16.17 L4.83,12 L3.41,13.41 L9,19 L21,7 L19.59,5.59 Z" Fill="{DynamicResource SuccessBrush}" Width="16" Height="16" Stretch="Uniform" Margin="0,0,10,0"/>
+                    <TextBlock Text="Multi-Instrument Symbol Subscriptions Enabled" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontSize="13"/>
+                </StackPanel>
             </StackPanel>
         </Border>
 
         <!-- Quick Stats column -->
-        <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
+        <Border Grid.Column="2" Style="{StaticResource DashboardCard}">
             <StackPanel>
-                <TextBlock Text="LIVE TELEMETRY SUMMARY" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5" Margin="0,0,0,15"/>
+                <TextBlock Text="LIVE TELEMETRY SUMMARY" Style="{StaticResource EnterpriseHeader}"/>
 
-                <Grid Margin="0,5,0,8">
+                <Grid Margin="0,8,0,12">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="Bridge Connection:" Foreground="#888888" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Text="{Binding ConnectionStatusText}" Foreground="#00ADB5" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock Text="Bridge Connection:" Style="{StaticResource EnterpriseLabel}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding ConnectionStatusText}" Foreground="{DynamicResource AccentBrush}" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
                 </Grid>
 
-                <Grid Margin="0,0,0,8">
+                <Grid Margin="0,0,0,12">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="Ping Latency:" Foreground="#888888" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Text="{Binding PingLatencyMs, StringFormat={}{0:F2} ms}" Foreground="#E2C044" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+                    <TextBlock Text="Ping Latency:" Style="{StaticResource EnterpriseLabel}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding PingLatencyMs, StringFormat={}{0:F2} ms}" Foreground="{DynamicResource WarningBrush}" FontWeight="Bold" FontFamily="Consolas" FontSize="13" VerticalAlignment="Center"/>
                 </Grid>
 
-                <Grid Margin="0,0,0,8">
+                <Grid Margin="0,0,0,12">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="Total Ticks Ingested:" Foreground="#888888" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Text="{Binding ProcessedTickCount}" Foreground="#4CAF50" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+                    <TextBlock Text="Total Ticks Ingested:" Style="{StaticResource EnterpriseLabel}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding ProcessedTickCount}" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontFamily="Consolas" FontSize="13" VerticalAlignment="Center"/>
                 </Grid>
             </StackPanel>
         </Border>
