@@ -6,118 +6,27 @@
              xmlns:local="clr-namespace:Nexus.Desktop.Views"
              xmlns:vm="clr-namespace:Nexus.Desktop.ViewModels"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="800"
-             Background="#222831">
+             d:DesignHeight="600" d:DesignWidth="800">
 
     <UserControl.Resources>
-        <!-- Conversion and local styles helper -->
         <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
 
-        <Style x:Key="LocalHeader" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="Foreground" Value="#00ADB5"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
-        </Style>
-
-        <Style x:Key="LocalLabel" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#888888"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="0,0,10,0"/>
-        </Style>
-
-        <Style x:Key="LocalValue" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#EEEEEE"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-
-        <Style x:Key="LocalTextBox" TargetType="TextBox">
-            <Setter Property="Background" Value="#1E1E1E"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#393E46"/>
-            <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="FontSize" Value="13"/>
-        </Style>
-
-        <Style x:Key="BuyBtn" TargetType="Button">
-            <Setter Property="Background" Value="#2E7D32"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-            <Setter Property="Padding" Value="20,8"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#388E3C"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#393E46"/>
-                    <Setter Property="Foreground" Value="#777777"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="SellBtn" TargetType="Button">
-            <Setter Property="Background" Value="#C62828"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-            <Setter Property="Padding" Value="20,8"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#D32F2F"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#393E46"/>
-                    <Setter Property="Foreground" Value="#777777"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="ActionBtn" TargetType="Button">
-            <Setter Property="Background" Value="#00ADB5"/>
-            <Setter Property="Foreground" Value="#EEEEEE"/>
-            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-            <Setter Property="Padding" Value="15,6"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#00C4CC"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#393E46"/>
-                    <Setter Property="Foreground" Value="#777777"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="SecondaryBtn" TargetType="Button">
-            <Setter Property="Background" Value="#393E46"/>
-            <Setter Property="Foreground" Value="#EEEEEE"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="Padding" Value="12,6"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#4F5661"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#222831"/>
-                    <Setter Property="Foreground" Value="#555555"/>
-                </Trigger>
-            </Style.Triggers>
+        <!-- Panel Cards style -->
+        <Style x:Key="TradingPanelCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderTranslucentBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="{DynamicResource ShadowBrush}" BlurRadius="12" Direction="270" ShadowDepth="2" Opacity="0.15"/>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="15">
+    <Grid Margin="0">
         <Grid.RowDefinitions>
             <!-- 1. Top Connection Panel -->
             <RowDefinition Height="Auto"/>
@@ -130,7 +39,7 @@
         <!-- ========================================== -->
         <!-- 1. CONNECTION PANEL                         -->
         <!-- ========================================== -->
-        <Border Grid.Row="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15" Margin="0,0,0,15">
+        <Border Grid.Row="0" Style="{StaticResource TradingPanelCard}" Margin="0,0,0,16">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -142,40 +51,55 @@
 
                 <!-- Current Mode -->
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="CURRENT MODE" Style="{StaticResource LocalLabel}"/>
-                    <TextBlock Text="{Binding CurrentMode, FallbackValue='Simulation'}" Foreground="#00ADB5" FontSize="14" FontWeight="Bold" Margin="0,4,0,0"/>
+                    <TextBlock Text="CURRENT MODE" Style="{StaticResource EnterpriseLabel}"/>
+                    <TextBlock Text="{Binding CurrentMode, FallbackValue='Simulation'}" Foreground="{DynamicResource AccentBrush}" FontSize="15" FontWeight="Bold" Margin="0,6,0,0"/>
                 </StackPanel>
 
                 <!-- Connection State -->
                 <StackPanel Grid.Column="1">
-                    <TextBlock Text="CONNECTION STATE" Style="{StaticResource LocalLabel}"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                        <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,6,0">
+                    <TextBlock Text="CONNECTION STATE" Style="{StaticResource EnterpriseLabel}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <Ellipse Width="10" Height="10" VerticalAlignment="Center" Margin="0,0,8,0" RenderTransformOrigin="0.5,0.5">
+                            <Ellipse.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1" x:Name="PulseTransform"/>
+                            </Ellipse.RenderTransform>
                             <Ellipse.Style>
                                 <Style TargetType="Ellipse">
-                                    <Setter Property="Fill" Value="#C62828"/>
+                                    <Setter Property="Fill" Value="{DynamicResource DangerBrush}"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                            <Setter Property="Fill" Value="#2E7D32"/>
+                                            <Setter Property="Fill" Value="{DynamicResource SuccessBrush}"/>
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.4" Duration="0:0:0.8"/>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.4" Duration="0:0:0.8"/>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.6" Duration="0:0:0.8"/>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Ellipse.Style>
                         </Ellipse>
-                        <TextBlock Text="{Binding ConnectionStatusText, FallbackValue='Disconnected'}" Style="{StaticResource LocalValue}" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding ConnectionStatusText, FallbackValue='Disconnected'}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Bridge Status -->
                 <StackPanel Grid.Column="2">
-                    <TextBlock Text="BRIDGE STATUS" Style="{StaticResource LocalLabel}"/>
-                    <TextBlock Text="Listening / Active" Margin="0,4,0,0">
+                    <TextBlock Text="BRIDGE STATUS" Style="{StaticResource EnterpriseLabel}"/>
+                    <TextBlock Text="Listening / Active" FontSize="13" Margin="0,6,0,0" VerticalAlignment="Center">
                         <TextBlock.Style>
-                            <Style TargetType="TextBlock" BasedOn="{StaticResource LocalValue}">
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsConnected}" Value="False">
                                         <Setter Property="Text" Value="Inactive"/>
-                                        <Setter Property="Foreground" Value="#888888"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+                                        <Setter Property="FontWeight" Value="Normal"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -185,14 +109,14 @@
 
                 <!-- Last Response Time -->
                 <StackPanel Grid.Column="3">
-                    <TextBlock Text="LAST RESPONSE TIME" Style="{StaticResource LocalLabel}"/>
-                    <TextBlock Text="{Binding LastResponseTimeText, FallbackValue='0 ms'}" Style="{StaticResource LocalValue}" Margin="0,4,0,0" FontFamily="Consolas"/>
+                    <TextBlock Text="LAST RESPONSE TIME" Style="{StaticResource EnterpriseLabel}"/>
+                    <TextBlock Text="{Binding LastResponseTimeText, FallbackValue='0 ms'}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13" Margin="0,6,0,0" FontFamily="Consolas"/>
                 </StackPanel>
 
                 <!-- Last Successful Refresh -->
                 <StackPanel Grid.Column="4">
-                    <TextBlock Text="LAST REFRESH" Style="{StaticResource LocalLabel}"/>
-                    <TextBlock Text="{Binding LastSuccessfulRefreshText, FallbackValue='Never'}" Style="{StaticResource LocalValue}" Margin="0,4,0,0"/>
+                    <TextBlock Text="LAST REFRESH" Style="{StaticResource EnterpriseLabel}"/>
+                    <TextBlock Text="{Binding LastSuccessfulRefreshText, FallbackValue='Never'}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13" Margin="0,6,0,0"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -200,7 +124,7 @@
         <!-- ========================================== -->
         <!-- 2. TRADE ENTRY PANEL                       -->
         <!-- ========================================== -->
-        <Border Grid.Row="1" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15" Margin="0,0,0,15">
+        <Border Grid.Row="1" Style="{StaticResource TradingPanelCard}" Margin="0,0,0,16">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -208,32 +132,32 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="MANUAL ORDER TICK ENTRY" Style="{StaticResource LocalHeader}"/>
+                <TextBlock Grid.Row="0" Text="MANUAL ORDER TICK ENTRY" Style="{StaticResource EnterpriseSubHeader}" Foreground="{DynamicResource AccentBrush}"/>
 
-                <Grid Grid.Row="1" Margin="0,5,0,10">
+                <Grid Grid.Row="1" Margin="0,8,0,12">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="60"/>
-                        <ColumnDefinition Width="120"/>
-                        <ColumnDefinition Width="30"/>
-                        <ColumnDefinition Width="60"/>
-                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="65"/>
+                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="24"/>
+                        <ColumnDefinition Width="65"/>
+                        <ColumnDefinition Width="130"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="12"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Symbol -->
-                    <TextBlock Grid.Column="0" Text="Symbol:" Style="{StaticResource LocalLabel}"/>
-                    <TextBox Grid.Column="1" Text="{Binding SelectedSymbol, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LocalTextBox}"/>
+                    <TextBlock Grid.Column="0" Text="Symbol:" Style="{StaticResource EnterpriseLabel}"/>
+                    <TextBox Grid.Column="1" Text="{Binding SelectedSymbol, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}"/>
 
                     <!-- Volume -->
-                    <TextBlock Grid.Column="3" Text="Volume:" Style="{StaticResource LocalLabel}"/>
-                    <TextBox Grid.Column="4" Text="{Binding OrderVolume, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LocalTextBox}"/>
+                    <TextBlock Grid.Column="3" Text="Volume:" Style="{StaticResource EnterpriseLabel}"/>
+                    <TextBox Grid.Column="4" Text="{Binding OrderVolume, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EnterpriseTextBox}"/>
 
-                    <!-- Buttons -->
-                    <Button Grid.Column="6" Content="BUY MARKET" Command="{Binding BuyCommand}" Style="{StaticResource BuyBtn}" AutomationProperties.Name="BuyButton"/>
-                    <Button Grid.Column="8" Content="SELL MARKET" Command="{Binding SellCommand}" Style="{StaticResource SellBtn}" AutomationProperties.Name="SellButton"/>
+                    <!-- Buttons with exact AutomationProperties.Name -->
+                    <Button Grid.Column="6" Content="BUY MARKET" Command="{Binding BuyCommand}" Style="{DynamicResource BuyBtn}" AutomationProperties.Name="BuyButton"/>
+                    <Button Grid.Column="8" Content="SELL MARKET" Command="{Binding SellCommand}" Style="{DynamicResource SellBtn}" AutomationProperties.Name="SellButton"/>
                 </Grid>
 
                 <!-- Status & Validation Messaging -->
@@ -245,11 +169,11 @@
 
                     <!-- Feedback / Validation / Errors -->
                     <StackPanel Orientation="Horizontal" Grid.Column="0">
-                        <TextBlock Text="{Binding ErrorMessage}" Foreground="#D65A31" FontWeight="Bold" FontSize="12" Margin="0,0,15,0" VerticalAlignment="Center" Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVisConverter}, FallbackValue=Collapsed}"/>
-                        <TextBlock Text="{Binding StatusMessage}" Foreground="#E2C044" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DangerBrush}" FontWeight="Bold" FontSize="12" Margin="0,0,16,0" VerticalAlignment="Center" Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVisConverter}, FallbackValue=Collapsed}"/>
+                        <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource WarningBrush}" FontSize="12" VerticalAlignment="Center" FontWeight="SemiBold"/>
                     </StackPanel>
 
-                    <Button Grid.Column="1" Content="Clear Error" Command="{Binding ClearErrorCommand}" Style="{StaticResource SecondaryBtn}" FontSize="11" Padding="8,4" Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVisConverter}, FallbackValue=Collapsed}"/>
+                    <Button Grid.Column="1" Content="Clear Error" Command="{Binding ClearErrorCommand}" Style="{StaticResource SecondaryButton}" FontSize="11" Padding="12,5" Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVisConverter}, FallbackValue=Collapsed}"/>
                 </Grid>
             </Grid>
         </Border>
@@ -257,67 +181,100 @@
         <!-- ========================================== -->
         <!-- 3. OPEN POSITIONS GRID                     -->
         <!-- ========================================== -->
-        <Border Grid.Row="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
+        <Border Grid.Row="2" Style="{StaticResource TradingPanelCard}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="12"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="12"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="ACTIVE TERMINAL POSITIONS" Style="{StaticResource LocalHeader}"/>
+                <TextBlock Grid.Row="0" Text="ACTIVE TERMINAL POSITIONS" Style="{StaticResource EnterpriseSubHeader}" Foreground="{DynamicResource AccentBrush}"/>
 
-                <DataGrid Grid.Row="1" ItemsSource="{Binding OpenPositions}" SelectedItem="{Binding SelectedPosition}" AutoGenerateColumns="False" IsReadOnly="True" Background="#121212" BorderBrush="#393E46" Foreground="White" RowBackground="#1A1A1A" AlternatingRowBackground="#222222" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#222831" BorderThickness="1">
-                    <DataGrid.Resources>
-                        <Style TargetType="DataGridColumnHeader">
-                            <Setter Property="Background" Value="#393E46"/>
-                            <Setter Property="Foreground" Value="White"/>
-                            <Setter Property="Padding" Value="8,6"/>
-                            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-                            <Setter Property="FontSize" Value="11"/>
-                        </Style>
-                        <Style TargetType="DataGridCell">
-                            <Setter Property="Padding" Value="8,6"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="{x:Type DataGridCell}">
-                                        <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
-                                            <ContentPresenter SnapsToDevicePixels="True" />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </DataGrid.Resources>
+                <DataGrid Grid.Row="2" ItemsSource="{Binding OpenPositions}" SelectedItem="{Binding SelectedPosition}" AutoGenerateColumns="False" IsReadOnly="True">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Ticket" Binding="{Binding Ticket}" Width="75" HeaderStyle="{StaticResource {x:Type DataGridColumnHeader}}"/>
-                        <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="75"/>
-                        <DataGridTextColumn Header="Side" Binding="{Binding Side}" Width="65"/>
-                        <DataGridTextColumn Header="Volume" Binding="{Binding Volume, StringFormat={}{0:F2}}" Width="70"/>
-                        <DataGridTextColumn Header="Open Price" Binding="{Binding OpenPrice, StringFormat={}{0:F5}}" Width="95"/>
-                        <DataGridTextColumn Header="Current Price" Binding="{Binding CurrentPrice, StringFormat={}{0:F5}}" Width="95"/>
-                        <DataGridTextColumn Header="Profit" Binding="{Binding Profit, StringFormat={}{0:C2}}" Width="85">
+                        <DataGridTextColumn Header="Ticket" Binding="{Binding Ticket}" Width="75">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="75"/>
+                        <DataGridTextColumn Header="Side" Binding="{Binding Side}" Width="65">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontWeight" Value="Bold"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Profit, Converter={StaticResource BoolToVisConverter}}" Value="True"> <!-- Wait, we can use simple triggers -->
+                                        <DataTrigger Binding="{Binding Side}" Value="Buy">
+                                            <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Side}" Value="Sell">
+                                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="Swap" Binding="{Binding Swap, StringFormat={}{0:C2}}" Width="70"/>
-                        <DataGridTextColumn Header="Comm" Binding="{Binding Commission, StringFormat={}{0:C2}}" Width="70"/>
-                        <DataGridTextColumn Header="Open Time" Binding="{Binding OpenTime, StringFormat='HH:mm:ss'}" Width="85"/>
+                        <DataGridTextColumn Header="Volume" Binding="{Binding Volume, StringFormat={}{0:F2}}" Width="70">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Open Price" Binding="{Binding OpenPrice, StringFormat={}{0:F5}}" Width="95">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Current Price" Binding="{Binding CurrentPrice, StringFormat={}{0:F5}}" Width="95">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Profit" Binding="{Binding Profit, StringFormat={}{0:C2}}" Width="85">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Swap" Binding="{Binding Swap, StringFormat={}{0:C2}}" Width="70">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Comm" Binding="{Binding Commission, StringFormat={}{0:C2}}" Width="70">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Open Time" Binding="{Binding OpenTime, StringFormat='HH:mm:ss'}" Width="85">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                         <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="75"/>
                     </DataGrid.Columns>
                 </DataGrid>
 
-                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-                    <Button Content="REFRESH POSITIONS" Command="{Binding RefreshPositionsCommand}" Style="{StaticResource SecondaryBtn}" Margin="0,0,10,0"/>
-                    <Button Content="CLOSE POSITION" Command="{Binding CloseCommand}" Style="{StaticResource SellBtn}" Padding="15,6"/>
+                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="REFRESH POSITIONS" Command="{Binding RefreshPositionsCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
+                    <Button Content="CLOSE POSITION" Command="{Binding CloseCommand}" Style="{DynamicResource SellBtn}" Padding="20,8"/>
                 </StackPanel>
             </Grid>
         </Border>
