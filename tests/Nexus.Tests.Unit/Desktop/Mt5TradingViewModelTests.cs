@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Nexus.Application.Ports;
-using Nexus.Application.Workflows.DTOs;
 using Nexus.Desktop.Models;
 using Nexus.Desktop.Services;
 using Nexus.Desktop.ViewModels;
@@ -391,15 +390,7 @@ namespace Nexus.Tests.Unit.Desktop
             public Task ConnectAsync(string host, int port, CancellationToken ct = default) => Task.CompletedTask;
             public Task DisconnectAsync(CancellationToken ct = default) => Task.CompletedTask;
             public Task<bool> LoginAsync(string accountId, string password, string brokerServer, CancellationToken ct = default) => Task.FromResult(true);
-            public Task<AccountSnapshotDto?> GetAccountSnapshotAsync(CancellationToken cancellationToken = default)
-            {
-                return Task.FromResult<AccountSnapshotDto?>(new AccountSnapshotDto
-                {
-                    Balance = 100000,
-                    Equity = 100000,
-                    Currency = "USD"
-                });
-            }
+            public Task<AccountSnapshotDto?> GetAccountSnapshotAsync(CancellationToken ct = default) => Task.FromResult<AccountSnapshotDto?>(null);
             public Task SubscribeSymbolAsync(string symbol, CancellationToken ct = default) => Task.CompletedTask;
             public Task UnsubscribeSymbolAsync(string symbol, CancellationToken ct = default) => Task.CompletedTask;
             public Task<string> AutoDetectAndInstallEaAsync(CancellationToken cancellationToken) => Task.FromResult("");
