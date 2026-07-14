@@ -5,123 +5,53 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
-
-    <UserControl.Resources>
-        <!-- Card Style -->
-        <Style x:Key="MarketCard" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderTranslucentBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="20"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect Color="{DynamicResource ShadowBrush}" BlurRadius="12" Direction="270" ShadowDepth="2" Opacity="0.15"/>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </UserControl.Resources>
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="16"/>
+            <RowDefinition Height="10"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header Card -->
-        <Border Grid.Row="0" Style="{StaticResource MarketCard}">
+        <Border Grid.Row="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
             <StackPanel>
-                <TextBlock Text="NEXUS REAL-TIME FEED WATCHLIST" Style="{StaticResource EnterpriseHeader}" Margin="0,0,0,4"/>
-                <TextBlock Text="Manage active subscriptions for major currency pairs and spot metals. Ingest live market data continuously." Style="{StaticResource EnterpriseBodyText}"/>
+                <TextBlock Text="NEXUS REAL-TIME FEED WATCHLIST" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5" Margin="0,0,0,5"/>
+                <TextBlock Text="Manage active subscriptions for major currency pairs and spot metals. Ingest live market data continuously." FontSize="12" Foreground="#BBBBBB"/>
             </StackPanel>
         </Border>
 
-        <!-- Data Grid Card -->
-        <Border Grid.Row="2" Style="{StaticResource MarketCard}">
-            <DataGrid ItemsSource="{Binding SubscribedSymbolsList}" AutoGenerateColumns="False" IsReadOnly="True">
+        <Border Grid.Row="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
+            <DataGrid ItemsSource="{Binding SubscribedSymbolsList}" AutoGenerateColumns="False" IsReadOnly="True" Background="#121212" BorderBrush="#393E46" Foreground="White" RowBackground="#1A1A1A" AlternatingRowBackground="#222222" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#222831" BorderThickness="1">
+                <DataGrid.Resources>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#393E46"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Padding" Value="8,6"/>
+                        <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+                        <Setter Property="FontSize" Value="11"/>
+                    </Style>
+                </DataGrid.Resources>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Instrument Symbol" Binding="{Binding SymbolName}" Width="150"/>
-
-                    <!-- Subscribed badge/cell representation -->
-                    <DataGridTemplateColumn Header="Subscribed" Width="110">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <Border CornerRadius="10" Padding="8,3" HorizontalAlignment="Left">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Background" Value="{DynamicResource InteractiveBrush}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsSubscribed}" Value="True">
-                                                    <Setter Property="Background" Value="{DynamicResource SuccessBrush}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <TextBlock Text="{Binding IsSubscribed}" Foreground="White" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-
-                    <DataGridTextColumn Header="Bid price" Binding="{Binding Bid, StringFormat={}{0:F5}}" Width="120">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="FontFamily" Value="Consolas"/>
-                                <Setter Property="FontSize" Value="12"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-
-                    <DataGridTextColumn Header="Ask price" Binding="{Binding Ask, StringFormat={}{0:F5}}" Width="120">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="FontFamily" Value="Consolas"/>
-                                <Setter Property="FontSize" Value="12"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-
-                    <DataGridTextColumn Header="Spread" Binding="{Binding Spread, StringFormat={}{0:F5}}" Width="100">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="FontFamily" Value="Consolas"/>
-                                <Setter Property="FontSize" Value="12"/>
-                                <Setter Property="Foreground" Value="{DynamicResource WarningBrush}"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-
-                    <DataGridTextColumn Header="Ticks Count" Binding="{Binding TickCount}" Width="110">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="FontFamily" Value="Consolas"/>
-                                <Setter Property="FontSize" Value="12"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-
-                    <DataGridTextColumn Header="Last Updated Time" Binding="{Binding LastUpdateTimeText}" Width="150">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="FontFamily" Value="Consolas"/>
-                                <Setter Property="FontSize" Value="12"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-
+                    <DataGridTextColumn Header="Subscribed" Binding="{Binding IsSubscribed}" Width="110"/>
+                    <DataGridTextColumn Header="Bid price" Binding="{Binding Bid, StringFormat={}{0:F5}}" Width="120"/>
+                    <DataGridTextColumn Header="Ask price" Binding="{Binding Ask, StringFormat={}{0:F5}}" Width="120"/>
+                    <DataGridTextColumn Header="Spread" Binding="{Binding Spread, StringFormat={}{0:F5}}" Width="100"/>
+                    <DataGridTextColumn Header="Ticks Count" Binding="{Binding TickCount}" Width="110"/>
+                    <DataGridTextColumn Header="Last Updated Time" Binding="{Binding LastUpdateTimeText}" Width="150"/>
                     <DataGridTemplateColumn Header="Action Controls" Width="130">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="SUBSCRIBE" Command="{Binding DataContext.ToggleSubscriptionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" FontSize="10" Padding="8,4">
                                     <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource ActionButton}">
-                                            <Setter Property="Content" Value="SUBSCRIBE"/>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#00ADB5"/>
+                                            <Setter Property="Foreground" Value="Black"/>
+                                            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+                                            <Setter Property="Cursor" Value="Hand"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsSubscribed}" Value="True">
                                                     <Setter Property="Content" Value="UNSUBSCRIBE"/>
-                                                    <Setter Property="Background" Value="{DynamicResource DangerBrush}"/>
+                                                    <Setter Property="Background" Value="#C62828"/>
                                                     <Setter Property="Foreground" Value="White"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
