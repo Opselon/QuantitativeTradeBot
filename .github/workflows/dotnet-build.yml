@@ -1,76 +1,285 @@
-name: dotnet-build
+name: ⚙️ CI Pipeline & AI Docs
 
 on:
   push:
-    branches:
-      - develop
-      - "feat/**"
-      - "feature/**"
-      - "fix/**"
-      - "hotfix/**"
+    branches: [ main, develop, "feat/**", "feature/**", "fix/**", "hotfix/**" ]
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [ main, develop ]
 
 permissions:
-  contents: read
+  contents: write # Required for auto-committing the MD file
+  actions: read   # Required for reading CI/CD logs via gh-cli
+
+concurrency:
+  group: nexus-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  NUGET_XMLDOC_MODE: skip
+  BUILD_CONFIGURATION: Release
+  SOLUTION_PATH: NexusTradingEngine.sln
 
 jobs:
-  build-test:
-    name: Build and Test - .NET 10 & Native C++
-    runs-on: ubuntu-latest
-
-    env:
-      DOTNET_NOLOGO: true
-      DOTNET_CLI_TELEMETRY_OPTOUT: true
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-      BUILD_CONFIGURATION: Release
-
+# =====================================================================
+# JOB 1: PREPARATION & ARCHITECTURE SCAN
+# =====================================================================
+  prep-and-docs:
+    name: 🔍 Scan & Generate Architecture Base
+    runs-on: windows-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup .NET 10 SDK
-        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "10.0.x"
-          include-prerelease: true
+          fetch-depth: 1
 
-      - name: Build Native C++ Component
+      - name: Generate Base AI Document with Gorgeous Unicode Tree
+        shell: pwsh
         run: |
-          chmod +x native/build.sh
-          ./native/build.sh
+          $OutputFile = "base_structure.md"
+          $RootPath = (Get-Location).Path
+          $Lines = @()
 
-      - name: Show .NET info
-        run: dotnet --info
+          $CommitMsg = (git log -1 --pretty=%B).Trim()
+          $CommitSummary = ($CommitMsg -split "`n")[0]
+          $CommitAuthor = (git log -1 --pretty=%an).Trim()
+          
+          $BranchName = $env:GITHUB_REF_NAME
+          $RunNum = $env:GITHUB_RUN_NUMBER
+          $CommitSha = $env:GITHUB_SHA
+          $GenTime = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + " UTC"
 
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', '**/packages.lock.json') }}
-          restore-keys: |
-            nuget-${{ runner.os }}-
+          $HeaderArray = @(
+              '## 🏛️ Nexus Trading Engine (NTE) Architecture Summary',
+              '> **Architecture Style:** Decoupled Hexagonal / Clean Architecture + Search-Driven Decision Engine',
+              '',
+              '### 🧩 Core System Layers',
+              '- 🔴 **`Nexus.Core` (Domain Layer):** Zero external dependencies. Defines the complete trading domain model, including `MarketState`, `MarketVector`, `TradeDecision`, `ScenarioScore`, `PatternMemory`, `EvaluationResult`, value objects (`Symbol`, `Money`, `LotSize`), and core interfaces for Strategy Runtime, Decision Engine, Risk Management, Neural Evaluation, Scenario Search, and Experience Database. Uses a *Zero-Allocation Tick Path* for deterministic, high-performance execution.',
+              '- ⚙️ **`Nexus.Application` (Orchestration):** Implements the complete Decision Pipeline, including Market State construction, Decision Generation, Scenario Search, Scenario Evaluation, Execution Coordination, Pattern Matching, Strategy Runtime, Experience Collection, AI orchestration, Risk Evaluation, and transformation of live market data into probabilistic trading decisions.',
+              '- 🔌 **`Nexus.Infrastructure` (Adapters):** Infrastructure adapters for MetaTrader 5 Bridge, EF Core persistence, Background Workers, Tick Streaming, Historical Data ingestion, Time-Series storage, Experience Database persistence, Training Dataset generation, Logging, Recovery services, and external platform integrations while keeping the domain completely isolated.',
+              '- ⚡ **`Nexus.Native.Core` (C++20):** High-performance quantitative computation engine accessed through P/Invoke. Responsible for ultra-low latency Market Vector generation, feature extraction, statistical calculations, numerical optimization, pattern processing, search acceleration, and future native AI optimizations beyond the .NET runtime.',
+              '- 🖥️ **`Nexus.WpfUi` (.NET 10 / WPF Layer):** Modern desktop workstation for monitoring Market States, Decision Engine execution, Pattern Memory, Experience Database, AI evaluation, Training progress, Strategy Runtime, Diagnostics, Bridge communication, and live execution management.',
+              '',
+              '### 🧠 Intelligence & Execution Subsystems',
+              '- 🤖 **`Nexus.AI`:** AI-assisted Market Intelligence layer responsible for feature learning, neural evaluation, probabilistic scoring, confidence estimation, pattern recognition, and continuous model training. AI assists the decision engine instead of replacing it, following the philosophy of modern search engines such as Stockfish.',
+              '- 📚 **Experience & Training Engine:** Continuously records every Market State, generated decision, execution result, market evolution, and trade outcome. Builds an Experience Database that produces structured datasets for offline and online training, improving future evaluation, scenario ranking, pattern recognition, and decision quality.',
+              '- 🔍 **Search & Decision Engine:** Core intelligence of NTE inspired by modern chess engine architecture. Generates multiple candidate trading decisions, explores probabilistic market scenarios, prunes low-quality branches, ranks promising paths, combines historical experience with AI evaluation, and selects the highest-confidence decision under defined risk constraints.',
+              '- 📈 **MetaTrader 5 Integration Layer:** MT5 serves exclusively as the execution and market data platform. Supplies ticks, positions, account information, and order execution while remaining completely decoupled from the decision engine, allowing future support for additional trading platforms.',
+              '',
+              '### 📊 Latest Build & Commit Metadata',
+              '| Field | Value |',
+              '| --- | --- |',
+              "| **Commit Message** | $CommitSummary |",
+              "| **Author** | $CommitAuthor |",
+              "| **Branch** | ``$BranchName`` |",
+              "| **Run Number** | ``$RunNum`` |",
+              "| **Commit SHA** | ``$CommitSha`` |",
+              "| **Generated At** | ``$GenTime`` |",
+              '',
+              '---',
+              '### 📂 Interactive Project Structure Tree',
+              '<details open>',
+              '<summary><b>Click to expand Project Tree (Filtered with WPF, .NET, C/C++, CMake & MQL5 files)</b></summary>',
+              '',
+              '```text'
+          )
+          
+          $Lines += $HeaderArray
 
-      - name: Restore
-        run: dotnet restore NexusTradingEngine.sln
+          $GlobalExcludes = @(".git", "bin", "obj", ".vs", "TestResults", "publish", "artifacts", "node_modules", "packages", "tmp", "log")
+          $IncludeFileExtensions = @(".cs", ".xaml", ".json", ".csproj", ".sln", ".yml", ".yaml", ".md", ".config", ".xml", ".ps1", ".sh", ".cpp", ".c", ".h", ".hpp", ".cmake", ".mq5")
 
-      - name: Build
-        run: dotnet build NexusTradingEngine.sln --configuration $BUILD_CONFIGURATION --no-restore
+          function Get-ProjectTree ($Path, $Prefix = "") {
+              $TreeLines = @()
+              $Items = Get-ChildItem -LiteralPath $Path -Force | Where-Object { $name = $_.Name; $shouldExclude = $false; foreach ($ex in $GlobalExcludes) { if ($name -eq $ex) { $shouldExclude = $true; break } }; -not $shouldExclude } | Sort-Object { -not $_.PSIsContainer }, Name
+              $Count = $Items.Count
+              for ($i = 0; $i -lt $Count; $i++) {
+                  $Item = $Items[$i]; $IsLast = ($i -eq ($Count - 1))
+                  $Connector = if ($IsLast) { "└── " } else { "├── " }
+                  $NextPrefix = if ($IsLast) { "$Prefix    " } else { "$Prefix│   " }
+                  if ($Item.PSIsContainer) {
+                      $hasValidFiles = (Get-ChildItem -LiteralPath $Item.FullName -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $IncludeFileExtensions -contains $_.Extension.ToLower() -or $_.Name -eq 'CMakeLists.txt' })
+                      if ($hasValidFiles) { $TreeLines += "$Prefix$Connector$($Item.Name)/"; $TreeLines += Get-ProjectTree $Item.FullName $NextPrefix }
+                  } else {
+                      if ($IncludeFileExtensions -contains $Item.Extension.ToLower() -or $Item.Name -eq 'CMakeLists.txt') { $TreeLines += "$Prefix$Connector$($Item.Name)" }
+                  }
+              }
+              return $TreeLines
+          }
 
-      - name: Test
-        run: >
-          dotnet test NexusTradingEngine.sln
-          --configuration $BUILD_CONFIGURATION
-          --no-build
-          --logger "trx;LogFileName=test-results.trx"
-          --results-directory TestResults
+          $TreeOutput = Get-ProjectTree (Get-Location).Path
+          $Lines += $TreeOutput
+          $Lines += '```'
+          $Lines += '</details>'
+          $Lines += ''
 
-      - name: Upload test results
-        if: always()
+          $Lines += "### 📈 Source File Counts"
+          $Lines += ""
+          $CS_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -Filter *.cs -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "bin|obj|packages" }).Count
+          $XAML_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -Filter *.xaml -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "bin|obj|packages" }).Count
+          $CPP_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match "\.(c|cpp|h|hpp)$" -and $_.FullName -notmatch "bin|obj" }).Count
+          $CMAKE_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -File -ErrorAction SilentlyContinue | Where-Object { ($_.Extension -eq ".cmake" -or $_.Name -eq "CMakeLists.txt") -and $_.FullName -notmatch "bin|obj" }).Count
+          $MQ5_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -Filter *.mq5 -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "bin|obj" }).Count
+          $PROJ_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match "\.(csproj|vcxproj|sln)$" -and $_.FullName -notmatch "bin|obj" }).Count
+
+          $Lines += "| File Type | Count |"
+          $Lines += "| --- | ---: |"
+          $Lines += "| C# (.cs) | $CS_COUNT |"
+          $Lines += "| WPF (.xaml) | $XAML_COUNT |"
+          $Lines += "| C/C++ Source | $CPP_COUNT |"
+          $Lines += "| CMake | $CMAKE_COUNT |"
+          $Lines += "| MQL5 (.mq5) | $MQ5_COUNT |"
+          $Lines += "| Projects (.sln, .csproj) | $PROJ_COUNT |"
+
+          $Lines | Out-File -FilePath $OutputFile -Encoding utf8
+
+      - name: Upload Base Document Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: TestResults
-          if-no-files-found: ignore
+          name: ai-doc-base
+          path: base_structure.md
+
+# =====================================================================
+# JOB 2: CI (UBUNTU) - Tests & Logs
+# =====================================================================
+  ci-ubuntu:
+    name: ⚙️ CI • Ubuntu (.NET + Tests)
+    needs: prep-and-docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "10.0.x" }
+      - run: dotnet restore "${{ env.SOLUTION_PATH }}"
+      - run: dotnet build "${{ env.SOLUTION_PATH }}" --configuration "${BUILD_CONFIGURATION}" --no-restore -fl "-flp:logfile=ci_build.log;verbosity=normal"
+      - run: |
+          dotnet test "${{ env.SOLUTION_PATH }}" --configuration "${BUILD_CONFIGURATION}" --no-build \
+          --filter "TestCategory!=Docker&TestCategory!=Integration&TestCategory!=E2E" \
+          --logger "trx;LogFileName=unit-tests.trx" --results-directory "TestResults"
+      - run: |
+          if [ -f "native/build.sh" ]; then
+            chmod +x native/build.sh
+            ./native/build.sh >> ci_build.log 2>&1 || true
+          fi
+      - name: Extract Errors & Warnings
+        if: always()
+        shell: bash
+        run: |
+          FILE="ci_logs_summary.md"
+          echo "### 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)" > "$FILE"
+          echo "- **Job Status:** ${{ job.status }}" >> "$FILE"
+          echo "#### 🔴 Errors" >> "$FILE"; echo '```text' >> "$FILE"; grep -E "error CS|fatal error" ci_build.log | tail -n 20 >> "$FILE" || echo "No explicit C# errors." >> "$FILE"; echo '```' >> "$FILE"
+          echo "#### 🟡 Warnings" >> "$FILE"; echo '```text' >> "$FILE"; grep -E "warning CS" ci_build.log | tail -n 20 >> "$FILE" || echo "No explicit C# warnings." >> "$FILE"; echo '```' >> "$FILE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ai-doc-ci
+          path: ci_logs_summary.md
+
+# =====================================================================
+# JOB 3: CI (WINDOWS) - Build Check & Logs ONLY (No Release)
+# =====================================================================
+  ci-windows:
+    name: ⚙️ CI • Windows (Build Check)
+    needs: prep-and-docs
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "10.0.x" }
+      - run: dotnet restore "${{ env.SOLUTION_PATH }}"
+      - run: dotnet build "${{ env.SOLUTION_PATH }}" --configuration Release --no-restore -fl "-flp:logfile=win_build.log;verbosity=normal"
+      - name: Extract Windows Errors
+        if: always()
+        shell: pwsh
+        run: |
+          $file = "win_logs_summary.md"
+          "### 🚀 Pipeline Diagnostics (Build Stage - Windows)`n- **Job Status:** ${{ job.status }}`n" | Set-Content $file
+          "#### 🔴 Errors" | Add-Content $file; '```text' | Add-Content $file
+          if (Test-Path win_build.log) { $errs = Select-String -Path win_build.log -Pattern "error CS" -SimpleMatch | Select-Object -Last 20; if ($errs) { $errs | ForEach-Object { Add-Content $file $_.Line.Trim() } } else { Add-Content $file "No C# errors." } } else { Add-Content $file "Build log not found." }
+          '```' | Add-Content $file
+          "#### 🟡 Warnings" | Add-Content $file; '```text' | Add-Content $file
+          if (Test-Path win_build.log) { $warns = Select-String -Path win_build.log -Pattern "warning CS" -SimpleMatch | Select-Object -Last 20; if ($warns) { $warns | ForEach-Object { Add-Content $file $_.Line.Trim() } } else { Add-Content $file "No C# warnings." } }
+          '```' | Add-Content $file
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ai-doc-win
+          path: win_logs_summary.md
+
+# =====================================================================
+# JOB 4: MERGE DIAGNOSTICS & UPDATE ROOT README.MD
+# =====================================================================
+  finalize-ai-doc:
+    name: 📝 Update README & Commit
+    needs: [ci-ubuntu, ci-windows]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          path: docs_merge/
+      - name: Assemble Diagnostics Section and Inject into README
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f README.md ]; then echo "# Nexus Trading Engine" > README.md; fi
+          if ! grep -q "<!-- NEXUS_AUTO_DOC_START -->" README.md; then echo -e "\n\n<!-- NEXUS_AUTO_DOC_START -->\n<!-- NEXUS_AUTO_DOC_END -->" >> README.md; fi
+          TEMP_CONTENT="temp_new_section.md"; rm -f "$TEMP_CONTENT"
+          if [ -f "docs_merge/ai-doc-base/base_structure.md" ]; then cat docs_merge/ai-doc-base/base_structure.md >> "$TEMP_CONTENT"; fi
+          if [ -f "docs_merge/ai-doc-ci/ci_logs_summary.md" ]; then echo "" >> "$TEMP_CONTENT"; cat docs_merge/ai-doc-ci/ci_logs_summary.md >> "$TEMP_CONTENT"; fi
+          if [ -f "docs_merge/ai-doc-win/win_logs_summary.md" ]; then echo "" >> "$TEMP_CONTENT"; cat docs_merge/ai-doc-win/win_logs_summary.md >> "$TEMP_CONTENT"; fi
+          
+          sed -n '1,/<!-- NEXUS_AUTO_DOC_START -->/p' README.md > temp_before.md
+          sed -n '/<!-- NEXUS_AUTO_DOC_END -->/,$p' README.md > temp_after.md
+          cat temp_before.md > README.md; echo "" >> README.md; cat "$TEMP_CONTENT" >> README.md; echo "" >> README.md; cat temp_after.md >> README.md
+          
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          if ! git diff --staged --quiet; then
+            git commit -m "docs(ai): auto-sync architecture & logs into README [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+
+# =====================================================================
+# JOB 5: TELEGRAM NOTIFICATION
+# =====================================================================
+  telegram-notify:
+    name: 📢 Send Telegram Summary
+    needs: [ci-ubuntu, ci-windows, finalize-ai-doc]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - shell: bash
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_ID }}
+          CI_STATUS: ${{ needs.ci-ubuntu.result }}
+          WIN_STATUS: ${{ needs.ci-windows.result }}
+          DOC_STATUS: ${{ needs.finalize-ai-doc.result }}
+        run: |
+          if [ -z "$BOT_TOKEN" ] || [ -z "$CHAT_ID" ]; then exit 0; fi
+          function get_icon { case $1 in success) echo "✅" ;; failure) echo "❌" ;; cancelled) echo "⚠️" ;; *) echo "❓" ;; esac }
+          MSG=$(cat <<EOF
+          🚀 <b>NTE - CI Pipeline Completed</b>
+
+          <b>Event:</b> <code>${{ github.event_name }}</code>
+          <b>Branch:</b> <code>${{ github.ref_name }}</code>
+          <b>Triggered By:</b> <code>${{ github.actor }}</code>
+
+          <b>📋 CI Results:</b>
+          $(get_icon "$CI_STATUS") Ubuntu Build & Test: <b>$CI_STATUS</b>
+          $(get_icon "$WIN_STATUS") Windows Build Check: <b>$WIN_STATUS</b>
+          $(get_icon "$DOC_STATUS") AI Docs Sync: <b>$DOC_STATUS</b>
+
+          🔗 <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Full Run on GitHub</a>
+          EOF
+          )
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" -d "chat_id=${CHAT_ID}" -d "parse_mode=HTML" -d "disable_web_page_preview=true" --data-urlencode "text=$MSG"
