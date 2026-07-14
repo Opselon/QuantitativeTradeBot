@@ -3,32 +3,194 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
-    <Border Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
+             d:DesignHeight="600" d:DesignWidth="1100">
+    <materialDesign:Card Style="{StaticResource NtePremiumCard}">
         <Grid>
             <Grid.RowDefinitions>
+                <!-- 1. Header with Actions -->
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="20"/>
+                <!-- 2. Structured Log List -->
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
+
+            <!-- Diagnostics View Header -->
             <DockPanel Grid.Row="0">
-                <TextBlock Text="SYSTEM DIAGNOSTICS &amp; BOUNDED LOGS" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5" VerticalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" DockPanel.Dock="Left">
+                    <materialDesign:PackIcon Kind="ShieldCheck" Width="28" Height="28" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <materialDesign:PackIcon.Style>
+                            <Style TargetType="materialDesign:PackIcon">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource LightPrimaryBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </materialDesign:PackIcon.Style>
+                    </materialDesign:PackIcon>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="SYSTEM DIAGNOSTICS &amp; BOUNDED LOGS" Style="{StaticResource NteHeadline}" Margin="0,0,0,2"/>
+                        <TextBlock Text="Live real-time system performance diagnostic, sanitized memory heaps, and broker payloads." Style="{StaticResource NteBodyMedium}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Action Controls -->
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Content="REFRESH" Command="{Binding RefreshLogsCommand}" Background="#00ADB5" Foreground="Black" Padding="12,5" BorderThickness="0" Margin="0,0,10,0" Cursor="Hand"/>
-                    <Button Content="CLEAR" Command="{Binding ClearLogsCommand}" Background="#C62828" Foreground="White" Padding="12,5" BorderThickness="0" Cursor="Hand"/>
+                    <Button Content="REFRESH" Command="{Binding RefreshLogsCommand}" Style="{StaticResource NtePremiumButton}" Margin="0,0,10,0"/>
+                    <Button Content="CLEAR LOGS" Command="{Binding ClearLogsCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource LightErrorBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource LightErrorBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </StackPanel>
             </DockPanel>
-            <ListView Grid.Row="1" ItemsSource="{Binding StructuredLogs}" Background="#121212" BorderBrush="#393E46" Foreground="White" Margin="0,10,0,0">
+
+            <!-- Modern Material Structured Logs ListView -->
+            <ListView Grid.Row="2" ItemsSource="{Binding StructuredLogs}" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" SelectionMode="Single">
+                <ListView.Style>
+                    <Style TargetType="ListView" BasedOn="{StaticResource MaterialDesignListView}">
+                        <Setter Property="Padding" Value="4"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource LightGlassBorderBrush}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListView.Style>
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="Timestamp" DisplayMemberBinding="{Binding TimestampUtc, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" Width="150"/>
-                        <GridViewColumn Header="Category" DisplayMemberBinding="{Binding Category}" Width="100"/>
-                        <GridViewColumn Header="Severity" DisplayMemberBinding="{Binding Severity}" Width="80"/>
-                        <GridViewColumn Header="Direction" DisplayMemberBinding="{Binding Direction}" Width="80"/>
-                        <GridViewColumn Header="Message" DisplayMemberBinding="{Binding Message}" Width="450"/>
+                        <GridView.ColumnHeaderContainerStyle>
+                            <Style TargetType="GridViewColumnHeader">
+                                <Setter Property="Background" Value="{DynamicResource SurfaceContainerBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+                                <Setter Property="FontFamily" Value="Segoe UI Variable, Inter"/>
+                                <Setter Property="FontSize" Value="11"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="Padding" Value="10,8"/>
+                                <Setter Property="BorderThickness" Value="0,0,0,1.5"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource LightSurfaceContainerBrush}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource LightTextSecondaryBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource LightGlassBorderBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </GridView.ColumnHeaderContainerStyle>
+
+                        <GridViewColumn Header="Timestamp" Width="170">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding TimestampUtc, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}" Foreground="{DynamicResource TextSecondaryBrush}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource NteTradingDataFont}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource LightTextSecondaryBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="Category" Width="120">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Category}" Foreground="{DynamicResource PrimaryBrush}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource NteLabelLarge}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource LightPrimaryBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="Severity" Width="90">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Severity}" FontWeight="Bold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource NteLabelLarge}">
+                                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Severity}" Value="ERROR">
+                                                        <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Severity}" Value="WARN">
+                                                        <Setter Property="Foreground" Value="{DynamicResource WarningBrush}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Severity}" Value="INFO">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
+                                                    </DataTrigger>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True"/>
+                                                            <Condition Binding="{Binding Severity}" Value="ERROR"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Foreground" Value="{DynamicResource LightErrorBrush}"/>
+                                                    </MultiDataTrigger>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True"/>
+                                                            <Condition Binding="{Binding Severity}" Value="WARN"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Foreground" Value="{DynamicResource LightWarningBrush}"/>
+                                                    </MultiDataTrigger>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True"/>
+                                                            <Condition Binding="{Binding Severity}" Value="INFO"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Foreground" Value="{DynamicResource LightSuccessBrush}"/>
+                                                    </MultiDataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="Direction" Width="90">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Direction}" Style="{StaticResource NteBodyMedium}"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="Message Payload" Width="500">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Message}" Style="{StaticResource NteTradingDataFont}" TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
                     </GridView>
                 </ListView.View>
             </ListView>
         </Grid>
-    </Border>
+    </materialDesign:Card>
 </UserControl>

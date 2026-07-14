@@ -3,44 +3,97 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="600" d:DesignWidth="1100">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1.2*"/>
-            <ColumnDefinition Width="15"/>
+            <ColumnDefinition Width="20"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Left side: Run Smoke Test Controls -->
-        <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
+        <!-- Left Column: Smoke Test Parameters & Control Triggers -->
+        <materialDesign:Card Grid.Column="0" Style="{StaticResource NtePremiumCard}">
             <StackPanel>
-                <TextBlock Text="REAL LOCALHOST BRIDGE PIPELINE VERIFIER" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5"/>
-                <TextBlock Text="Press the button below to run an automated, live integration smoke test that connects, authenticates, pings, subscribes, monitors EURUSD ticks, and disconnects cleanly." FontSize="12" Foreground="#BBBBBB" TextWrapping="Wrap" Margin="0,5,0,20"/>
+                <TextBlock Text="PIPELINE SMOKE VERIFIER" Style="{StaticResource NteTitleLarge}" Margin="0,0,0,15"/>
+                <TextBlock Text="Deploy and verify local MT5 TCP listeners and real-time feed pipelines. Triggers end-to-end handshake pings, subscribes to EURUSD ticks, and runs offline validation loops." Style="{StaticResource NteBodyMedium}" Margin="0,0,0,25" TextWrapping="Wrap"/>
 
-                <Button Content="RUN AUTOMATED REAL SMOKE TEST" Command="{Binding RunSmokeTestCommand}" Background="#00ADB5" Foreground="Black" FontWeight="Bold" Padding="20,12" FontSize="12" HorizontalAlignment="Left" Margin="0,0,0,15" Cursor="Hand"/>
+                <Button Content="RUN AUTOMATED REAL SMOKE TEST" Command="{Binding RunSmokeTestCommand}" Style="{StaticResource NtePremiumButton}" Padding="20,0" Height="42" HorizontalAlignment="Left" Margin="0,0,0,25"/>
 
-                <Border BorderBrush="#393E46" BorderThickness="0,1,0,0" Margin="0,5,0,15"/>
+                <Border BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GlassBorderBrush}" Margin="0,0,0,20">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource LightGlassBorderBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                </Border>
 
-                <TextBlock Text="LIGHTWEIGHT DIAGNOSTICS API" FontFamily="Segoe UI" FontSize="14" Foreground="#EEEEEE" Margin="0,0,0,10"/>
-                <Grid Margin="0,0,0,6">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="Test Outcome Status:" FontFamily="Segoe UI Semibold" FontSize="12" Foreground="#888888" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Text="{Binding TestOutcome}" Foreground="#E2C044" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                <!-- Status Telemetry Widgets -->
+                <TextBlock Text="INTEGRATION TELEMETRY API" Style="{StaticResource NteTitleMedium}" Margin="0,0,0,15"/>
+
+                <Grid Margin="10,0,10,12">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="Gateway Status:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="{Binding TestOutcome}" Foreground="{DynamicResource WarningBrush}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource LightWarningBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </Grid>
             </StackPanel>
-        </Border>
+        </materialDesign:Card>
 
-        <!-- Right side: Real-time progress logs -->
-        <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
+        <!-- Right Column: Real-time Terminal Log Console -->
+        <materialDesign:Card Grid.Column="2" Style="{StaticResource NtePremiumCard}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="15"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="SMOKE TEST CONSOLE WORKFLOW LOG" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5"/>
-                <ListView Grid.Row="1" ItemsSource="{Binding SmokeTestLogList}" Background="#121212" BorderBrush="#393E46" Foreground="#EEEEEE" Margin="0,10,0,0" FontFamily="Consolas" FontSize="11"/>
+
+                <TextBlock Grid.Row="0" Text="SMOKE TEST WORKFLOW LOG" Style="{StaticResource NteTitleLarge}"/>
+
+                <!-- Premium Terminal Log Output -->
+                <ListView Grid.Row="2" ItemsSource="{Binding SmokeTestLogList}" Background="{DynamicResource BackgroundBrush}" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}" SelectionMode="None">
+                    <ListView.Style>
+                        <Style TargetType="ListView" BasedOn="{StaticResource MaterialDesignListView}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource LightGlassBorderBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListView.Style>
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,2">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource NteTradingDataFont}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource LightTextPrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
             </Grid>
-        </Border>
+        </materialDesign:Card>
     </Grid>
 </UserControl>

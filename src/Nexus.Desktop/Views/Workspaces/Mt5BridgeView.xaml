@@ -3,97 +3,183 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="650" d:DesignWidth="1100">
     <Grid>
         <Grid.RowDefinitions>
+            <!-- 1. Header Card -->
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="10"/>
+            <RowDefinition Height="15"/>
+            <!-- 2. Dual Panel Content -->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
+        <!-- Premium Header Card -->
+        <materialDesign:Card Grid.Row="0" Style="{StaticResource NtePremiumCard}" Padding="20,15">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="NEXUS MT5 LOCALHOST BRIDGE CONTROL" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5" Margin="0,0,0,5"/>
-                    <TextBlock Text="Establish local bridge sockets, authenticate credentials, and monitor connection health." FontSize="12" Foreground="#BBBBBB"/>
+                <materialDesign:PackIcon Kind="Bridge" Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,15,0">
+                    <materialDesign:PackIcon.Style>
+                        <Style TargetType="materialDesign:PackIcon">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource LightPrimaryBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </materialDesign:PackIcon.Style>
+                </materialDesign:PackIcon>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="NEXUS MT5 LOCALHOST BRIDGE CONTROL" Style="{StaticResource NteHeadline}" Margin="0,0,0,3"/>
+                    <TextBlock Text="Establish secure local socket bridges, authenticate broker terminal accounts, and monitor bidirectional pings." Style="{StaticResource NteBodyMedium}"/>
                 </StackPanel>
             </Grid>
-        </Border>
+        </materialDesign:Card>
 
+        <!-- Dual Panel workspace -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1.2*"/>
-                <ColumnDefinition Width="15"/>
+                <ColumnDefinition Width="20"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left Panel: Connection Settings -->
-            <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
+            <!-- Left Panel: Secure Config & Authentication -->
+            <materialDesign:Card Grid.Column="0" Style="{StaticResource NtePremiumCard}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="CONNECTION CONFIGURATION" FontFamily="Segoe UI" FontSize="14" Foreground="#EEEEEE" Margin="0,0,0,10"/>
+                        <!-- Connection config -->
+                        <TextBlock Text="BRIDGE SOCKET PARAMETERS" Style="{StaticResource NteTitleLarge}" Margin="0,0,0,15"/>
 
-                        <TextBlock Text="Bridge Endpoint Host:" FontFamily="Segoe UI Semibold" FontSize="12" Foreground="#888888" Margin="0,5,0,4"/>
-                        <TextBox Text="{Binding Mt5BridgeHost, UpdateSourceTrigger=PropertyChanged}" Background="#222831" Foreground="White" BorderBrush="#393E46" Padding="6,4" FontSize="13" Margin="0,0,0,10"/>
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="15"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Mt5BridgeHost, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}" materialDesign:HintAssist.Hint="Bridge Host IP"/>
+                            <TextBox Grid.Column="2" Text="{Binding Mt5BridgePort, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}" materialDesign:HintAssist.Hint="Bridge Listener Port"/>
+                        </Grid>
 
-                        <TextBlock Text="Bridge Endpoint Port:" FontFamily="Segoe UI Semibold" FontSize="12" Foreground="#888888" Margin="0,5,0,4"/>
-                        <TextBox Text="{Binding Mt5BridgePort, UpdateSourceTrigger=PropertyChanged}" Background="#222831" Foreground="White" BorderBrush="#393E46" Padding="6,4" FontSize="13" Margin="0,0,0,15"/>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <Button Content="START BRIDGE LISTENER" Command="{Binding BridgeConnectCommand}" Background="#00ADB5" Foreground="Black" FontWeight="Bold" Padding="15,6" BorderThickness="0" Margin="0,0,10,0" Cursor="Hand"/>
-                            <Button Content="STOP BRIDGE LISTENER" Command="{Binding BridgeDisconnectCommand}" Background="#393E46" Foreground="#EEEEEE" Padding="12,6" BorderThickness="0" Cursor="Hand"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,25">
+                            <Button Content="START LISTENER" Command="{Binding BridgeConnectCommand}" Style="{StaticResource NtePremiumButton}" Margin="0,0,10,0"/>
+                            <Button Content="STOP LISTENER" Command="{Binding BridgeDisconnectCommand}" Style="{StaticResource NteSecondaryButton}"/>
                         </StackPanel>
 
-                        <Border BorderBrush="#393E46" BorderThickness="0,1,0,0" Margin="0,5,0,15"/>
+                        <Border BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GlassBorderBrush}" Margin="0,0,0,20">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource LightGlassBorderBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
 
-                        <TextBlock Text="SECURE LOGIN CREDENTIALS" FontFamily="Segoe UI" FontSize="14" Foreground="#EEEEEE" Margin="0,0,0,10"/>
+                        <!-- Credentials -->
+                        <TextBlock Text="SECURE BROKER AUTHENTICATION" Style="{StaticResource NteTitleLarge}" Margin="0,0,0,15"/>
 
-                        <TextBlock Text="Account ID / Login ID:" FontFamily="Segoe UI Semibold" FontSize="12" Foreground="#888888" Margin="0,5,0,4"/>
-                        <TextBox Text="{Binding LoginAccountId, UpdateSourceTrigger=PropertyChanged}" Background="#222831" Foreground="White" BorderBrush="#393E46" Padding="6,4" FontSize="13" Margin="0,0,0,10"/>
+                        <TextBox Text="{Binding LoginAccountId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}" materialDesign:HintAssist.Hint="Account ID / Login ID" Margin="0,0,0,15"/>
+                        <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}" materialDesign:HintAssist.Hint="Broker Password / Secret Key" Margin="0,0,0,15"/>
+                        <TextBox Text="{Binding BrokerServer, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}" materialDesign:HintAssist.Hint="MT5 Server Broker Name" Margin="0,0,0,25"/>
 
-                        <TextBlock Text="Broker Password / Secret:" FontFamily="Segoe UI Semibold" FontSize="12" Foreground="#888888" Margin="0,5,0,4"/>
-                        <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" Background="#222831" Foreground="White" BorderBrush="#393E46" Padding="6,4" FontSize="13" Margin="0,0,0,10"/>
-
-                        <TextBlock Text="Broker Server Name:" FontFamily="Segoe UI Semibold" FontSize="12" Foreground="#888888" Margin="0,5,0,4"/>
-                        <TextBox Text="{Binding BrokerServer, UpdateSourceTrigger=PropertyChanged}" Background="#222831" Foreground="White" BorderBrush="#393E46" Padding="6,4" FontSize="13" Margin="0,0,0,15"/>
-
-                        <Button Content="SECURE AUTHORIZE" Command="{Binding BridgeLoginCommand}" Background="#00ADB5" Foreground="Black" FontWeight="Bold" Padding="15,6" BorderThickness="0" Cursor="Hand"/>
+                        <Button Content="SECURE AUTHORIZE" Command="{Binding BridgeLoginCommand}" Style="{StaticResource NtePremiumButton}"/>
                     </StackPanel>
                 </ScrollViewer>
-            </Border>
+            </materialDesign:Card>
 
             <!-- Right Panel: EA Installation Guide -->
-            <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
+            <materialDesign:Card Grid.Column="2" Style="{StaticResource NtePremiumCard}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="EA INSTALLATION GUIDE / HELP" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5" Margin="0,0,0,12"/>
-                        <TextBlock Text="Follow these instructions to connect your MetaTrader 5 Terminal to NTE:" FontSize="12" Foreground="#BBBBBB" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                        <TextBlock Text="EXPERT ADVISOR INSTALL GUIDE" Style="{StaticResource NteTitleLarge}" Margin="0,0,0,15"/>
+                        <TextBlock Text="To successfully link your MetaTrader 5 Terminal to NTE:" Style="{StaticResource NteBodyMedium}" Margin="0,0,0,15" TextWrapping="Wrap"/>
 
-                        <TextBlock Text="1. Open MT5 Terminal Data Folder:" FontWeight="Bold" Foreground="#00ADB5" Margin="0,0,0,3"/>
-                        <TextBlock Text="   Go to File -> Open Data Folder inside MT5." FontSize="12" Foreground="#BBBBBB" Margin="0,0,0,8"/>
+                        <StackPanel Margin="5,0">
+                            <StackPanel Margin="0,0,0,12">
+                                <TextBlock Text="1. Open Data Folder inside MT5" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,2">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NteTitleMedium}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource LightPrimaryBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="   Go to File -> Open Data Folder inside MT5 terminal window." Style="{StaticResource NteBodyMedium}"/>
+                            </StackPanel>
 
-                        <TextBlock Text="2. Copy the Expert Advisor file:" FontWeight="Bold" Foreground="#00ADB5" Margin="0,0,0,3"/>
-                        <TextBlock Text="   Copy 'NexusBridge.mq5' from the repository to the data folder's 'MQL5/Experts/' directory." FontSize="12" Foreground="#BBBBBB" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                            <StackPanel Margin="0,0,0,12">
+                                <TextBlock Text="2. Copy the Expert Advisor file" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,2">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NteTitleMedium}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource LightPrimaryBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="   Copy 'NexusBridge.mq5' from the repo to data folder's 'MQL5/Experts/' directory." Style="{StaticResource NteBodyMedium}" TextWrapping="Wrap"/>
+                            </StackPanel>
 
-                        <TextBlock Text="3. Compile the EA in MetaEditor:" FontWeight="Bold" Foreground="#00ADB5" Margin="0,0,0,3"/>
-                        <TextBlock Text="   Open the file in MetaEditor and press Compile (F7)." FontSize="12" Foreground="#BBBBBB" Margin="0,0,0,8"/>
+                            <StackPanel Margin="0,0,0,12">
+                                <TextBlock Text="3. Compile EA in MetaEditor" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,2">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NteTitleMedium}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource LightPrimaryBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="   Open the file in MetaEditor and press Compile (F7) with zero errors." Style="{StaticResource NteBodyMedium}"/>
+                            </StackPanel>
 
-                        <TextBlock Text="4. Attach the EA to a chart:" FontWeight="Bold" Foreground="#00ADB5" Margin="0,0,0,3"/>
-                        <TextBlock Text="   Drag 'NexusBridge' onto any chart. Set Host='127.0.0.1' and Port=5000." FontSize="12" Foreground="#BBBBBB" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                            <StackPanel Margin="0,0,0,12">
+                                <TextBlock Text="4. Attach EA to Chart" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,2">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NteTitleMedium}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource LightPrimaryBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="   Drag 'NexusBridge' onto EURUSD chart. Set Host='127.0.0.1' and Port=5000." Style="{StaticResource NteBodyMedium}"/>
+                            </StackPanel>
 
-                        <TextBlock Text="5. Enable Algorithmic Trading:" FontWeight="Bold" Foreground="#00ADB5" Margin="0,0,0,3"/>
-                        <TextBlock Text="   Click the 'Algo Trading' button on the MT5 top toolbar." FontSize="12" Foreground="#BBBBBB" Margin="0,0,0,8"/>
-
-                        <TextBlock Text="6. Verify connection logs:" FontWeight="Bold" Foreground="#00ADB5" Margin="0,0,0,3"/>
-                        <TextBlock Text="   Check the 'Journal' and 'Experts' tabs in MT5 terminal toolbox." FontSize="12" Foreground="#BBBBBB"/>
+                            <StackPanel>
+                                <TextBlock Text="5. Activate Algorithmic Trading" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,2">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NteTitleMedium}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource LightPrimaryBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="   Click 'Algo Trading' on top MT5 toolbar and check experts status." Style="{StaticResource NteBodyMedium}"/>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
-            </Border>
+            </materialDesign:Card>
         </Grid>
     </Grid>
 </UserControl>

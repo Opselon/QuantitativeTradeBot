@@ -3,49 +3,188 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="600" d:DesignWidth="1100">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="15"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <!-- Welcome column -->
-        <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
-            <StackPanel>
-                <TextBlock Text="Welcome to Nexus Trading Engine!" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5" Margin="0,0,0,15"/>
-                <TextBlock Text="NTE is a real-time, low-latency institutional algorithmic trading desk. Use the left navigation panel to access different terminal views." FontSize="12" Foreground="#BBBBBB" TextWrapping="Wrap" Margin="0,0,0,15"/>
-                <TextBlock Text="✓ Real MT5 Bridge Ready" Foreground="#4CAF50" FontWeight="Bold" Margin="0,0,0,5"/>
-                <TextBlock Text="✓ Native C++ Math Acceleration Active" Foreground="#4CAF50" FontWeight="Bold" Margin="0,0,0,5"/>
-                <TextBlock Text="✓ Multi-Instrument Symbol Subscriptions Enabled" Foreground="#4CAF50" FontWeight="Bold" Margin="0,0,0,5"/>
-            </StackPanel>
-        </Border>
+        <!-- Command Center Header Banner -->
+        <materialDesign:Card Grid.Row="0" Style="{StaticResource NtePremiumCard}" Padding="25,20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <materialDesign:PackIcon Kind="ChartTimelineVariant" Width="40" Height="40" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,20,0">
+                    <materialDesign:PackIcon.Style>
+                        <Style TargetType="materialDesign:PackIcon">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource LightPrimaryBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </materialDesign:PackIcon.Style>
+                </materialDesign:PackIcon>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="AI TRADING COMMAND CENTER" Style="{StaticResource NteHeadline}" Margin="0,0,0,4"/>
+                    <TextBlock Text="Live real-time mathematical indicators, market data feeds ingestion pipelines, and neural decision model matrices." Style="{StaticResource NteBodyMedium}"/>
+                </StackPanel>
+            </Grid>
+        </materialDesign:Card>
 
-        <!-- Quick Stats column -->
-        <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
-            <StackPanel>
-                <TextBlock Text="LIVE TELEMETRY SUMMARY" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5" Margin="0,0,0,15"/>
+        <!-- Information Cards Grid -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-                <Grid Margin="0,5,0,8">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="Bridge Connection:" Foreground="#888888" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Text="{Binding ConnectionStatusText}" Foreground="#00ADB5" FontWeight="Bold" VerticalAlignment="Center"/>
-                </Grid>
+            <!-- Column 1: Platform Capabilities & Welcome Information -->
+            <materialDesign:Card Grid.Column="0" Style="{StaticResource NtePremiumCard}">
+                <StackPanel>
+                    <TextBlock Text="Welcome to Nexus Trading Engine" Style="{StaticResource NteTitleLarge}" Margin="0,0,0,15"/>
+                    <TextBlock Text="Nexus is an ultra-low latency algorithmic terminal. Real-time market feed ingestion and automated Native Indicator libraries are active." Style="{StaticResource NteBodyLarge}" Margin="0,0,0,20" TextWrapping="Wrap"/>
 
-                <Grid Margin="0,0,0,8">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="Ping Latency:" Foreground="#888888" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Text="{Binding PingLatencyMs, StringFormat={}{0:F2} ms}" Foreground="#E2C044" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
-                </Grid>
+                    <Border BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GlassBorderBrush}" Margin="0,0,0,20">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource LightGlassBorderBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
 
-                <Grid Margin="0,0,0,8">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="Total Ticks Ingested:" Foreground="#888888" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Text="{Binding ProcessedTickCount}" Foreground="#4CAF50" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
-                </Grid>
-            </StackPanel>
-        </Border>
+                    <StackPanel Margin="5,0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <materialDesign:PackIcon Kind="ShieldCheck" Foreground="{DynamicResource SuccessBrush}" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource LightSuccessBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <TextBlock Text="Real MT5 Gateway Client Handshake Ready" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <materialDesign:PackIcon Kind="Server" Foreground="{DynamicResource SuccessBrush}" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource LightSuccessBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <TextBlock Text="Native C++ INDICATORS Engine Acceleration Active" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ChartTimelineVariant" Foreground="{DynamicResource SuccessBrush}" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource LightSuccessBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <TextBlock Text="Multi-Instrument Real-Time Symbol Ingestion Enabled" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <!-- Column 2: Core Telemetry Stats -->
+            <materialDesign:Card Grid.Column="2" Style="{StaticResource NtePremiumCard}">
+                <StackPanel>
+                    <TextBlock Text="LIVE TELEMETRY SUMMARY" Style="{StaticResource NteTitleLarge}" Margin="0,0,0,20"/>
+
+                    <Grid Margin="0,5,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" Grid.Column="0">
+                            <materialDesign:PackIcon Kind="Bridge" Width="18" Height="18" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Bridge Connection:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="{Binding ConnectionStatusText}" Foreground="{DynamicResource PrimaryBrush}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource LightPrimaryBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" Grid.Column="0">
+                            <materialDesign:PackIcon Kind="HelpCircle" Width="18" Height="18" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Ping Latency:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="{Binding PingLatencyMs, StringFormat={}{0:F2} ms}" Foreground="{DynamicResource WarningBrush}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource NteTradingDataFont}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource LightWarningBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" Grid.Column="0">
+                            <materialDesign:PackIcon Kind="ChartTimelineVariant" Width="18" Height="18" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Total Ingested Ticks:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="{Binding ProcessedTickCount}" Foreground="{DynamicResource SuccessBrush}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource NteTradingDataFont}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource LightSuccessBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
     </Grid>
 </UserControl>

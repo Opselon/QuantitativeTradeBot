@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MaterialDesignThemes.Wpf" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
   </ItemGroup>
 
