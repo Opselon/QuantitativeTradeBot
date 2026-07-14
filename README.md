@@ -285,12 +285,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Add Telegram notification step to CI/CD workflow |
+| **Commit Message** | Refactor CI pipeline for enhanced documentation and logging |
 | **Author** | Capsizer |
 | **Branch** | `main` |
-| **Run Number** | `38` |
-| **Commit SHA** | `13d214ac7c40bf2e430960fea1c18d97e064848a` |
-| **Generated At** | `2026-07-14 18:12:43 UTC` |
+| **Run Number** | `34` |
+| **Commit SHA** | `a8b6c3c0e91f60300390b478af67f1f705890ab5` |
+| **Generated At** | `2026-07-14 18:28:33 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -708,7 +708,7 @@ No explicit C# errors.
 No explicit C# warnings.
 ```
 
-### 🚀 Pipeline Diagnostics (Release Stage - Windows)
+### 🚀 Pipeline Diagnostics (Build Stage - Windows)
 - **Job Status:** success
 
 #### 🔴 Errors
