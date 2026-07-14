@@ -502,9 +502,50 @@ namespace Nexus.Tests.Unit.Desktop
             Assert.Contains("TRADE_REJECTED", result.ErrorMessage);
         }
 
+        [Fact]
+        public void LocalHttpApiRoutes_IsAuthorized_WithValidToken_ReturnsTrue()
+        {
+            // Arrange
+            var context = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+            context.Request.Headers["X-Nexus-Token"] = "nexus_local_sec_token_2026";
+
+            // Act
+            var result = Nexus.Infrastructure.Mt5Bridge.LocalHttpApiRoutes.IsAuthorized(context);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void LocalHttpApiRoutes_IsAuthorized_WithInvalidToken_ReturnsFalse()
+        {
+            // Arrange
+            var context = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+            context.Request.Headers["X-Nexus-Token"] = "wrong_token_123";
+
+            // Act
+            var result = Nexus.Infrastructure.Mt5Bridge.LocalHttpApiRoutes.IsAuthorized(context);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void LocalHttpApiRoutes_IsAuthorized_WithoutToken_ReturnsFalse()
+        {
+            // Arrange
+            var context = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+
+            // Act
+            var result = Nexus.Infrastructure.Mt5Bridge.LocalHttpApiRoutes.IsAuthorized(context);
+
+            // Assert
+            Assert.False(result);
+        }
+
         // --- STUB CLASSES ---
 
-#pragma warning disable 67
+#pragma warning disable 67 // Suppress CS0067: Event is never used
         private class StubBridgeClient : IMt5BridgeClient
         {
             private readonly BridgeMessageEnvelope? _responseToReturn;
@@ -540,7 +581,7 @@ namespace Nexus.Tests.Unit.Desktop
             public Task DisconnectAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
             public void Dispose() { }
         }
-#pragma warning restore 67
+#pragma warning restore 67 // Restore CS0067
 
         private class StubAccountService : IMt5AccountService
         {

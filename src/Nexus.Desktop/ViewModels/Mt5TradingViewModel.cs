@@ -14,9 +14,11 @@ namespace Nexus.Desktop.ViewModels
         private readonly IMt5OperatorService _operatorService;
         private readonly IDiagnosticService _diagnosticService;
         private readonly IAppConfigurationService _configService;
+        private readonly IMt5BridgeService _bridgeService;
 
         private bool _isConnected;
         private string _connectionStatusText = "Disconnected";
+        private BridgeLifecycleState _currentState = BridgeLifecycleState.Stopped;
         private bool _isBusy;
         private bool _isRefreshing;
         private bool _isExecutingTrade;
@@ -39,6 +41,84 @@ namespace Nexus.Desktop.ViewModels
         {
             get => _isConnected;
             set => SetProperty(ref _isConnected, value);
+        }
+
+        public BridgeLifecycleState CurrentState
+        {
+            get => _currentState;
+            set
+            {
+                if (SetProperty(ref _currentState, value))
+                {
+                    System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+                    {
+                        CommandManager.InvalidateRequerySuggested();
+                    });
+
+                    IsConnected = value == BridgeLifecycleState.Authenticated || value == BridgeLifecycleState.HandshakeSuccess;
+                    ConnectionStatusText = value.ToString();
+
+                    OnPropertyChanged(nameof(IsTradingEnabled));
+                    OnPropertyChanged(nameof(WarningBannerText));
+                    OnPropertyChanged(nameof(WarningBannerColor));
+                }
+            }
+        }
+
+        public bool IsTradingEnabled => CurrentState == BridgeLifecycleState.Authenticated;
+
+        public string WarningBannerText
+        {
+            get
+            {
+                switch (CurrentState)
+                {
+                    case BridgeLifecycleState.Authenticated:
+                        return "Execution Ready: Live broker validation active";
+                    case BridgeLifecycleState.Handshaking:
+                    case BridgeLifecycleState.HandshakeSuccess:
+                    case BridgeLifecycleState.SocketConnected:
+                    case BridgeLifecycleState.Listening:
+                        return "Handshake Active: Awaiting EA response";
+                    case BridgeLifecycleState.Stopped:
+                    case BridgeLifecycleState.ConnectionError:
+                    default:
+                        return "Bridge Offline: Manual Execution Disabled";
+                }
+            }
+        }
+
+        public string WarningBannerColor
+        {
+            get
+            {
+                switch (CurrentState)
+                {
+                    case BridgeLifecycleState.Authenticated:
+                        return "#2E7D32"; // Green
+                    case BridgeLifecycleState.Handshaking:
+                    case BridgeLifecycleState.HandshakeSuccess:
+                    case BridgeLifecycleState.SocketConnected:
+                    case BridgeLifecycleState.Listening:
+                        return "#E65100"; // Orange
+                    case BridgeLifecycleState.Stopped:
+                    case BridgeLifecycleState.ConnectionError:
+                    default:
+                        return "#C62828"; // Red
+                }
+            }
+        }
+
+        public string PingLatencySeverityColor
+        {
+            get
+            {
+                double latency = _bridgeService?.PingLatencyMs ?? 0;
+                if (latency <= 0) return "#888888"; // Inactive Gray
+                if (latency < 10) return "#2E7D32"; // Green
+                if (latency <= 50) return "#FBC02D"; // Yellow
+                return "#C62828"; // Red
+            }
         }
 
         public string ConnectionStatusText
@@ -152,17 +232,33 @@ namespace Nexus.Desktop.ViewModels
         public Mt5TradingViewModel(
             IMt5OperatorService operatorService,
             IDiagnosticService diagnosticService,
-            IAppConfigurationService configService)
+            IAppConfigurationService configService,
+            IMt5BridgeService bridgeService)
         {
             _operatorService = operatorService ?? throw new ArgumentNullException(nameof(operatorService));
             _diagnosticService = diagnosticService ?? throw new ArgumentNullException(nameof(diagnosticService));
             _configService = configService ?? throw new ArgumentNullException(nameof(configService));
+            _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
 
             RefreshPositionsCommand = new AsyncRelayCommand(OnRefreshPositionsAsync);
             BuyCommand = new AsyncRelayCommand(OnBuyAsync, CanExecuteTrade);
             SellCommand = new AsyncRelayCommand(OnSellAsync, CanExecuteTrade);
             CloseCommand = new AsyncRelayCommand(OnCloseAsync, CanClosePosition);
             ClearErrorCommand = new RelayCommand(OnClearError);
+
+            // Synchronize state initial value
+            CurrentState = _bridgeService.CurrentState;
+            _bridgeService.OnStatusChanged += status =>
+            {
+                System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+                {
+                    CurrentState = _bridgeService.CurrentState;
+                });
+                if (System.Windows.Application.Current == null)
+                {
+                    CurrentState = _bridgeService.CurrentState;
+                }
+            };
 
             ValidateInputs();
 
@@ -180,12 +276,12 @@ namespace Nexus.Desktop.ViewModels
             if (string.IsNullOrWhiteSpace(SelectedSymbol)) return false;
             if (OrderVolume < 0.01m || OrderVolume > 100m) return false;
             if (IsBusy || IsExecutingTrade) return false;
-            return true;
+            return CurrentState == BridgeLifecycleState.Authenticated;
         }
 
         private bool CanClosePosition()
         {
-            return SelectedPosition != null && !IsBusy && !IsExecutingTrade;
+            return SelectedPosition != null && !IsBusy && !IsExecutingTrade && CurrentState == BridgeLifecycleState.Authenticated;
         }
 
         private void ValidateInputs()
@@ -268,6 +364,7 @@ namespace Nexus.Desktop.ViewModels
                 LastSuccessfulRefreshText = LastRefreshUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
                 LastResponseTimeText = $"{stopwatch.ElapsedMilliseconds} ms";
                 StatusMessage = "Positions refreshed successfully.";
+                OnPropertyChanged(nameof(PingLatencySeverityColor));
 
                 _diagnosticService.Log("Mt5Operator", "INFO", $"Refresh completed in {stopwatch.ElapsedMilliseconds} ms. Success: True, Positions: {positions.Count}");
             }

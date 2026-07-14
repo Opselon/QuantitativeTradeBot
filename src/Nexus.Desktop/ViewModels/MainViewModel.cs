@@ -236,6 +236,10 @@ namespace Nexus.Desktop.ViewModels
             Mt5Trading = mt5Trading ?? throw new ArgumentNullException(nameof(mt5Trading));
             Intelligence = intelligence ?? throw new ArgumentNullException(nameof(intelligence));
             _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
+            _bridgeService.OnStatusChanged += status =>
+            {
+                OnPropertyChanged(nameof(BridgeState));
+            };
             _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
 
             Dashboard = dashboard ?? throw new ArgumentNullException(nameof(dashboard));
@@ -483,6 +487,8 @@ namespace Nexus.Desktop.ViewModels
         public bool IsStep4 => _currentStep == 4;
         public bool IsStep5 => _currentStep == 5;
         public bool IsStep6 => _currentStep == 6;
+
+        public BridgeLifecycleState BridgeState => _bridgeService.CurrentState;
 
         public bool IsBusy
         {

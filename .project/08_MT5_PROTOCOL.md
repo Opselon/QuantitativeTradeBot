@@ -489,6 +489,17 @@ Request Payload:
 }
 ```
 
+---
+
+## 11. Security and Sensitive Data Protection
+
+To protect the integrity of live trading accounts and prevent unauthorized access, the bridge enforces the following security standards:
+
+1. **Secure Memory-Only Login Flows**: Sensitive broker passwords and login session details are never written to disk or configuration files. They are handled only in transient memory during active session lifetimes.
+2. **Local WindowsSecretStore Integration**: When credentials must be persisted across desktop re-runs, NTE utilizes the `WindowsSecretStore` (relying on DPAPI) on Windows, falling back to machine-bound file encryption on non-Windows/Linux environments.
+3. **Log Redaction & Sanitization**: All incoming/outgoing payloads and diagnostic messages flowing through the `DiagnosticRingBuffer` are automatically sanitized via the `LogSanitizer` utility, masking tokens, API keys, passwords, and other credentials with `******` strings before they hit logs or are queried via the Kestrel REST APIs.
+4. **Localhost API Binding & Authentication**: The Kestrel minimal API server operates strictly bound to the local interface (`127.0.0.1:5005`) to prevent external network exploitation. All mutating routes enforce bearer-style token validation via the `X-Nexus-Token` header.
+
 Response Payload:
 ```json
 {
@@ -587,3 +598,30 @@ Notification Payload:
   }
 }
 ```
+
+---
+
+## 11. Security and Sensitive Data Protection
+
+To protect the integrity of live trading accounts and prevent unauthorized access, the bridge enforces the following security standards:
+
+1. **Secure Memory-Only Login Flows**: Sensitive broker passwords and login session details are never written to disk or configuration files. They are handled only in transient memory during active session lifetimes.
+2. **Local WindowsSecretStore Integration**: When credentials must be persisted across desktop re-runs, NTE utilizes the `WindowsSecretStore` (relying on DPAPI) on Windows, falling back to machine-bound file encryption on non-Windows/Linux environments.
+3. **Log Redaction & Sanitization**: All incoming/outgoing payloads and diagnostic messages flowing through the `DiagnosticRingBuffer` are automatically sanitized via the `LogSanitizer` utility, masking tokens, API keys, passwords, and other credentials with `******` strings before they hit logs or are queried via the Kestrel REST APIs.
+4. **Localhost API Binding & Authentication**: The Kestrel minimal API server operates strictly bound to the local interface (`127.0.0.1:5005`) to prevent external network exploitation. All mutating routes enforce bearer-style token validation via the `X-Nexus-Token` header.
+
+---
+
+## 12. Bridge Lifecycle & Telemetry Flow States
+
+To support live, stateful monitoring of the MetaTrader 5 Bridge session, NTE enforces a multi-state connection tracking flow:
+
+- **Stopped**: The bridge server listening socket is offline.
+- **Listening**: The local NTE server socket listener has successfully bound to `127.0.0.1:5000` (breathing blue glow in the user workspace).
+- **SocketConnected**: A raw TCP socket handshake attempt is established from the `NexusBridge.mq5` client (pulsing orange).
+- **Handshaking**: Handshake payload dispatched, waiting for the active MQL5 Expert Advisor to respond.
+- **HandshakeSuccess**: Bidirectional handshake complete, active chart metadata and terminal broker specifications mapped (breathing green).
+- **Authenticated**: Trade credentials checked and verified with the active MT5 broker terminal, manual and automated trading desk execution pipelines unlocked.
+- **ConnectionError**: Socket transport or handshake protocol timed out or experienced connection failures (alert red).
+
+These micro-states are visually tracked sequentially on the Workstation and Onboarding wizard, and used as strict guardrails to prevent executing trade tickets on disconnected charts.

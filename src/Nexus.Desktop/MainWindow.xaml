@@ -537,6 +537,131 @@
                                     <TextBlock Text="Verify Gateway Communication Session" Style="{StaticResource EnterpriseHeader}"/>
                                     <TextBlock Text="Run bidirectional heartbeat handshake tests with the terminal connector." Style="{StaticResource EnterpriseBodyText}" Margin="0,0,0,20"/>
 
+                                    <!-- Visual Step Indicator -->
+                                    <Border BorderBrush="#393E46" BorderThickness="1" Background="#1A1F26" CornerRadius="4" Padding="12" Margin="0,0,0,15">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Local Listener Node -->
+                                            <Border Grid.Column="0" Padding="10,6" CornerRadius="3" BorderThickness="1">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#222831"/>
+                                                        <Setter Property="BorderBrush" Value="#393E46"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="Listening">
+                                                                <Setter Property="Background" Value="#0D47A1"/>
+                                                                <Setter Property="BorderBrush" Value="#00ADB5"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="SocketConnected">
+                                                                <Setter Property="Background" Value="#0D47A1"/>
+                                                                <Setter Property="BorderBrush" Value="#00ADB5"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="Handshaking">
+                                                                <Setter Property="Background" Value="#0D47A1"/>
+                                                                <Setter Property="BorderBrush" Value="#00ADB5"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="HandshakeSuccess">
+                                                                <Setter Property="Background" Value="#0D47A1"/>
+                                                                <Setter Property="BorderBrush" Value="#00ADB5"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="Authenticated">
+                                                                <Setter Property="Background" Value="#0D47A1"/>
+                                                                <Setter Property="BorderBrush" Value="#00ADB5"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="Local Listener" Foreground="White" FontSize="11" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                                            </Border>
+
+                                            <TextBlock Grid.Column="1" Text=" ── " Foreground="#555555" VerticalAlignment="Center" FontSize="12"/>
+
+                                            <!-- TCP Socket Node -->
+                                            <Border Grid.Column="2" Padding="10,6" CornerRadius="3" BorderThickness="1">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#222831"/>
+                                                        <Setter Property="BorderBrush" Value="#393E46"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="SocketConnected">
+                                                                <Setter Property="Background" Value="#E65100"/>
+                                                                <Setter Property="BorderBrush" Value="#FF9800"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="Handshaking">
+                                                                <Setter Property="Background" Value="#E65100"/>
+                                                                <Setter Property="BorderBrush" Value="#FF9800"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="HandshakeSuccess">
+                                                                <Setter Property="Background" Value="#E65100"/>
+                                                                <Setter Property="BorderBrush" Value="#FF9800"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="Authenticated">
+                                                                <Setter Property="Background" Value="#1B5E20"/>
+                                                                <Setter Property="BorderBrush" Value="#4CAF50"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="TCP Socket" Foreground="White" FontSize="11" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                                            </Border>
+
+                                            <TextBlock Grid.Column="3" Text=" ── " Foreground="#555555" VerticalAlignment="Center" FontSize="12"/>
+
+                                            <!-- EA Handshake Node -->
+                                            <Border Grid.Column="4" Padding="10,6" CornerRadius="3" BorderThickness="1">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#222831"/>
+                                                        <Setter Property="BorderBrush" Value="#393E46"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="Handshaking">
+                                                                <Setter Property="Background" Value="#E65100"/>
+                                                                <Setter Property="BorderBrush" Value="#FF9800"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="HandshakeSuccess">
+                                                                <Setter Property="Background" Value="#1B5E20"/>
+                                                                <Setter Property="BorderBrush" Value="#4CAF50"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="Authenticated">
+                                                                <Setter Property="Background" Value="#1B5E20"/>
+                                                                <Setter Property="BorderBrush" Value="#4CAF50"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="EA Handshake" Foreground="White" FontSize="11" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                                            </Border>
+
+                                            <TextBlock Grid.Column="5" Text=" ── " Foreground="#555555" VerticalAlignment="Center" FontSize="12"/>
+
+                                            <!-- Broker Authentication Node -->
+                                            <Border Grid.Column="6" Padding="10,6" CornerRadius="3" BorderThickness="1">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#222831"/>
+                                                        <Setter Property="BorderBrush" Value="#393E46"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding BridgeState}" Value="Authenticated">
+                                                                <Setter Property="Background" Value="#1B5E20"/>
+                                                                <Setter Property="BorderBrush" Value="#4CAF50"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="Broker Auth" Foreground="White" FontSize="11" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+
                                     <Border Background="#222831" Padding="20" CornerRadius="4" Margin="0,0,0,20">
                                         <StackPanel>
                                             <TextBlock Text="VERIFICATION PROTOCOL" Foreground="#888888" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>

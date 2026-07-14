@@ -186,7 +186,10 @@
                 <!-- Last Response Time -->
                 <StackPanel Grid.Column="3">
                     <TextBlock Text="LAST RESPONSE TIME" Style="{StaticResource LocalLabel}"/>
-                    <TextBlock Text="{Binding LastResponseTimeText, FallbackValue='0 ms'}" Style="{StaticResource LocalValue}" Margin="0,4,0,0" FontFamily="Consolas"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <Ellipse Width="8" Height="8" Fill="{Binding PingLatencySeverityColor, FallbackValue='#888888'}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="{Binding LastResponseTimeText, FallbackValue='0 ms'}" Style="{StaticResource LocalValue}" FontFamily="Consolas"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- Last Successful Refresh -->
@@ -225,11 +228,11 @@
 
                     <!-- Symbol -->
                     <TextBlock Grid.Column="0" Text="Symbol:" Style="{StaticResource LocalLabel}"/>
-                    <TextBox Grid.Column="1" Text="{Binding SelectedSymbol, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LocalTextBox}"/>
+                    <TextBox Grid.Column="1" Text="{Binding SelectedSymbol, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LocalTextBox}" IsEnabled="{Binding IsTradingEnabled}"/>
 
                     <!-- Volume -->
                     <TextBlock Grid.Column="3" Text="Volume:" Style="{StaticResource LocalLabel}"/>
-                    <TextBox Grid.Column="4" Text="{Binding OrderVolume, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LocalTextBox}"/>
+                    <TextBox Grid.Column="4" Text="{Binding OrderVolume, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LocalTextBox}" IsEnabled="{Binding IsTradingEnabled}"/>
 
                     <!-- Buttons -->
                     <Button Grid.Column="6" Content="BUY MARKET" Command="{Binding BuyCommand}" Style="{StaticResource BuyBtn}" AutomationProperties.Name="BuyButton"/>
