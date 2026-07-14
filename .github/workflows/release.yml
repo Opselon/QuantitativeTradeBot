@@ -1,10 +1,9 @@
-name: Nexus Enterprise CI/CD & AI Documentation
+name: 📦 Production Release & Artifacts
 
 on:
   push:
-    branches: [ main, develop, "feat/**", "feature/**", "fix/**", "hotfix/**" ]
-  pull_request:
-    branches: [ main, develop ]
+    tags:
+      - "v*" # Triggered ONLY when pushing a tag like v0.65.0
   workflow_dispatch:
     inputs:
       version:
@@ -24,252 +23,24 @@ on:
         type: boolean
 
 permissions:
-  contents: write # Required for releases and auto-committing the MD file
-  actions: read   # Required for reading CI/CD logs via gh-cli
-
-concurrency:
-  group: nexus-pipeline-${{ github.ref }}
-  cancel-in-progress: true
+  contents: write # Required for creating GitHub Releases
+  actions: read
 
 env:
-  DOTNET_NOLOGO: true
-  DOTNET_CLI_TELEMETRY_OPTOUT: true
-  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-  NUGET_XMLDOC_MODE: skip
   BUILD_CONFIGURATION: Release
   SOLUTION_PATH: NexusTradingEngine.sln
   DESKTOP_PROJECT: src/Nexus.Desktop/Nexus.Desktop.csproj
   INFRASTRUCTURE_PROJECT: src/Nexus.Infrastructure/Nexus.Infrastructure.csproj
 
-# =====================================================================
-# JOB 1: PREPARATION & ARCHITECTURE SCAN (With Git Commit Summary)
-# =====================================================================
 jobs:
-  prep-and-docs:
-    name: 🔍 Scan & Generate Architecture Base
+# =====================================================================
+# JOB 1: STRICT BUILD & RELEASE
+# =====================================================================
+  release-production:
+    name: 🚀 Publish & Release (Production)
     runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1 # Required to fetch the latest commit message
-
-      - name: Generate Base AI Document with Gorgeous Unicode Tree
-        shell: pwsh
-        run: |
-          $OutputFile = "base_structure.md"
-          $RootPath = (Get-Location).Path
-          $Lines = @()
-
-          # Fetch latest commit details dynamically
-          $CommitMsg = (git log -1 --pretty=%B).Trim()
-          $CommitSummary = ($CommitMsg -split "`n")[0]
-          $CommitAuthor = (git log -1 --pretty=%an).Trim()
-          
-          # Map GitHub Env vars securely to prevent PS parsing errors/literal string issues
-          $BranchName = $env:GITHUB_REF_NAME
-          $RunNum = $env:GITHUB_RUN_NUMBER
-          $CommitSha = $env:GITHUB_SHA
-          $GenTime = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + " UTC"
-
-          # 1. Base Markdown Header (Optimized for AI Parsing & Human UI/UX)
-          $HeaderArray = @(
-              '## 🏛️ Nexus Trading Engine (NTE) Architecture Summary',
-              '> **Architecture Style:** Decoupled Hexagonal / Clean Architecture + Search-Driven Decision Engine',
-              '',
-              '### 🧩 Core System Layers',
-              '- 🔴 **`Nexus.Core` (Domain Layer):** Zero external dependencies. Defines the complete trading domain model, including `MarketState`, `MarketVector`, `TradeDecision`, `ScenarioScore`, `PatternMemory`, `EvaluationResult`, value objects (`Symbol`, `Money`, `LotSize`), and core interfaces for Strategy Runtime, Decision Engine, Risk Management, Neural Evaluation, Scenario Search, and Experience Database. Uses a *Zero-Allocation Tick Path* for deterministic, high-performance execution.',
-              '- ⚙️ **`Nexus.Application` (Orchestration):** Implements the complete Decision Pipeline, including Market State construction, Decision Generation, Scenario Search, Scenario Evaluation, Execution Coordination, Pattern Matching, Strategy Runtime, Experience Collection, AI orchestration, Risk Evaluation, and transformation of live market data into probabilistic trading decisions.',
-              '- 🔌 **`Nexus.Infrastructure` (Adapters):** Infrastructure adapters for MetaTrader 5 Bridge, EF Core persistence, Background Workers, Tick Streaming, Historical Data ingestion, Time-Series storage, Experience Database persistence, Training Dataset generation, Logging, Recovery services, and external platform integrations while keeping the domain completely isolated.',
-              '- ⚡ **`Nexus.Native.Core` (C++20):** High-performance quantitative computation engine accessed through P/Invoke. Responsible for ultra-low latency Market Vector generation, feature extraction, statistical calculations, numerical optimization, pattern processing, search acceleration, and future native AI optimizations beyond the .NET runtime.',
-              '- 🖥️ **`Nexus.WpfUi` (.NET 10 / WPF Layer):** Modern desktop workstation for monitoring Market States, Decision Engine execution, Pattern Memory, Experience Database, AI evaluation, Training progress, Strategy Runtime, Diagnostics, Bridge communication, and live execution management.',
-              '',
-              '### 🧠 Intelligence & Execution Subsystems',
-              '- 🤖 **`Nexus.AI`:** AI-assisted Market Intelligence layer responsible for feature learning, neural evaluation, probabilistic scoring, confidence estimation, pattern recognition, and continuous model training. AI assists the decision engine instead of replacing it, following the philosophy of modern search engines such as Stockfish.',
-              '- 📚 **Experience & Training Engine:** Continuously records every Market State, generated decision, execution result, market evolution, and trade outcome. Builds an Experience Database that produces structured datasets for offline and online training, improving future evaluation, scenario ranking, pattern recognition, and decision quality.',
-              '- 🔍 **Search & Decision Engine:** Core intelligence of NTE inspired by modern chess engine architecture. Generates multiple candidate trading decisions, explores probabilistic market scenarios, prunes low-quality branches, ranks promising paths, combines historical experience with AI evaluation, and selects the highest-confidence decision under defined risk constraints.',
-              '- 📈 **MetaTrader 5 Integration Layer:** MT5 serves exclusively as the execution and market data platform. Supplies ticks, positions, account information, and order execution while remaining completely decoupled from the decision engine, allowing future support for additional trading platforms.',
-              '',
-              '### 📊 Latest Build & Commit Metadata',
-              '| Field | Value |',
-              '| --- | --- |',
-              "| **Commit Message** | $CommitSummary |",
-              "| **Author** | $CommitAuthor |",
-              "| **Branch** | ``$BranchName`` |",
-              "| **Run Number** | ``$RunNum`` |",
-              "| **Commit SHA** | ``$CommitSha`` |",
-              "| **Generated At** | ``$GenTime`` |",
-              '',
-              '---',
-              '### 📂 Interactive Project Structure Tree',
-              '<details open>',
-              '<summary><b>Click to expand Project Tree (Filtered with WPF, .NET, C/C++, CMake & MQL5 files)</b></summary>',
-              '',
-              '```text'
-          )
-          
-          # Merge the header array into $Lines
-          $Lines += $HeaderArray
-
-          # Global exclusions
-          $GlobalExcludes = @(".git", "bin", "obj", ".vs", "TestResults", "publish", "artifacts", "node_modules", "packages", "tmp", "log")
-          
-          # WPF, C#, C++, CMake and MQL5 Code Inclusions
-          $IncludeFileExtensions = @(".cs", ".xaml", ".json", ".csproj", ".sln", ".yml", ".yaml", ".md", ".config", ".xml", ".ps1", ".sh", ".cpp", ".c", ".h", ".hpp", ".cmake", ".mq5")
-
-          # Recursive Unicode Tree Builder Function
-          function Get-ProjectTree ($Path, $Prefix = "") {
-              $TreeLines = @()
-              $Items = Get-ChildItem -LiteralPath $Path -Force | Where-Object {
-                  $name = $_.Name
-                  $shouldExclude = $false
-                  foreach ($ex in $GlobalExcludes) {
-                      if ($name -eq $ex) { $shouldExclude = $true; break }
-                  }
-                  -not $shouldExclude
-              } | Sort-Object { -not $_.PSIsContainer }, Name
-
-              $Count = $Items.Count
-              for ($i = 0; $i -lt $Count; $i++) {
-                  $Item = $Items[$i]
-                  $IsLast = ($i -eq ($Count - 1))
-                  
-                  # Gorgeous Unicode Connectors
-                  $Connector = if ($IsLast) { "└── " } else { "├── " }
-                  $NextPrefix = if ($IsLast) { "$Prefix    " } else { "$Prefix│   " }
-
-                  if ($Item.PSIsContainer) {
-                      # Prune empty directories (only recurse if they contain targeted files deeply)
-                      $hasValidFiles = (Get-ChildItem -LiteralPath $Item.FullName -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
-                          $IncludeFileExtensions -contains $_.Extension.ToLower() -or $_.Name -eq 'CMakeLists.txt'
-                      })
-                      if ($hasValidFiles) {
-                          $TreeLines += "$Prefix$Connector$($Item.Name)/"
-                          $TreeLines += Get-ProjectTree $Item.FullName $NextPrefix
-                      }
-                  } else {
-                      if ($IncludeFileExtensions -contains $Item.Extension.ToLower() -or $Item.Name -eq 'CMakeLists.txt') {
-                          $TreeLines += "$Prefix$Connector$($Item.Name)"
-                      }
-                  }
-              }
-              return $TreeLines
-          }
-
-          # 2. Start Recursive Generation
-          $TreeOutput = Get-ProjectTree (Get-Location).Path
-          $Lines += $TreeOutput
-
-          $Lines += '```'
-          $Lines += '</details>'
-          $Lines += ''
-
-          # 3. Append Calculated Source File Counts
-          $Lines += "### 📈 Source File Counts"
-          $Lines += ""
-          $CS_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -Filter *.cs -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "bin|obj|packages" }).Count
-          $XAML_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -Filter *.xaml -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "bin|obj|packages" }).Count
-          $CPP_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match "\.(c|cpp|h|hpp)$" -and $_.FullName -notmatch "bin|obj" }).Count
-          $CMAKE_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -File -ErrorAction SilentlyContinue | Where-Object { ($_.Extension -eq ".cmake" -or $_.Name -eq "CMakeLists.txt") -and $_.FullName -notmatch "bin|obj" }).Count
-          $MQ5_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -Filter *.mq5 -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "bin|obj" }).Count
-          $PROJ_COUNT = (Get-ChildItem -Path (Get-Location).Path -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match "\.(csproj|vcxproj|sln)$" -and $_.FullName -notmatch "bin|obj" }).Count
-
-          $Lines += "| File Type | Count |"
-          $Lines += "| --- | ---: |"
-          $Lines += "| C# (.cs) | $CS_COUNT |"
-          $Lines += "| WPF (.xaml) | $XAML_COUNT |"
-          $Lines += "| C/C++ Source | $CPP_COUNT |"
-          $Lines += "| CMake | $CMAKE_COUNT |"
-          $Lines += "| MQL5 (.mq5) | $MQ5_COUNT |"
-          $Lines += "| Projects (.sln, .csproj) | $PROJ_COUNT |"
-
-          # 4. Safe Single-Write to File (Enforces unified UTF-8 encoding & CRLF line breaks)
-          $Lines | Out-File -FilePath $OutputFile -Encoding utf8
-
-      - name: Upload Base Document Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ai-doc-base
-          path: base_structure.md
-
-# =====================================================================
-# JOB 2: CI (UBUNTU) - Tests & Linux Native Build
-# =====================================================================
-  ci-ubuntu:
-    name: ⚙️ CI • Ubuntu (.NET + Tests + Native)
-    needs: prep-and-docs
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-
-      - name: Restore solution
-        run: dotnet restore "${{ env.SOLUTION_PATH }}"
-
-      - name: Build solution (Capture Logs Natively)
-        run: dotnet build "${{ env.SOLUTION_PATH }}" --configuration "${BUILD_CONFIGURATION}" --no-restore -fl "-flp:logfile=ci_build.log;verbosity=normal"
-
-      - name: Run unit tests
-        run: |
-          dotnet test "${{ env.SOLUTION_PATH }}" --configuration "${BUILD_CONFIGURATION}" --no-build \
-          --filter "TestCategory!=Docker&TestCategory!=Integration&TestCategory!=E2E" \
-          --logger "trx;LogFileName=unit-tests.trx" --results-directory "TestResults"
-
-      - name: Build native C++ component
-        run: |
-          if [ -f "native/build.sh" ]; then
-            chmod +x native/build.sh
-            ./native/build.sh >> ci_build.log 2>&1 || true
-          fi
-
-      - name: Extract Errors & Warnings for AI (No GH CLI needed)
-        if: always()
-        shell: bash
-        run: |
-          FILE="ci_logs_summary.md"
-          echo "### 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)" > "$FILE"
-          echo "- **Job Status:** ${{ job.status }}" >> "$FILE"
-          
-          echo "#### 🔴 Errors" >> "$FILE"
-          echo '```text' >> "$FILE"
-          if [ -f ci_build.log ]; then
-            grep -E "error CS|fatal error" ci_build.log | tail -n 20 >> "$FILE" || echo "No explicit C# errors." >> "$FILE"
-          else
-            echo "Build log not found." >> "$FILE"
-          fi
-          echo '```' >> "$FILE"
-
-          echo "#### 🟡 Warnings" >> "$FILE"
-          echo '```text' >> "$FILE"
-          if [ -f ci_build.log ]; then
-            grep -E "warning CS" ci_build.log | tail -n 20 >> "$FILE" || echo "No explicit C# warnings." >> "$FILE"
-          fi
-          echo '```' >> "$FILE"
-
-      - name: Upload CI Logs Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ai-doc-ci
-          path: ci_logs_summary.md
-
-# =====================================================================
-# JOB 3: RELEASE (WINDOWS) - Packaging, EF Bundle & Release
-# =====================================================================
-  release-windows:
-    name: 📦 Release • Windows & GH Release
-    needs: ci-ubuntu
-    if: always()
-    runs-on: windows-latest
+    environment: production # 🛡️ REQUIRES MANUAL APPROVAL IN GITHUB SETTINGS
     timeout-minutes: 60
-    defaults:
-      run:
-        shell: pwsh
     env:
       PUBLISH_ROOT: ${{ github.workspace }}/artifacts/publish
       RELEASE_ROOT: ${{ github.workspace }}/artifacts/release
@@ -283,52 +54,30 @@ jobs:
 
       - name: Determine Version
         id: version
+        shell: bash
         run: |
-          $version = if ($env:GITHUB_EVENT_NAME -eq "workflow_dispatch") { "${{ inputs.version }}".Trim() } else { "0.64.$env:GITHUB_RUN_NUMBER" }
-          $numericVersion = ($version -split '-')[0]
-          "version=$version" >> $env:GITHUB_OUTPUT
-          "tag=v$version" >> $env:GITHUB_OUTPUT
+          if [ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "tag=v${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+            echo "version=${TAG_NAME#v}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
 
-      - name: Build Solution (Capture Logs Natively)
+      - name: Restore Solution
+        run: dotnet restore "${{ env.SOLUTION_PATH }}"
+
+      # 🔴 STRICT GATE: Release will FAIL and STOP if tests do not pass here. No bypass.
+      - name: Verify All Unit Tests
         run: |
-          dotnet restore "${{ env.SOLUTION_PATH }}"
-          dotnet build "${{ env.SOLUTION_PATH }}" --configuration Release --no-restore -fl "-flp:logfile=win_build.log;verbosity=normal"
-
-      - name: Extract Windows Errors for AI
-        if: always()
-        run: |
-          $ErrorActionPreference = "Continue"
-          $file = "win_logs_summary.md"
-          
-          "### 🚀 Pipeline Diagnostics (Release Stage - Windows)`n- **Job Status:** ${{ job.status }}`n" | Set-Content $file
-          
-          "#### 🔴 Errors" | Add-Content $file
-          '```text' | Add-Content $file
-          if (Test-Path win_build.log) {
-            $errs = Select-String -Path win_build.log -Pattern "error CS" -SimpleMatch | Select-Object -Last 20
-            if ($errs) { $errs | ForEach-Object { Add-Content $file $_.Line.Trim() } } else { Add-Content $file "No C# errors." }
-          } else { Add-Content $file "Build log not found." }
-          '```' | Add-Content $file
-
-          "#### 🟡 Warnings" | Add-Content $file
-          '```text' | Add-Content $file
-          if (Test-Path win_build.log) {
-            $warns = Select-String -Path win_build.log -Pattern "warning CS" -SimpleMatch | Select-Object -Last 20
-            if ($warns) { $warns | ForEach-Object { Add-Content $file $_.Line.Trim() } } else { Add-Content $file "No C# warnings." }
-          }
-          '```' | Add-Content $file
-
-      - name: Upload Windows Logs Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ai-doc-win
-          path: win_logs_summary.md
+          dotnet test "${{ env.SOLUTION_PATH }}" --configuration Release --no-restore \
+          --filter "TestCategory!=Docker&TestCategory!=Integration&TestCategory!=E2E"
 
       - name: Publish Desktop App
         run: |
@@ -338,10 +87,7 @@ jobs:
       - name: Build Native Windows
         shell: bash
         run: |
-          if [ -f "native/build.sh" ]; then
-            chmod +x native/build.sh
-            ./native/build.sh || true
-          fi
+          if [ -f "native/build.sh" ]; then chmod +x native/build.sh; ./native/build.sh || true; fi
 
       - name: EF Migration Bundle
         run: |
@@ -350,6 +96,7 @@ jobs:
           dotnet ef migrations bundle --project "${{ env.INFRASTRUCTURE_PROJECT }}" --startup-project "${{ env.INFRASTRUCTURE_PROJECT }}" --configuration Release --runtime win-x64 --self-contained --force --output "${{ env.MIGRATION_ROOT }}/efbundle.exe" || Write-Warning "EF Bundle failed"
 
       - name: Create ZIP Packages
+        shell: pwsh
         run: |
           New-Item -ItemType Directory -Path "${{ env.RELEASE_ROOT }}" -Force | Out-Null
           $ver = "${{ steps.version.outputs.version }}"
@@ -357,182 +104,42 @@ jobs:
           Compress-Archive -Path "${{ env.PUBLISH_ROOT }}/win-x64-framework-dependent/*" -DestinationPath "${{ env.RELEASE_ROOT }}/Nexus-win-x64-framework-dependent-$ver.zip" -Force
           if (Test-Path "${{ env.MIGRATION_ROOT }}/efbundle.exe") { Copy-Item "${{ env.MIGRATION_ROOT }}/efbundle.exe" "${{ env.RELEASE_ROOT }}/efbundle-win-x64-$ver.exe" -Force }
 
-      - name: GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          target_commitish: ${{ github.sha }}
           name: Nexus Trading Engine ${{ steps.version.outputs.tag }}
           files: artifacts/release/*
+          prerelease: ${{ inputs.prerelease == true }}
+          draft: ${{ inputs.draft == true }}
+          generate_release_notes: true
 
 # =====================================================================
-# JOB 4: MERGE DIAGNOSTICS & UPDATE ROOT README.MD (Zero Clutter)
+# JOB 2: TELEGRAM NOTIFICATION (Release Version)
 # =====================================================================
-  finalize-ai-doc:
-    name: 📝 Update README & Commit
-    needs: [prep-and-docs, ci-ubuntu, release-windows]
+  telegram-notify-release:
+    name: 📢 Send Release Alert
+    needs: [release-production]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Download Base Doc
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: ai-doc-base
-          path: docs_merge/
-
-      - name: Download CI Logs
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: ai-doc-ci
-          path: docs_merge/
-
-      - name: Download Windows Logs
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: ai-doc-win
-          path: docs_merge/
-
-      - name: Assemble Diagnostics Section and Inject into README
-        shell: bash
-        run: |
-          set -euo pipefail
-          
-          # 1. Ensure README.md exists
-          if [ ! -f README.md ]; then
-            echo "# Nexus Trading Engine" > README.md
-          fi
-
-          # 2. Inject Placeholder Markers if missing from README.md
-          if ! grep -q "<!-- NEXUS_AUTO_DOC_START -->" README.md; then
-            echo -e "\n\n<!-- NEXUS_AUTO_DOC_START -->\n<!-- NEXUS_AUTO_DOC_END -->" >> README.md
-          fi
-
-          # 3. Assemble the new dynamic content block
-          TEMP_CONTENT="temp_new_section.md"
-          rm -f "$TEMP_CONTENT"
-
-          if [ -f "docs_merge/base_structure.md" ]; then
-            cat docs_merge/base_structure.md >> "$TEMP_CONTENT"
-          fi
-          
-          if [ -f "docs_merge/ci_logs_summary.md" ]; then
-            echo "" >> "$TEMP_CONTENT"
-            cat docs_merge/ci_logs_summary.md >> "$TEMP_CONTENT"
-          fi
-          
-          if [ -f "docs_merge/win_logs_summary.md" ]; then
-            echo "" >> "$TEMP_CONTENT"
-            cat docs_merge/win_logs_summary.md >> "$TEMP_CONTENT"
-          fi
-
-          # 4. Safely split original README around placeholders and inject new content
-          sed -n '1,/<!-- NEXUS_AUTO_DOC_START -->/p' README.md > temp_before.md
-          sed -n '/<!-- NEXUS_AUTO_DOC_END -->/,$p' README.md > temp_after.md
-
-          # Reconstruct README.md
-          cat temp_before.md > README.md
-          echo "" >> README.md
-          cat "$TEMP_CONTENT" >> README.md
-          echo "" >> README.md
-          cat temp_after.md >> README.md
-
-          # Clean up old standalone 00_PROJECT_STRUCTURE.md file if it exists to avoid clutter
-          if [ -f 00_PROJECT_STRUCTURE.md ]; then
-            git rm -f 00_PROJECT_STRUCTURE.md || rm -f 00_PROJECT_STRUCTURE.md
-          fi
-
-          # Clean temporary files
-          rm -f temp_before.md temp_after.md "$TEMP_CONTENT"
-
-      - name: Commit and Push to Repository
-        shell: bash
-        run: |
-          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
-              echo "Running in PR, skipping commit push."
-              exit 0
-          fi
-
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
-          git add README.md
-          
-          # Stage deletion of 00_PROJECT_STRUCTURE.md if it was removed
-          git rm --cached 00_PROJECT_STRUCTURE.md 2>/dev/null || true
-          
-          if git diff --staged --quiet; then
-            echo "No changes to README.md. Skip commit."
-          else
-            echo "Changes detected in README.md. Committing to repo..."
-            git commit -m "docs(ai): auto-sync architecture & logs into README [skip ci]"
-            git push origin HEAD:${{ github.ref_name }}
-          fi
-# =====================================================================
-# JOB 5: TELEGRAM NOTIFICATION (Beautiful HTML Summary)
-# =====================================================================
-  telegram-notify:
-    name: 📢 Send Telegram Summary
-    needs: [prep-and-docs, ci-ubuntu, release-windows, finalize-ai-doc]
-    if: always() # Guarantee this runs even if builds fail
-    runs-on: ubuntu-latest
-    steps:
-      - name: Build & Send Telegram Notification
-        shell: bash
+      - shell: bash
         env:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_ID }}
-          CI_STATUS: ${{ needs.ci-ubuntu.result }}
-          REL_STATUS: ${{ needs.release-windows.result }}
-          DOC_STATUS: ${{ needs.finalize-ai-doc.result }}
+          REL_STATUS: ${{ needs.release-production.result }}
         run: |
-          if [ -z "$BOT_TOKEN" ] || [ -z "$CHAT_ID" ]; then
-            echo "⚠️ Telegram Secrets are not configured. Skipping notification."
-            exit 0
-          fi
-
-          # Map GitHub status to emojis
-          function get_icon {
-            case $1 in
-              success) echo "✅" ;;
-              failure) echo "❌" ;;
-              cancelled) echo "⚠️" ;;
-              skipped) echo "⏭️" ;;
-              *) echo "❓" ;;
-            esac
-          }
-
-          ICON_CI=$(get_icon "$CI_STATUS")
-          ICON_REL=$(get_icon "$REL_STATUS")
-          ICON_DOC=$(get_icon "$DOC_STATUS")
-
-          # Build Multiline HTML Message
+          if [ -z "$BOT_TOKEN" ] || [ -z "$CHAT_ID" ]; then exit 0; fi
+          function get_icon { case $1 in success) echo "🎉" ;; failure) echo "🛑" ;; cancelled) echo "⚠️" ;; *) echo "❓" ;; esac }
           MSG=$(cat <<EOF
-          🚀 <b>Nexus Trading Engine - CI/CD Run</b>
+          📦 <b>NTE - Production Release Pipeline</b>
 
-          <b>Event:</b> <code>${{ github.event_name }}</code>
-          <b>Branch:</b> <code>${{ github.ref_name }}</code>
+          <b>Version Trigger:</b> <code>${{ github.ref_name }}</code>
           <b>Triggered By:</b> <code>${{ github.actor }}</code>
 
-          <b>📋 Pipeline Results:</b>
-          $ICON_CI Ubuntu CI: <b>$CI_STATUS</b>
-          $ICON_REL Windows Release: <b>$REL_STATUS</b>
-          $ICON_DOC AI Docs Sync: <b>$DOC_STATUS</b>
+          <b>Deployment Status:</b> $(get_icon "$REL_STATUS") <b>$REL_STATUS</b>
 
-          🔗 <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Full Run on GitHub</a>
+          🔗 <a href="${{ github.server_url }}/${{ github.repository }}/releases">View Published Releases</a>
           EOF
           )
-
-          # Send via curl, using URL encoding to safely transmit newlines and HTML
-          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-            -d "chat_id=${CHAT_ID}" \
-            -d "parse_mode=HTML" \
-            -d "disable_web_page_preview=true" \
-            --data-urlencode "text=$MSG"
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" -d "chat_id=${CHAT_ID}" -d "parse_mode=HTML" -d "disable_web_page_preview=true" --data-urlencode "text=$MSG"
