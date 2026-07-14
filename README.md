@@ -1,7 +1,3 @@
-Here is the complete, professionally formatted `README.md` translated and structured in English.
-
----
-
 # Nexus Trading Engine (NTE)
 
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-black?style=flat-square&logo=github)](https://github.com/Opselon/QuantitativeTradeBot)
