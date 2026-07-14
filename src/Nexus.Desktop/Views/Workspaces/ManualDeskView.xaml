@@ -17,7 +17,8 @@
         </Grid.RowDefinitions>
 
         <!-- Premium Alert / Readiness Indicator Banner -->
-        <materialDesign:Card Grid.Row="0" Padding="18" materialDesign:ShadowAssist.ShadowDepth="Depth1">
+        <!-- Fixed: Changed ShadowAssist.ShadowDepth to ElevationAssist.Elevation -->
+        <materialDesign:Card Grid.Row="0" Padding="18" materialDesign:ElevationAssist.Elevation="Dp1">
             <materialDesign:Card.Style>
                 <Style TargetType="materialDesign:Card">
                     <Setter Property="Background" Value="#2A1E1E"/>
@@ -37,7 +38,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <materialDesign:PackIcon Kind="HelpCircle" Width="28" Height="28" Foreground="{DynamicResource ErrorBrush}" VerticalAlignment="Center" Margin="0,0,15,0">
+                <materialDesign:PackIcon Kind="AlertCircleOutline" Width="28" Height="28" Foreground="{DynamicResource ErrorBrush}" VerticalAlignment="Center" Margin="0,0,15,0">
                     <materialDesign:PackIcon.Style>
                         <Style TargetType="materialDesign:PackIcon">
                             <Style.Triggers>

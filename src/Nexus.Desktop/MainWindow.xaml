@@ -289,7 +289,7 @@
                                     </Style>
                                 </Button.Style>
                                 <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Analytics" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <materialDesign:PackIcon Kind="ChartLine" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                     <TextBlock Text="Native Engine" VerticalAlignment="Center" Style="{StaticResource NteBodyLarge}"/>
                                 </StackPanel>
                             </Button>
@@ -532,19 +532,28 @@
                                             <TextBlock Text="PORT HANDSHAKE CRITERIA" Style="{StaticResource NteLabelLarge}" Margin="0,0,0,15"/>
 
                                             <Grid Margin="0,0,0,12">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Server:" Style="{StaticResource NteLabelLarge}"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding BrokerServer}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                             </Grid>
 
                                             <Grid Margin="0,0,0,12">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Broker ID Account:" Style="{StaticResource NteLabelLarge}"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding LoginAccountId}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                             </Grid>
 
                                             <Grid>
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Diagnostic Result:" Style="{StaticResource NteLabelLarge}"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding TestOutcome}" Foreground="{DynamicResource WarningBrush}" FontSize="14" FontWeight="Bold"/>
                                             </Grid>
@@ -574,19 +583,28 @@
                                                 <TextBlock Text="BALANCE ACCOUNT BALANCES" Style="{StaticResource NteLabelLarge}" Margin="0,0,0,15"/>
 
                                                 <Grid Margin="0,0,0,12">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Primary Balance:" Style="{StaticResource NteLabelLarge}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Balance, StringFormat={}{0:C2}}" Foreground="{DynamicResource SuccessBrush}" FontSize="15" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
                                                 </Grid>
 
                                                 <Grid Margin="0,0,0,12">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Liquidity Equity:" Style="{StaticResource NteLabelLarge}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Equity, StringFormat={}{0:C2}}" Foreground="{DynamicResource SuccessBrush}" FontSize="15" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
                                                 </Grid>
 
                                                 <Grid>
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Free Margin:" Style="{StaticResource NteLabelLarge}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.FreeMargin, StringFormat={}{0:C2}}" Style="{StaticResource NteTradingDataFont}" FontWeight="SemiBold"/>
                                                 </Grid>
@@ -598,19 +616,28 @@
                                                 <TextBlock Text="BROKER ACCOUNT METADATA" Style="{StaticResource NteLabelLarge}" Margin="0,0,0,15"/>
 
                                                 <Grid Margin="0,0,0,12">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Account ID:" Style="{StaticResource NteLabelLarge}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountId}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                                 </Grid>
 
                                                 <Grid Margin="0,0,0,12">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Leverage Structure:" Style="{StaticResource NteLabelLarge}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Leverage, StringFormat='1:{0}'}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                                 </Grid>
 
                                                 <Grid>
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Account Mode:" Style="{StaticResource NteLabelLarge}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountMode}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="Bold" Style="{StaticResource NteBodyLarge}"/>
                                                 </Grid>
@@ -711,19 +738,28 @@
                                             <!-- Left side -->
                                             <StackPanel Grid.Column="0">
                                                 <Grid Margin="0,0,0,15">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Account ID Login:" Style="{StaticResource NteLabelLarge}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountId}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                                 </Grid>
 
                                                 <Grid Margin="0,0,0,15">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Broker Server:" Style="{StaticResource NteLabelLarge}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.BrokerServer}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                                 </Grid>
 
                                                 <Grid>
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Account Mode:" Style="{StaticResource NteLabelLarge}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.AccountMode}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="Bold" Style="{StaticResource NteBodyLarge}"/>
                                                 </Grid>
@@ -732,19 +768,28 @@
                                             <!-- Right side -->
                                             <StackPanel Grid.Column="2">
                                                 <Grid Margin="0,0,0,15">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Live Account Balance:" Style="{StaticResource NteLabelLarge}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Balance, StringFormat={}{0:C2}}" Foreground="{DynamicResource SuccessBrush}" FontSize="16" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
                                                 </Grid>
 
                                                 <Grid Margin="0,0,0,15">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Live Equity value:" Style="{StaticResource NteLabelLarge}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.Equity, StringFormat={}{0:C2}}" Foreground="{DynamicResource SuccessBrush}" FontSize="16" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
                                                 </Grid>
 
                                                 <Grid>
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Free Margin:" Style="{StaticResource NteLabelLarge}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding AccountSnapshot.FreeMargin, StringFormat={}{0:C2}}" Style="{StaticResource NteTradingDataFont}" FontWeight="SemiBold"/>
                                                 </Grid>
@@ -771,25 +816,38 @@
                                             <TextBlock Text="NATIVE C++ MATH PERFORMANCE DIAGNOSTICS" Style="{StaticResource NteHeadline}" Margin="0,0,0,25"/>
 
                                             <Grid Margin="0,0,0,15">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <!-- Corrected: ColumnDefinition was missing its prefix -->
+                                                    <ColumnDefinition Width="200"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Total Ingested Ticks:" Style="{StaticResource NteLabelLarge}"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding ProcessedTickCount}" Foreground="{DynamicResource SuccessBrush}" FontSize="16" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
                                             </Grid>
 
                                             <Grid Margin="0,0,0,15">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="200"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Last Processed Instrument:" Style="{StaticResource NteLabelLarge}"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding LastProcessedSymbol}" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold"/>
                                             </Grid>
 
                                             <Grid Margin="0,0,0,15">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="200"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Ingestion Latency Duration:" Style="{StaticResource NteLabelLarge}"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding LastProcessingLatencyMs, StringFormat={}{0:F4} ms}" Foreground="{DynamicResource PrimaryBrush}" FontSize="14" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
                                             </Grid>
 
                                             <Grid>
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="200"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Pipeline Updated Time:" Style="{StaticResource NteLabelLarge}"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding LastProcessedTimestampText}" Style="{StaticResource NteTradingDataFont}"/>
                                             </Grid>

@@ -37,7 +37,10 @@
                 <TextBlock Text="INTEGRATION TELEMETRY API" Style="{StaticResource NteTitleMedium}" Margin="0,0,0,15"/>
 
                 <Grid Margin="10,0,10,12">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
                     <TextBlock Text="Gateway Status:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
                     <TextBlock Grid.Column="1" Text="{Binding TestOutcome}" Foreground="{DynamicResource WarningBrush}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center">
                         <TextBlock.Style>
@@ -66,7 +69,7 @@
                 <TextBlock Grid.Row="0" Text="SMOKE TEST WORKFLOW LOG" Style="{StaticResource NteTitleLarge}"/>
 
                 <!-- Premium Terminal Log Output -->
-                <ListView Grid.Row="2" ItemsSource="{Binding SmokeTestLogList}" Background="{DynamicResource BackgroundBrush}" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}" SelectionMode="None">
+                <ListView Grid.Row="2" ItemsSource="{Binding SmokeTestLogList}" Background="{DynamicResource BackgroundBrush}" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}">
                     <ListView.Style>
                         <Style TargetType="ListView" BasedOn="{StaticResource MaterialDesignListView}">
                             <Style.Triggers>
@@ -77,6 +80,12 @@
                             </Style.Triggers>
                         </Style>
                     </ListView.Style>
+                    <!-- Fixed: Inherit the implicit styled template dynamically via type reference -->
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem" BasedOn="{StaticResource {x:Type ListViewItem}}">
+                            <Setter Property="Focusable" Value="False"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,2">

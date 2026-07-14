@@ -5,8 +5,13 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- Include Material Design XAML Toolkit Resource Dictionaries -->
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />
+                <!-- Modern Material Design bundled theme setup -->
+                <materialDesign:BundledTheme BaseTheme="Dark" 
+                                             PrimaryColor="DeepPurple" 
+                                             SecondaryColor="Lime" />
+
+                <!-- Fixed: Updated Defaults.xaml filename to MaterialDesign2.Defaults.xaml for v5.0+ compatibility -->
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
 
                 <!-- Our Custom Light and Dark Theme Dictionaries. Load Dark Theme by default. -->
                 <ResourceDictionary Source="DarkTheme.xaml" />
@@ -24,10 +29,12 @@
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="UniformCornerRadius" Value="12"/>
                 <Setter Property="Padding" Value="20"/>
-                <Setter Property="materialDesign:ShadowAssist.ShadowDepth" Value="Depth1"/>
+                <!-- Updated from ShadowAssist.ShadowDepth to ElevationAssist.Elevation -->
+                <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp1"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="materialDesign:ShadowAssist.ShadowDepth" Value="Depth2"/>
+                        <!-- Updated from ShadowAssist.ShadowDepth to ElevationAssist.Elevation -->
+                        <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
                         <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
                     </Trigger>
                 </Style.Triggers>

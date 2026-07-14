@@ -6,7 +6,7 @@
   <ItemGroup>
     <!-- Production Dependencies -->
     <PackageVersion Include="Dapper" Version="2.1.79" />
-    <PackageVersion Include="MaterialDesignThemes.Wpf" Version="1.0.1" />
+	<PackageVersion Include="MaterialDesignThemes" Version="5.3.2" />
     <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.20.1" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.2" />
