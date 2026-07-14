@@ -475,3 +475,64 @@ jobs:
             git commit -m "docs(ai): auto-sync architecture & logs into README [skip ci]"
             git push origin HEAD:${{ github.ref_name }}
           fi
+# =====================================================================
+# JOB 5: TELEGRAM NOTIFICATION (Beautiful HTML Summary)
+# =====================================================================
+  telegram-notify:
+    name: 📢 Send Telegram Summary
+    needs: [prep-and-docs, ci-ubuntu, release-windows, finalize-ai-doc]
+    if: always() # Guarantee this runs even if builds fail
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build & Send Telegram Notification
+        shell: bash
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_ID }}
+          CI_STATUS: ${{ needs.ci-ubuntu.result }}
+          REL_STATUS: ${{ needs.release-windows.result }}
+          DOC_STATUS: ${{ needs.finalize-ai-doc.result }}
+        run: |
+          if [ -z "$BOT_TOKEN" ] || [ -z "$CHAT_ID" ]; then
+            echo "⚠️ Telegram Secrets are not configured. Skipping notification."
+            exit 0
+          fi
+
+          # Map GitHub status to emojis
+          function get_icon {
+            case $1 in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              cancelled) echo "⚠️" ;;
+              skipped) echo "⏭️" ;;
+              *) echo "❓" ;;
+            esac
+          }
+
+          ICON_CI=$(get_icon "$CI_STATUS")
+          ICON_REL=$(get_icon "$REL_STATUS")
+          ICON_DOC=$(get_icon "$DOC_STATUS")
+
+          # Build Multiline HTML Message
+          MSG=$(cat <<EOF
+          🚀 <b>Nexus Trading Engine - CI/CD Run</b>
+
+          <b>Event:</b> <code>${{ github.event_name }}</code>
+          <b>Branch:</b> <code>${{ github.ref_name }}</code>
+          <b>Triggered By:</b> <code>${{ github.actor }}</code>
+
+          <b>📋 Pipeline Results:</b>
+          $ICON_CI Ubuntu CI: <b>$CI_STATUS</b>
+          $ICON_REL Windows Release: <b>$REL_STATUS</b>
+          $ICON_DOC AI Docs Sync: <b>$DOC_STATUS</b>
+
+          🔗 <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Full Run on GitHub</a>
+          EOF
+          )
+
+          # Send via curl, using URL encoding to safely transmit newlines and HTML
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${CHAT_ID}" \
+            -d "parse_mode=HTML" \
+            -d "disable_web_page_preview=true" \
+            --data-urlencode "text=$MSG"
