@@ -281,12 +281,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Change 'Hello World' to 'Goodbye World' |
+| **Commit Message** | Merge pull request #19 from Opselon/wpf-material-redesign-15855607657618852518 |
 | **Author** | Capsizer |
 | **Branch** | `main` |
-| **Run Number** | `47` |
-| **Commit SHA** | `3d7d1ebf7e252bff1eb8c09c0643883ff348630d` |
-| **Generated At** | `2026-07-14 22:54:43 UTC` |
+| **Run Number** | `49` |
+| **Commit SHA** | `85119361c46742eb5a014393620033a60ba14bec` |
+| **Generated At** | `2026-07-14 22:57:10 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -556,6 +556,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   └── NexusIntelligenceDashboard.xaml.cs
 │   │   ├── App.xaml
 │   │   ├── App.xaml.cs
+│   │   ├── DarkTheme.xaml
+│   │   ├── LightTheme.xaml
 │   │   ├── MainWindow.xaml
 │   │   ├── MainWindow.xaml.cs
 │   │   ├── Nexus.Desktop.csproj
@@ -688,7 +690,7 @@ To get started, please review the contribution guidelines outlined above, explor
 | File Type | Count |
 | --- | ---: |
 | C# (.cs) | 233 |
-| WPF (.xaml) | 13 |
+| WPF (.xaml) | 15 |
 | C/C++ Source | 12 |
 | CMake | 1 |
 | MQL5 (.mq5) | 1 |
