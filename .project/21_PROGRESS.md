@@ -48,22 +48,23 @@ We have successfully completed Stage 3 of the WPF manual trading operator dashbo
 
 ## Stage B – Real MT5 Localhost Bridge Integration Layer (Completed on 2026-07-13)
 
-We have successfully completed the real local MT5 bridge integration layer (Stage B), providing an operational, highly robust, real-time market data nervous system and operator workstation:
+We have successfully completed the real local MT5 bridge integration layer (Stage B) and brought it to a clean, fully verified real-debuggable workstation:
 
 ### What was Done
-1. **Core Bridge Service & Push Telemetry**:
-   - Created the core `IMt5BridgeService` interface and its robust `Mt5BridgeService` implementation under `src/Nexus.Infrastructure/Mt5Bridge/`.
-   - Updated `IMt5BridgeClient` and `TcpMt5BridgeClient` with the event-driven `OnMessageReceived` stream listener to enable high-throughput tick pushes.
-   - Built a background telemetry monitor loop on `Mt5BridgeService` sending heartbeat handshakes, monitoring stale session metrics, and implementing automated reconnect backoffs with symbol subscription preservation.
-2. **MQL5 EA In-Terminal Tick Streaming**:
-   - Overwrote and optimized `MQL5/Experts/Nexus/NexusBridge.mq5` to support subscription commands (`SubscribeSymbol`, `UnsubscribeSymbol`), select symbols dynamically in Market Watch, and run a high-frequency tick query loop under `OnTimer()` using `SymbolInfoTick()` to stream bid/ask updates back to C# as `ReceiveTickStream` JSON notifications.
-3. **Ingestion MarketDataPipeline**:
-   - Developed `MarketDataPipeline` under `src/Nexus.Infrastructure/Mt5Bridge/` to normalize, validate, consistently timestamp, and marshal bridge ticks straight into `INativeCoreService.UpdateTick` (feeding C++ high-performance Indicator indicator engines, with safe managed simulation fallbacks).
-4. **Desktop Operator Service Facade**:
-   - Built the `IMt5BridgeOperatorService` and `Mt5BridgeOperatorService` facade under `src/Nexus.Desktop/Services/` to securely encapsulate real-time ticks, subscription watchlists, and live connection states, exposing thread-safe metrics.
-5. **WPF Workstation Centralization**:
-   - Restructured `MainWindow.xaml` and `MainViewModel.cs` into an institutional navigation layout driven by Left Sidebar buttons switching a headerless `TabControl` containing 9 spaces: Dashboard, MT5 Bridge, Market Watch, Manual Desk, Account Metrics, Native Engine, Diagnostics, Settings, and Test Console.
-   - Included a dedicated EA Installation help panel, and built an automated "Real Smoke Test Workflow" verifier script displaying real-time diagnostic output logs step-by-step.
+1. **Core Bridge Service & Handshake Protocol**:
+   - Extended `IMt5BridgeService` and implemented a bidirectional Handshake protocol. When MT5 connects, a Handshake Request is sent and the EA responds with its details (account number, broker server, subscribed symbols, initialized status, chart symbol).
+   - The bridge enters "Connected" and "Started" states only when both socket transport and handshake succeed.
+2. **Real Login Workflow**:
+   - Implemented direct broker login with the `Mt5LoginCredentials` DTO, holding passwords strictly in memory.
+   - Integrated structured log events (`bridge_connect_requested`, `bridge_connect_succeeded`, etc.) with correlation IDs, thread contexts, and process IDs.
+3. **Local Secure HTTP API (18 Endpoints)**:
+   - Configured Kestrel hosting on `127.0.0.1:5005` registered cleanly via Microsoft.Extensions.Hosting's background IHostedService inside `Nexus.Infrastructure`, bypassing WPF's temporary project compilation quirks.
+   - Implemented 18 core endpoints and `X-Nexus-Token` header authorization to secure mutating endpoints.
+4. **Structured Diagnostics Ring Buffer**:
+   - Implemented a thread-safe `DiagnosticRingBuffer` (1,000 default capacity, old drops tracking, JSON Lines export) and integrated it with Kestrel and the Diagnostics View.
+   - Formatted all diagnostic outputs and redacted/sanitized sensitive secrets using `LogSanitizer`.
+5. **Modular WPF Workspace User Controls**:
+   - Separated the main dashboard tabs into distinct UserControl Views under `src/Nexus.Desktop/Views/Workspaces/` (`DashboardView.xaml`, `Mt5BridgeView.xaml`, `MarketWatchView.xaml`, etc.) and associated ViewModels under `src/Nexus.Desktop/ViewModels/Workspaces/` resolving all compilation and namespace conflicts.
 6. **Robust Unit and Integration Testing**:
-   - Created `Mt5BridgeOperatorTests.cs` validating connection telemetry, symbol subscription lists, and push tick-stream normalization.
-   - Excluded the Windows-only WPF/Desktop tests on headless Linux builds unconditionally under `Nexus.Tests.Unit.csproj` to maintain pristine CI execution.
+   - Created `Mt5BridgeOperatorTests.cs` validating connection telemetry and added multiple new unit tests in `Mt5BridgeTests.cs` covering handshake serialization, ring buffer capacity limits, filtering, and secret redaction.
+   - Excluded Windows-only tests on headless Linux builds unconditionally under `Nexus.Tests.Unit.csproj` to maintain pristine CI execution.

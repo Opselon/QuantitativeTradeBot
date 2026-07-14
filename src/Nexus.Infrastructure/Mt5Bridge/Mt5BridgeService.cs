@@ -28,6 +28,19 @@ namespace Nexus.Infrastructure.Mt5Bridge
         private DateTime _lastHeartbeatUtc = DateTime.MinValue;
         private string _lastErrorMessage = string.Empty;
 
+        // EA status & file properties
+        public bool IsEaPresentInRepository { get; private set; }
+        public long EaRepositoryFileSize { get; private set; }
+        public DateTime EaRepositoryFileLastModifiedUtc { get; private set; }
+        public string EaRepositoryFilePath { get; private set; } = string.Empty;
+        public bool IsEaInstalledConfirmed { get; set; }
+        public bool IsHandshakeSucceeded { get; private set; }
+        public string EaName { get; private set; } = string.Empty;
+        public string EaVersion { get; private set; } = string.Empty;
+        public string ChartSymbol { get; private set; } = string.Empty;
+        public string HandshakeAccountId { get; private set; } = string.Empty;
+        public string HandshakeBrokerServer { get; private set; } = string.Empty;
+
         private string? _host;
         private int _port;
         private string? _lastAccountId;

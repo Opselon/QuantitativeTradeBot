@@ -8,10 +8,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Nexus.Infrastructure\Nexus.Infrastructure.csproj" />
+    <ProjectReference Include="..\Nexus.Application\Nexus.Application.csproj" />
     <ProjectReference Include="..\Nexus.AI\Nexus.AI.csproj" />
     <ProjectReference Include="..\Nexus.Infrastructure.Native\Nexus.Infrastructure.Native.csproj" />
   </ItemGroup>

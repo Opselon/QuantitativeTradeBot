@@ -1,0 +1,46 @@
+<UserControl x:Class="Nexus.Desktop.Views.Workspaces.TestConsoleView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1.2*"/>
+            <ColumnDefinition Width="15"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left side: Run Smoke Test Controls -->
+        <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
+            <StackPanel>
+                <TextBlock Text="REAL LOCALHOST BRIDGE PIPELINE VERIFIER" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5"/>
+                <TextBlock Text="Press the button below to run an automated, live integration smoke test that connects, authenticates, pings, subscribes, monitors EURUSD ticks, and disconnects cleanly." FontSize="12" Foreground="#BBBBBB" TextWrapping="Wrap" Margin="0,5,0,20"/>
+
+                <Button Content="RUN AUTOMATED REAL SMOKE TEST" Command="{Binding RunSmokeTestCommand}" Background="#00ADB5" Foreground="Black" FontWeight="Bold" Padding="20,12" FontSize="12" HorizontalAlignment="Left" Margin="0,0,0,15" Cursor="Hand"/>
+
+                <Border BorderBrush="#393E46" BorderThickness="0,1,0,0" Margin="0,5,0,15"/>
+
+                <TextBlock Text="LIGHTWEIGHT DIAGNOSTICS API" FontFamily="Segoe UI" FontSize="14" Foreground="#EEEEEE" Margin="0,0,0,10"/>
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="Test Outcome Status:" FontFamily="Segoe UI Semibold" FontSize="12" Foreground="#888888" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="{Binding TestOutcome}" Foreground="#E2C044" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- Right side: Real-time progress logs -->
+        <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="SMOKE TEST CONSOLE WORKFLOW LOG" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5"/>
+                <ListView Grid.Row="1" ItemsSource="{Binding SmokeTestLogList}" Background="#121212" BorderBrush="#393E46" Foreground="#EEEEEE" Margin="0,10,0,0" FontFamily="Consolas" FontSize="11"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
