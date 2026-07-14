@@ -1,53 +1,48 @@
 # NexusBridge MT5
 
-## Pragmatic Execution & Telemetry Adapter for the Nexus Trading Engine (NTE)
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-MetaTrader%205-blue.svg?style=flat-square" alt="Platform MT5" />
+  <img src="https://img.shields.io/badge/Language-MQL5%20%2F%20C%2B%2B-orange.svg?style=flat-square" alt="Language" />
+  <img src="https://img.shields.io/badge/Architecture-Clean%20%2F%20Hexagonal-green.svg?style=flat-square" alt="Architecture" />
+  <img src="https://img.shields.io/badge/License-MIT-lightgrey.svg?style=flat-square" alt="License" />
+</p>
 
-NexusBridge is the specialized, low-latency MetaTrader 5 client gateway for the **Nexus Trading Engine (NTE)**. 
+NexusBridge is the low-latency execution and telemetry edge adapter for the **Nexus Trading Engine (NTE)**. It connects the MetaTrader 5 terminal with high-performance external systems (such as C# .NET 10 core engines, Python AI systems, or C++ quantitative runtimes).
 
-### The MQL5 Pragmatic Reality
-While clean architecture principles dictate complete separation of concerns, executing this pattern inside the native MQL5 environment requires distinct pragmatic compromises. MQL5 lacks runtime reflection, true generic containers, dynamic DLL loading at runtime, and standard mock frameworks. Attempting to implement a heavy, .NET-style Dependency Injection (DI) container or dynamic service locator inside MQL5 introduces unnecessary complexity, runtime instability, and execution latency.
-
-Therefore, NexusBridge implements **Compile-Time Dependency Inversion**. The bridge acts strictly as a **deterministic execution and telemetry adapter**. The complex analytical "brain" (strategy orchestration, neural network evaluations, global portfolio risk, search-space decision algorithms) is offloaded to the C# (.NET 10) and native C++ quantitative core of the NTE.
-
----
-
-## Architectural Philosophy: The Lean Edge Adapter
-
-```
-┌─────────────────────────────────────────┐
-│     NTE CORE ENGINE (C# / C++20)        │
-│  "The Brain, Domain & Neural Engine"    │
-└────────────────────┬────────────────────┘
-                     │ Secure TCP Stream
-                     ▼
-┌─────────────────────────────────────────┐
-│         NEXUSBRIDGE (MQL5 EA)           │
-│  "The Deterministic Execution Adapter"   │
-│                                         │
-│   ┌─────────────────────────────────┐   │
-│   │    Application Router / Queue   │   │
-│   └────────────────┬────────────────┘   │
-│                    │ (Interfaces)       │
-│                    ▼                    │
-│   ┌─────────────────────────────────┐   │
-│   │      Concrete MT5 Adapters      │   │
-│   └────────────────┬────────────────┘   │
-└────────────────────┼────────────────────┘
-                     │ Native MQL5 API
-                     ▼
-┌─────────────────────────────────────────┐
-│           METATRADER TERMINAL           │
-└─────────────────────────────────────────┘
-```
-
-By constraining the MQL5 footprint to a lightweight execution adapter, the bridge achieves:
-1. **Low Runtime Overhead:** Negligible execution path latency.
-2. **Deterministic Behavior:** Simple static allocation patterns that minimize memory fragmentation.
-3. **Resiliency:** Clean state reconciliation on socket dropouts or terminal restarts.
+This bridge is designed with a **pragmatic hybrid architecture** to work within the runtime limitations of MQL5 (such as the lack of reflection, dynamic assembly loading, or complex generic collections). It delegates all heavy analytical tasks, portfolio optimization, and machine learning models to the external NTE system, keeping the MQL5 component lightweight, responsive, and reliable.
 
 ---
 
-## Directory Structure
+## 🏛️ System Architecture Map
+
+The system uses a **decoupled ports-and-adapters (hexagonal) layout** inside MQL5, ensuring that the core trade execution logic remains isolated from raw network protocols and data formats.
+
+```mermaid
+graph TD
+    %% Core Styling
+    classDef domain fill:#fff2cc,stroke:#d6b656,stroke-width:2px,color:#000;
+    classDef app fill:#e2f0d9,stroke:#385723,stroke-width:2px,color:#000;
+    classDef adapter fill:#d4e1f5,stroke:#1a5276,stroke-width:2px,color:#000;
+    classDef external fill:#fce4d6,stroke:#b25900,stroke-width:2px,color:#000;
+
+    %% Nodes
+    subgraph MQL5 Sandboxed Environment
+        Domain[Domain / Safety Layer <br> • Risk Policies <br> • Pre-Trade Checkers <br> • Local Entities]:::domain
+        App[Application Orchestrator <br> • Command Router <br> • Event Dispatcher <br> • Message Queue]:::app
+        Adapters[Adapters Layer <br> • MT5 Trade Adapter <br> • MT5 Market Adapter <br> • TCP Socket Adapter]:::adapter
+    end
+
+    External[External Engine <br> • C# .NET 10 System <br> • C++ Math Core <br> • AI Models]:::external
+
+    %% Relations
+    External <==>|Secure JSON Stream| Adapters
+    Adapters <==> App
+    App <==> Domain
+```
+
+---
+
+## 📂 Project Anatomy
 
 ```text
 MQL5/
@@ -61,7 +56,7 @@ MQL5/
         │   ├── AppContext.mqh           # Global access reference for core systems
         │   └── Exceptions.mqh           # Base structural error definitions
         │
-        ├── Interfaces/                  # Abstract Contracts (Dependency Inversion Ports)
+        ├── Interfaces/                  # Abstract Contracts (Inversion Ports)
         │   ├── ITradeService.mqh        # Contract for placing and modifying positions
         │   ├── IMarketService.mqh       # Contract for accessing indicator & candle data
         │   └── IMessageTransport.mqh    # Contract for outbound TCP / frame transport
@@ -71,7 +66,7 @@ MQL5/
         │   ├── EventHandler.mqh         # Marshals local trade/tick updates to transport
         │   └── MessageQueue.mqh         # Prioritized outbound messaging buffer
         │
-        ├── Adapters/                    # Concrete Implementations of Interfaces (Adapters)
+        ├── Adapters/                    # Concrete Implementations of Interfaces
         │   ├── MT5TradeAdapter.mqh      # Wraps native OrderSend and OrderSendAsync API
         │   ├── MT5MarketAdapter.mqh     # Handles native tick capture and historic MqlRates
         │   └── TcpTransportAdapter.mqh  # Manages low-level WinAPI TCP socket connections
@@ -88,11 +83,64 @@ MQL5/
 
 ---
 
-## Interface-Based Inversion (MQL5 Implementation)
+## 🔄 Core System Workflows
 
-To decouple the execution pipeline from native MT5 dependencies, all application logic references abstract interface classes. 
+### 1. Inbound Order Execution Pipeline
+This model highlights the sequence of an incoming buy request. The system runs the request through signature verification and risk checks before calling the native MT5 trading engine.
 
-### 1. Abstract Port: `ITradeService`
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Ext as External C# Core
+    participant Net as TcpTransportAdapter
+    participant Sec as Security Engine
+    participant App as CommandHandler
+    participant Risk as RiskPolicy Engine
+    participant MT5 as MT5TradeAdapter
+    participant Broker as Broker Server
+
+    Ext->>Net: Send Signed JSON Payload (TCP Frame)
+    Net->>Sec: Extract & Validate Signature (SHA-256)
+    Sec-->>Net: Signature Verified
+    Net->>App: Forward Command Envelope
+    App->>Risk: Perform Local Risk Validation (Size, Margin)
+    Risk-->>App: Limits Approved
+    App->>MT5: Map to MqlTradeRequest & Dispatch
+    MT5->>Broker: OrderSendAsync()
+    Broker-->>MT5: Execution Receipt (Ticket ID)
+    MT5-->>App: Format Response
+    App-->>Net: Enqueue Response Frame
+    Net-->>Ext: Stream Confirmation Message
+```
+
+### 2. High-Frequency Telemetry Stream
+This workflow illustrates how the bridge processes high-density price feeds and indicators, keeping the external trading system updated with local market conditions.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Terminal as MT5 Terminal (OnTick)
+    participant Market as MT5MarketAdapter
+    participant App as EventHandler
+    participant Queue as MessageQueue
+    participant Net as TcpTransportAdapter
+    participant Ext as External C# Core
+
+    Terminal->>Market: Fire Native OnTick Callback
+    Market->>App: Retrieve Raw Tick Data & Account Metrics
+    App->>App: Construct Telemetry Packet
+    App->>Queue: Enqueue Packet (Low-Priority Lane)
+    Queue->>Net: Dequeue Frame (Non-blocking Socket Write)
+    Net->>Ext: Stream Telemetry Frame
+```
+
+---
+
+## 🛠️ Implementation Specs (MQL5 Decoupled Design)
+
+This compile-time composition pattern avoids complex runtime DI engines while preserving the benefits of dependency inversion.
+
+### Step 1: Abstract Port Definition (`ITradeService.mqh`)
 ```mql5
 // ITradeService.mqh
 #include "../Protocol/RequestModels.mqh"
@@ -108,7 +156,7 @@ public:
 };
 ```
 
-### 2. Concrete Adapter: `MT5TradeAdapter`
+### Step 2: Concrete Adapter Implementation (`MT5TradeAdapter.mqh`)
 ```mql5
 // MT5TradeAdapter.mqh
 #include "../Interfaces/ITradeService.mqh"
@@ -123,7 +171,7 @@ public:
       MqlTradeRequest mqlRequest = {};
       MqlTradeResult  mqlResult  = {};
 
-      // Map request structures to native MT5 models
+      // Map request parameters to native MQL structs
       mqlRequest.action       = TRADE_ACTION_DEAL;
       mqlRequest.symbol       = request.Symbol;
       mqlRequest.volume       = request.Volume;
@@ -133,12 +181,12 @@ public:
       mqlRequest.tp           = request.TakeProfit;
       mqlRequest.magic        = request.MagicNumber;
       mqlRequest.deviation    = request.Slippage;
-      mqlRequest.comment      = "NTE Execution";
+      mqlRequest.comment      = "NTE Direct Link";
 
       ResetLastError();
       bool success = OrderSend(mqlRequest, mqlResult);
 
-      // Populate response model safely
+      // Populate response parameters
       out_response.Retcode = mqlResult.retcode;
       out_response.Ticket  = mqlResult.order;
       out_response.Price   = mqlResult.price;
@@ -156,36 +204,29 @@ public:
 };
 ```
 
----
-
-## Static Composition & Context Registry
-
-Rather than using dynamic runtime dependency injection, objects are created statically or during the EA's initialization phase in the Composition Root (`NexusBridge.mq5`).
-
+### Step 3: Application Initialization (`NexusBridge.mq5`)
 ```mql5
 // NexusBridge.mq5
 #include "Core/AppContext.mqh"
 #include "Adapters/MT5TradeAdapter.mqh"
 #include "Adapters/TcpTransportAdapter.mqh"
-#include "Application/CommandHandler.mqh"
 
-// Static allocation of concrete implementations
+// Statically allocated system instances
 MT5TradeAdapter     g_TradeAdapter;
 TcpTransportAdapter g_TcpAdapter;
-CommandHandler      g_CommandHandler;
 
 int OnInit()
 {
-   // Initialize and bind pointers to the global AppContext
-   AppContext::TradeService   = &g_TradeAdapter;
-   AppContext::Transport      = &g_TcpAdapter;
+   // Bind service implementations to application contexts
+   AppContext::TradeService = &g_TradeAdapter;
+   AppContext::Transport    = &g_TcpAdapter;
    
    if(!g_TcpAdapter.Connect())
    {
-      Print("[NTE BRIDGE] [WARN] TCP transport failed initialization. Waiting for reconnect loop.");
+      Print("[NTE BRIDGE] [WARN] TCP transport failed initialization. Retrying in background loop...");
    }
 
-   Print("[NTE BRIDGE] Initialized under static compile-time composition.");
+   Print("[NTE BRIDGE] System initialized successfully.");
    return(INIT_SUCCEEDED);
 }
 
@@ -193,22 +234,15 @@ void OnDeinit(const int reason)
 {
    g_TcpAdapter.Disconnect();
 }
-
-void OnTick()
-{
-   // Handle real-time market data streaming and out-going events
-}
 ```
-
-This structural configuration maintains code testability. For backtesting or local offline validation, the composition file can simply bind a mock simulator adapter (e.g., `StrategySimulator`) to the `AppContext` references instead of the live adapters.
 
 ---
 
-## Wire-Protocol Specifications
+## 🔒 Security & Data Contracts
 
-To interact with the C# client framework, NexusBridge parses incoming command envelopes and generates outbound message streams using a structured JSON layout over a raw TCP socket connection.
+Every network command payload processed by the bridge is structured and authenticated using SHA-256 HMAC tokens, preventing unauthorized network traffic from interacting with the terminal.
 
-### 1. Inbound Command Frame (C# Engine to MT5)
+### 1. Inbound Execution Envelope
 ```json
 {
   "header": {
@@ -232,57 +266,58 @@ To interact with the C# client framework, NexusBridge parses incoming command en
 }
 ```
 
-### 2. Outbound Telemetry Event Frame (MT5 to C# Engine)
+### 2. Market Data & Indicator Update Payload
 ```json
 {
   "header": {
-    "message_id": "a521da10-f823-11ef-93b1-12010a760012",
-    "timestamp": 1740003011
+    "message_id": "c623d3a0-f823-11ef-bcfe-22010a760002",
+    "timestamp": 1740003000
   },
-  "event_name": "TickEvent",
+  "event_name": "MarketUpdateEvent",
   "payload": {
     "symbol": "XAUUSD",
-    "time": 1740003011,
-    "bid": 2353.20,
-    "ask": 2353.40,
-    "last": 0.0,
-    "volume_real": 0.0
+    "timeframe": "M5",
+    "ohlcv": {
+      "open": 2350.10,
+      "high": 2355.80,
+      "low": 2348.00,
+      "close": 2353.40,
+      "volume": 12050
+    },
+    "indicators": {
+      "rsi_14": 64.21,
+      "ema_50": 2340.45,
+      "atr_14": 15.20
+    }
   }
 }
 ```
 
 ---
 
-## System Resilience & Recovery Procedures
+## 🛡️ Reliability & Fail-Safe Mechanisms
 
-### 1. Zero-Trust State Recovery
-The bridge assumes that the TCP connection state can drop out at any time. When a reconnection is established, the `RecoveryManager` synchronizes the local cache with the broker server's ground truth, resolving active execution tickets and updating the external C# engine.
+> [!IMPORTANT]
+> To prevent execution inconsistencies during network dropouts or broker disconnects, the system uses the following safeguards:
 
-```
-                  Connection Interruption & Reconnection Flow
-                  
- ┌──────────────────────┐                     ┌─────────────────────┐
- │  Connection Dropped  │                     │ Connection Restored │
- └──────────┬───────────┘                     └──────────┬──────────┘
-            │                                            │
-            ▼                                            ▼
- ┌──────────────────────┐                     ┌─────────────────────┐
- │ Freeze Outbound Tx   │                     │ Re-Query Active     │
- │ Queue                │                     │ Tickets from Broker │
- └──────────────────────┘                     └──────────┬──────────┘
-                                                         │
-                                                         ▼
- ┌──────────────────────┐                     ┌─────────────────────┐
- │ Cache Incoming Ticks │                     │ Rebuild Local Cache │
- │ locally              │                     │ State               │
- └──────────────────────┘                     └──────────┬──────────┘
-                                                         │
-                                                         ▼
-                                              ┌─────────────────────┐
-                                              │ Stream State Update │
-                                              │ to C# Engine        │
-                                              └─────────────────────┘
-```
+* **Zero-Trust State Sync:** If connection is lost, the `RecoveryManager` immediately queries active tickets directly from the broker upon reconnecting. This matches the internal cache with actual broker data before resuming external communication.
+* **Pre-Trade Risk Limits:** The `RiskPolicy` checks all incoming order volumes, leverage, and margin requirements against strict local boundaries, blocking executions that violate limits.
+* **Outbound Message Queues:** A non-blocking buffer prioritizes execution reports over tick messages, preventing order feedback from being delayed by high-density price streams.
 
-### 2. Input Integrity Checks
-Prior to execution, all incoming commands undergo basic range and logic checks to intercept anomalous values (such as zero volume or stop levels placed on the wrong side of the current market spread) before they are passed to the broker's processing queue.
+---
+
+## 🚀 Deployment Guide
+
+### Building from Source
+1. Open your MT5 terminal directory.
+2. Clone this repository directly into your local folder tree:
+   `MQL5/Experts/Nexus/`
+3. Launch **MetaEditor** (`F4`).
+4. Open the primary executable: `Nexus/NexusBridge.mq5`.
+5. Compile the file (`F7`). Ensure no errors are reported in the output log.
+
+### Attaching the EA
+1. In MT5, open the **Navigator Window** (`Ctrl+N`).
+2. Drag and drop **NexusBridge** onto a chart.
+3. Check **"Allow Algo Trading"** in the options dialog.
+4. Navigate to the **Common** tab and check **"Allow DLL Imports"** (required for system-level WinAPI TCP socket connections).
