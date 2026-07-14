@@ -267,29 +267,35 @@ To get started, please review the contribution guidelines outlined above, explor
 <!-- NEXUS_AUTO_DOC_START -->
 
 ## 🏛️ Nexus Trading Engine (NTE) Architecture Summary
-**Style:** Decoupled Hexagonal / Clean Architecture
-- **Nexus.Core:** Zero external dependencies. Uses *Zero-Allocation Tick Path*. Contains value objects (`Symbol`, `Money`, `LotSize`) and core interfaces (`IStrategy`, `IRiskManager`).
-- **Nexus.Application:** Implements execution logic, `IExecutionGateway`, `ExecutionCoordinator`, and the `IMt5TradingService` with Simulated vs Real Routing adapters.
-- **Nexus.Infrastructure:** Adapters (EF Core, Background Workers, Time-Series tick copy).
-- **Native C++:** High-performance quantitative engine (EMA calculations) via P/Invoke to bypass JIT.
-- **Nexus.WpfUi (WPF Layer):** Rich Desktop UI designed in WPF on .NET 10.
+> **Architecture Style:** Decoupled Hexagonal / Clean Architecture + Search-Driven Decision Engine
+
+### 🧩 Core System Layers
+- 🔴 **`Nexus.Core` (Domain Layer):** Zero external dependencies. Defines the complete trading domain model, including `MarketState`, `MarketVector`, `TradeDecision`, `ScenarioScore`, `PatternMemory`, `EvaluationResult`, value objects (`Symbol`, `Money`, `LotSize`), and core interfaces for Strategy Runtime, Decision Engine, Risk Management, Neural Evaluation, Scenario Search, and Experience Database. Uses a *Zero-Allocation Tick Path* for deterministic, high-performance execution.
+- ⚙️ **`Nexus.Application` (Orchestration):** Implements the complete Decision Pipeline, including Market State construction, Decision Generation, Scenario Search, Scenario Evaluation, Execution Coordination, Pattern Matching, Strategy Runtime, Experience Collection, AI orchestration, Risk Evaluation, and transformation of live market data into probabilistic trading decisions.
+- 🔌 **`Nexus.Infrastructure` (Adapters):** Infrastructure adapters for MetaTrader 5 Bridge, EF Core persistence, Background Workers, Tick Streaming, Historical Data ingestion, Time-Series storage, Experience Database persistence, Training Dataset generation, Logging, Recovery services, and external platform integrations while keeping the domain completely isolated.
+- ⚡ **`Nexus.Native.Core` (C++20):** High-performance quantitative computation engine accessed through P/Invoke. Responsible for ultra-low latency Market Vector generation, feature extraction, statistical calculations, numerical optimization, pattern processing, search acceleration, and future native AI optimizations beyond the .NET runtime.
+- 🖥️ **`Nexus.WpfUi` (.NET 10 / WPF Layer):** Modern desktop workstation for monitoring Market States, Decision Engine execution, Pattern Memory, Experience Database, AI evaluation, Training progress, Strategy Runtime, Diagnostics, Bridge communication, and live execution management.
+
+### 🧠 Intelligence & Execution Subsystems
+- 🤖 **`Nexus.AI`:** AI-assisted Market Intelligence layer responsible for feature learning, neural evaluation, probabilistic scoring, confidence estimation, pattern recognition, and continuous model training. AI assists the decision engine instead of replacing it, following the philosophy of modern search engines such as Stockfish.
+- 📚 **Experience & Training Engine:** Continuously records every Market State, generated decision, execution result, market evolution, and trade outcome. Builds an Experience Database that produces structured datasets for offline and online training, improving future evaluation, scenario ranking, pattern recognition, and decision quality.
+- 🔍 **Search & Decision Engine:** Core intelligence of NTE inspired by modern chess engine architecture. Generates multiple candidate trading decisions, explores probabilistic market scenarios, prunes low-quality branches, ranks promising paths, combines historical experience with AI evaluation, and selects the highest-confidence decision under defined risk constraints.
+- 📈 **MetaTrader 5 Integration Layer:** MT5 serves exclusively as the execution and market data platform. Supplies ticks, positions, account information, and order execution while remaining completely decoupled from the decision engine, allowing future support for additional trading platforms.
 
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Merge pull request #15 from Opselon/jules-13003469003020934887-4fc5b7fb |
+| **Commit Message** | Optimize release workflow and architecture documentation |
 | **Author** | Capsizer |
-| **Branch** | $env:GITHUB_REF_NAME |
-| **Run Number** | $env:GITHUB_RUN_NUMBER |
-| **Commit SHA** | $env:GITHUB_SHA |
-| **Generated At** | `
-2026-07-14 16:26:21 UTC
-` |
+| **Branch** | `main` |
+| **Run Number** | `37` |
+| **Commit SHA** | `f1986d97e5321bc4df3d35e5879085f93f834e3d` |
+| **Generated At** | `2026-07-14 18:01:30 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
-<details>
-<summary><b>Click to expand Project Tree (Filtered with WPF, .NET & C++ files)</b></summary>
+<details open>
+<summary><b>Click to expand Project Tree (Filtered with WPF, .NET, C/C++, CMake & MQL5 files)</b></summary>
 
 ```text
 ├── .github/
@@ -338,6 +344,10 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── ACCUMULATOR_DESIGN.md
 │   ├── AI_TRAINING_PIPELINE.md
 │   └── PATTERN_MEMORY.md
+├── MQL5/
+│   └── Experts/
+│       └── Nexus/
+│           └── NexusBridge.mq5
 ├── native/
 │   ├── Nexus.Native/
 │   │   ├── NexusNative.cpp
@@ -629,6 +639,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   └── market_vector.cpp
 │   │   ├── tests/
 │   │   │   └── native_tests.cpp
+│   │   └── CMakeLists.txt
 │   └── Nexus.WpfUi/
 │       ├── App.xaml
 │       ├── App.xaml.cs
@@ -682,6 +693,8 @@ To get started, please review the contribution guidelines outlined above, explor
 | C# (.cs) | 233 |
 | WPF (.xaml) | 13 |
 | C/C++ Source | 12 |
+| CMake | 1 |
+| MQL5 (.mq5) | 1 |
 | Projects (.sln, .csproj) | 11 |
 
 ### 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)
