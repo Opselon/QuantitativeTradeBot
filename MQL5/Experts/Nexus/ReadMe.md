@@ -1,84 +1,170 @@
-# NexusBridge MT5
+# Nexus Trading Engine (NTE) & NexusBridge
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-MetaTrader%205-blue.svg?style=flat-square" alt="Platform MT5" />
-  <img src="https://img.shields.io/badge/Language-MQL5%20%2F%20C%2B%2B-orange.svg?style=flat-square" alt="Language" />
-  <img src="https://img.shields.io/badge/Architecture-Clean%20%2F%20Hexagonal-green.svg?style=flat-square" alt="Architecture" />
-  <img src="https://img.shields.io/badge/License-MIT-lightgrey.svg?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20MetaTrader%205-blue.svg?style=flat-square" alt="Platform" />
+  <img src="https://img.shields.io/badge/Framework-.NET%2010%20%7C%20WPF%20%7C%20C%2B%2B20-violet.svg?style=flat-square" alt="Framework" />
+  <img src="https://img.shields.io/badge/Architecture-Clean%20%2F%20Hexagonal%20%2F%20DDD-green.svg?style=flat-square" alt="Architecture" />
+  <img src="https://img.shields.io/badge/Language-C%23%20%7C%20MQL5%20%7C%20C%2B%2B-orange.svg?style=flat-square" alt="Languages" />
 </p>
 
-NexusBridge is the low-latency execution and telemetry edge adapter for the **Nexus Trading Engine (NTE)**. It connects the MetaTrader 5 terminal with high-performance external systems (such as C# .NET 10 core engines, Python AI systems, or C++ quantitative runtimes).
+The **Nexus Trading Engine (NTE)** is a production-oriented, modular algorithmic trading platform built with **.NET 10**, **WPF**, **C#**, and a native **C++20 quantitative core**. 
 
-This bridge is designed with a **pragmatic hybrid architecture** to work within the runtime limitations of MQL5 (such as the lack of reflection, dynamic assembly loading, or complex generic collections). It delegates all heavy analytical tasks, portfolio optimization, and machine learning models to the external NTE system, keeping the MQL5 component lightweight, responsive, and reliable.
+The **NexusBridge** acts as the high-speed edge adapter within the MetaTrader 5 environment. It connects MT5 to the NTE core, keeping the trading terminal completely decoupled from the primary decision-making engine.
 
 ---
 
-## 🏛️ System Architecture Map
+## 🛠️ Repository Structure
 
-The system uses a **decoupled ports-and-adapters (hexagonal) layout** inside MQL5, ensuring that the core trade execution logic remains isolated from raw network protocols and data formats.
-
-```mermaid
-graph TD
-    %% Core Styling
-    classDef domain fill:#fff2cc,stroke:#d6b656,stroke-width:2px,color:#000;
-    classDef app fill:#e2f0d9,stroke:#385723,stroke-width:2px,color:#000;
-    classDef adapter fill:#d4e1f5,stroke:#1a5276,stroke-width:2px,color:#000;
-    classDef external fill:#fce4d6,stroke:#b25900,stroke-width:2px,color:#000;
-
-    %% Nodes
-    subgraph MQL5 Sandboxed Environment
-        Domain[Domain / Safety Layer <br> • Risk Policies <br> • Pre-Trade Checkers <br> • Local Entities]:::domain
-        App[Application Orchestrator <br> • Command Router <br> • Event Dispatcher <br> • Message Queue]:::app
-        Adapters[Adapters Layer <br> • MT5 Trade Adapter <br> • MT5 Market Adapter <br> • TCP Socket Adapter]:::adapter
-    end
-
-    External[External Engine <br> • C# .NET 10 System <br> • C++ Math Core <br> • AI Models]:::external
-
-    %% Relations
-    External <==>|Secure JSON Stream| Adapters
-    Adapters <==> App
-    App <==> Domain
+```text
+.
+├── .github/
+│   └── workflows/                       # Continuous Integration & Delivery Pipelines
+├── .nexus_docs/                         # Exhaustive Architecture & Engineering Specs
+├── .project/                            # Active Backlog, Session States & Master Plan
+├── docs/                                # AI-Architectural Diagrams & Math Formulations
+├── MQL5/
+│   └── Experts/
+│       └── Nexus/
+│           └── NexusBridge.mq5          # Physical Monolith / Consolidated Execution Gateway
+├── native/
+│   └── Nexus.Native/                    # High-Performance C++20 Quantitative Library
+│       ├── NexusNative.cpp
+│       └── NexusNative.h
+└── src/
+    ├── Nexus.AI/                        # Feature Learning & Inference Interfaces
+    ├── Nexus.Application/               # Orchestration, Decision Pipeline & Commands
+    ├── Nexus.Core/                      # Domain Model, Core Entities & Value Objects
+    ├── Nexus.Desktop/                   # Operator Workstation Dashboard
+    ├── Nexus.Infrastructure/            # Database Bootstrappers, TCP Server & Mt5 Adapters
+    ├── Nexus.Infrastructure.Native/     # Native interop (P/Invoke) integrations
+    └── Nexus.WpfUi/                     # Main Application Entry Shell (WPF)
 ```
 
 ---
 
-## 📂 Project Anatomy
+## 🧩 Core System Layers
 
-```text
-MQL5/
-└── Experts/
-    └── Nexus/
-        ├── NexusBridge.mq5              # EA Entry Point & Static Composition Root
+### 🔴 Nexus.Core (Domain Layer)
+* **Dependency Profile:** Zero external package dependencies.
+* **Responsibilities:** Defines the complete core trading domain. It contains the data structures and mathematical definitions for the trading space.
+* **Key Components:**
+  * `MarketState`, `MarketVector`, `TradeDecision`, `ScenarioScore`, `PatternMatchResult`, and `EvaluationResult`.
+  * Core value objects: `Symbol`, `Money`, and `LotSize`.
+  * Abstract ports for the Strategy Runtime, Decision Engine, Risk Management, and Experience Database.
+  * **Zero-Allocation Tick Path:** An execution path designed to avoid garbage collection overhead during high-frequency tick processing.
+
+### ⚙️ Nexus.Application (Orchestration Layer)
+* **Dependency Profile:** References `Nexus.Core`. No direct UI or physical database dependency.
+* **Responsibilities:** Implements the core **Decision Pipeline**. It processes raw data inputs into evaluated trading decisions and coordinates system workflows.
+* **Key Components:**
+  * `DecisionEngine`, `ScenarioEvaluationEngine`, `AccumulatorService`, and `ExecutionCoordinator`.
+  * Manages the execution lifecycle from incoming market data to state generation, risk validation, and trade dispatching.
+
+### 🔌 Nexus.Infrastructure (Adapters Layer)
+* **Dependency Profile:** Implementation layer. References external drivers, databases, and platform APIs.
+* **Responsibilities:** Satisfies the application layer's abstract ports. Handles data storage, background services, and external integrations.
+* **Key Components:**
+  * **Database Bootstrappers:** Support for PostgreSQL (enterprise deployments) and SQLite (simple local deployments) via Entity Framework Core.
+  * **Background Workers:** Ingestion and dispatch processes (`MarketDataIngestionWorker`, `ExecutionWorker`).
+  * **TCP MT5 Client Bridge:** Manages socket-level serialization and protocol handling for external trading connections.
+
+### ⚡ Nexus.Native.Core (Native C++20 Core)
+* **Dependency Profile:** C++20 Shared Library (`Nexus.Native.dll`).
+* **Responsibilities:** Low-latency quantitative calculations and signal generation accessed via P/Invoke.
+* **Key Components:**
+  * Performance indicators (EMA, SMA, RSI, ATR) and mathematical feature extraction.
+  * High-performance search and optimization algorithms.
+  * Generates raw mathematical `MarketVector` payloads to feed the C# application-layer pipeline.
+
+### 🖥️ Nexus.WpfUi (.NET 10 / WPF Layer)
+* **Dependency Profile:** Client-facing UI layer.
+* **Responsibilities:** Provides a desktop workspace for monitoring market states, decision engine logs, risk parameters, and active portfolio metrics.
+* **Key Components:**
+  * MVVM-patterned dashboards (`MainViewModel`, `ManualDeskViewModel`, `DiagnosticsViewModel`).
+  * System diagnostics, log streaming, and manual trade entry capabilities.
+
+---
+
+## 🧠 Intelligence & Execution Subsystems
+
+The core intelligence of NTE is designed as a search-driven system, separating state evaluation from execution mechanics.
+
+```
+Market Update (Tick/Bar)
+         │
+         ▼
+ ┌──────────────┐
+ │ Nexus.Native │ ──> Low-latency Feature Extraction (ATR, RSI, Market Vector)
+ └──────┬───────┘
         │
-        ├── Core/                        # System Bootstrapping & Shared Context
-        │   ├── Bootstrap.mqh            # Static object graph constructor
-        │   ├── Constants.mqh            # Global system boundaries and error codes
-        │   ├── AppContext.mqh           # Global access reference for core systems
-        │   └── Exceptions.mqh           # Base structural error definitions
+        ▼
+ ┌──────────────┐
+ │   Nexus.AI   │ ──> Feature Learning & Neural Evaluation (PatternMatch)
+ └──────┬───────┘
         │
-        ├── Interfaces/                  # Abstract Contracts (Inversion Ports)
-        │   ├── ITradeService.mqh        # Contract for placing and modifying positions
-        │   ├── IMarketService.mqh       # Contract for accessing indicator & candle data
-        │   └── IMessageTransport.mqh    # Contract for outbound TCP / frame transport
+        ▼
+ ┌──────────────┐
+ │ Search Engine│ ──> Candidate Action Generation & Path Tree Search
+ └──────┬───────┘
         │
-        ├── Application/                 # Use Case Managers & Orchestrators
-        │   ├── CommandHandler.mqh       # Parses and dispatches incoming system commands
-        │   ├── EventHandler.mqh         # Marshals local trade/tick updates to transport
-        │   └── MessageQueue.mqh         # Prioritized outbound messaging buffer
+        ▼
+ ┌──────────────┐
+ │  Risk Guard  │ ──> Pre-Trade Safety Check (Daily Loss, Size Constraints)
+ └──────┬───────┘
         │
-        ├── Adapters/                    # Concrete Implementations of Interfaces
-        │   ├── MT5TradeAdapter.mqh      # Wraps native OrderSend and OrderSendAsync API
-        │   ├── MT5MarketAdapter.mqh     # Handles native tick capture and historic MqlRates
-        │   └── TcpTransportAdapter.mqh  # Manages low-level WinAPI TCP socket connections
-        │
-        ├── Protocol/                    # Wire-Format Serialization & Validation
-        │   ├── RequestModels.mqh        # Struct definitions for incoming action payloads
-        │   ├── ResponseModels.mqh       # Struct definitions for outbound acknowledgements
-        │   └── JsonSerializer.mqh       # Lightweight, manual string builder for JSON serialization
-        │
-        └── Security/                    # Inbound Command Verification
-            ├── Authentication.mqh       # Cryptographic signature validation (SHA-256)
-            └── InputValidator.mqh       # Range checks to prevent out-of-bounds orders
+        ▼
+ ┌──────────────┐
+ │ NexusBridge  │ ──> Execution via Broker Gateway (MetaTrader 5)
+ └──────────────┘
+```
+
+### 🤖 Nexus.AI
+* **Role:** AI-assisted Market Intelligence.
+* **Design Philosophy:** Rather than allowing neural networks to place trades directly, AI models serve as evaluators within a structured decision tree (similar to modern chess engine architectures like Stockfish).
+* **Key Actions:** Feature learning, neural evaluation, confidence estimation, pattern recognition, and continuous training model generation.
+
+### 📚 Experience & Training Engine
+* **Role:** Data Logging and Offline Training Pipelines.
+* **Design Philosophy:** Every trade lifecycle, market condition, decision, and financial outcome is stored systematically to improve future decision-making.
+* **Key Actions:** Records complete `MarketState` and `TradeDecision` data points to generate clean training datasets. This helps improve scenario ranking, pattern validation, and neural model fine-tuning over time.
+
+### 🔍 Search & Decision Engine
+* **Role:** Strategy Action Selection.
+* **Design Philosophy:** Evaluates multiple potential actions, projecting probability curves across various scenarios while pruning high-risk or low-confidence paths.
+* **Key Actions:** Generates candidate trading choices, runs Monte Carlo-style evaluations on projected price targets, and selects the optimal path that fits within defined risk constraints.
+
+### 📈 MetaTrader 5 Integration Layer
+* **Role:** Execution Gateway.
+* **Design Philosophy:** MT5 serves strictly as an execution endpoint and telemetry provider. The platform remains decoupled from the core strategy logic, allowing for future integrations with other trading platforms or FIX engines without rewrite of the domain layer.
+
+---
+
+## ⚙️ NexusBridge: Consolidated Deployment Architecture
+
+For deployment, MT5 requires a simple and robust installation process. Rather than managing dozens of separate header files inside MT5's sandboxed environment (which complicates version control, installation, and performance), **NexusBridge is packaged and deployed as a highly optimized physical monolith: `NexusBridge.mq5`**.
+
+This file organizes the logical clean architecture segments into strict **namespaces and class structures** directly inside the script, combining performance with maintainability.
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                          NexusBridge.mq5                               │
+├────────────────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────┐   ┌───────────────────────┐                 │
+│  │    Namespace Core     │   │  Namespace Security   │                 │
+│  │ • Bootstrapping       │   │ • HMAC SHA-256 Sign   │                 │
+│  │ • Configuration       │   │ • Payload Sanity      │                 │
+│  └───────────────────────┘   └───────────────────────┘                 │
+│  ┌───────────────────────┐   ┌───────────────────────┐                 │
+│  │  Namespace Protocol   │   │  Namespace Messaging  │                 │
+│  │ • JSON Serializer     │   │ • Priority Tx Queue   │                 │
+│  │ • Struct Mapping      │   │ • Non-Blocking Socket │                 │
+│  └───────────────────────┘   └───────────────────────┘                 │
+│  ┌───────────────────────────────────────────────────┐                 │
+│  │               Namespace Adapters                  │                 │
+│  │  • MT5TradeAdapter (Wraps Native API)             │                 │
+│  │  • MT5MarketAdapter (Low-latency Telemetry)       │                 │
+│  └───────────────────────────────────────────────────┘                 │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -136,113 +222,11 @@ sequenceDiagram
 
 ---
 
-## 🛠️ Implementation Specs (MQL5 Decoupled Design)
+## 🔌 API & Communication Schemas
 
-This compile-time composition pattern avoids complex runtime DI engines while preserving the benefits of dependency inversion.
+The C# engine (under `src/Nexus.Application/Mt5Bridge/Contracts/`) communicates with the compiled MQL5 bridge over TCP. All network payloads share a standard schema envelope.
 
-### Step 1: Abstract Port Definition (`ITradeService.mqh`)
-```mql5
-// ITradeService.mqh
-#include "../Protocol/RequestModels.mqh"
-#include "../Protocol/ResponseModels.mqh"
-
-class ITradeService
-{
-public:
-   virtual      ~ITradeService() {}
-   
-   virtual bool PlaceOrder(const PlaceOrderRequest &request, PlaceOrderResponse &out_response) = 0;
-   virtual bool ClosePosition(const ClosePositionRequest &request, ClosePositionResponse &out_response) = 0;
-};
-```
-
-### Step 2: Concrete Adapter Implementation (`MT5TradeAdapter.mqh`)
-```mql5
-// MT5TradeAdapter.mqh
-#include "../Interfaces/ITradeService.mqh"
-
-class MT5TradeAdapter : public ITradeService
-{
-public:
-   virtual ~MT5TradeAdapter() {}
-
-   virtual bool PlaceOrder(const PlaceOrderRequest &request, PlaceOrderResponse &out_response) override
-   {
-      MqlTradeRequest mqlRequest = {};
-      MqlTradeResult  mqlResult  = {};
-
-      // Map request parameters to native MQL structs
-      mqlRequest.action       = TRADE_ACTION_DEAL;
-      mqlRequest.symbol       = request.Symbol;
-      mqlRequest.volume       = request.Volume;
-      mqlRequest.type         = (ENUM_ORDER_TYPE)request.OrderType;
-      mqlRequest.price        = request.Price;
-      mqlRequest.sl           = request.StopLoss;
-      mqlRequest.tp           = request.TakeProfit;
-      mqlRequest.magic        = request.MagicNumber;
-      mqlRequest.deviation    = request.Slippage;
-      mqlRequest.comment      = "NTE Direct Link";
-
-      ResetLastError();
-      bool success = OrderSend(mqlRequest, mqlResult);
-
-      // Populate response parameters
-      out_response.Retcode = mqlResult.retcode;
-      out_response.Ticket  = mqlResult.order;
-      out_response.Price   = mqlResult.price;
-      out_response.Volume  = mqlResult.volume;
-      out_response.Success = (success && mqlResult.retcode == TRADE_RETCODE_DONE);
-
-      return out_response.Success;
-   }
-
-   virtual bool ClosePosition(const ClosePositionRequest &request, ClosePositionResponse &out_response) override
-   {
-      // Native close validation logic
-      return false; 
-   }
-};
-```
-
-### Step 3: Application Initialization (`NexusBridge.mq5`)
-```mql5
-// NexusBridge.mq5
-#include "Core/AppContext.mqh"
-#include "Adapters/MT5TradeAdapter.mqh"
-#include "Adapters/TcpTransportAdapter.mqh"
-
-// Statically allocated system instances
-MT5TradeAdapter     g_TradeAdapter;
-TcpTransportAdapter g_TcpAdapter;
-
-int OnInit()
-{
-   // Bind service implementations to application contexts
-   AppContext::TradeService = &g_TradeAdapter;
-   AppContext::Transport    = &g_TcpAdapter;
-   
-   if(!g_TcpAdapter.Connect())
-   {
-      Print("[NTE BRIDGE] [WARN] TCP transport failed initialization. Retrying in background loop...");
-   }
-
-   Print("[NTE BRIDGE] System initialized successfully.");
-   return(INIT_SUCCEEDED);
-}
-
-void OnDeinit(const int reason)
-{
-   g_TcpAdapter.Disconnect();
-}
-```
-
----
-
-## 🔒 Security & Data Contracts
-
-Every network command payload processed by the bridge is structured and authenticated using SHA-256 HMAC tokens, preventing unauthorized network traffic from interacting with the terminal.
-
-### 1. Inbound Execution Envelope
+### 1. PlaceOrderRequest (`PlaceOrderRequest.cs`)
 ```json
 {
   "header": {
@@ -266,29 +250,20 @@ Every network command payload processed by the bridge is structured and authenti
 }
 ```
 
-### 2. Market Data & Indicator Update Payload
+### 2. PlaceOrderResponse (`PlaceOrderResponse.cs`)
 ```json
 {
   "header": {
-    "message_id": "c623d3a0-f823-11ef-bcfe-22010a760002",
-    "timestamp": 1740003000
+    "message_id": "9bc32d10-f823-11ef-93a0-12010a760002",
+    "correlation_id": "402941-e23a",
+    "timestamp": 1740003011
   },
-  "event_name": "MarketUpdateEvent",
+  "status": "SUCCESS",
   "payload": {
-    "symbol": "XAUUSD",
-    "timeframe": "M5",
-    "ohlcv": {
-      "open": 2350.10,
-      "high": 2355.80,
-      "low": 2348.00,
-      "close": 2353.40,
-      "volume": 12050
-    },
-    "indicators": {
-      "rsi_14": 64.21,
-      "ema_50": 2340.45,
-      "atr_14": 15.20
-    }
+    "ticket_id": 98572114,
+    "execution_price": 2353.42,
+    "actual_volume": 0.15,
+    "retcode": 10009
   }
 }
 ```
@@ -306,18 +281,31 @@ Every network command payload processed by the bridge is structured and authenti
 
 ---
 
-## 🚀 Deployment Guide
+## 🚀 Build and Deploying the System
 
-### Building from Source
-1. Open your MT5 terminal directory.
-2. Clone this repository directly into your local folder tree:
-   `MQL5/Experts/Nexus/`
-3. Launch **MetaEditor** (`F4`).
-4. Open the primary executable: `Nexus/NexusBridge.mq5`.
-5. Compile the file (`F7`). Ensure no errors are reported in the output log.
+### Prerequisites
+* Windows 11 workstation.
+* **.NET 10 SDK** (for the WpfUi, Application, and Infrastructure projects).
+* **MSVC C++ Compiler / CMake** with C++20 support (for building `Nexus.Native.Core`).
+* **MetaTrader 5 Client Terminal** with Algo Trading enabled.
 
-### Attaching the EA
-1. In MT5, open the **Navigator Window** (`Ctrl+N`).
-2. Drag and drop **NexusBridge** onto a chart.
-3. Check **"Allow Algo Trading"** in the options dialog.
-4. Navigate to the **Common** tab and check **"Allow DLL Imports"** (required for system-level WinAPI TCP socket connections).
+### Compilation
+
+1. **Build the C++ Native Core:**
+   ```bash
+   cd native
+   cmake -B build -DCMAKE_BUILD_TYPE=Release
+   cmake --build build --config Release
+   ```
+   *This outputs the `NexusNative.dll` assembly to the platform's execution folder.*
+
+2. **Build the .NET 10 System Solution:**
+   ```bash
+   dotnet restore NexusTradingEngine.sln
+   dotnet build NexusTradingEngine.sln --configuration Release
+   ```
+
+3. **Install & Compile the MQL5 Gateway:**
+   * Copy the physical file `MQL5/Experts/Nexus/NexusBridge.mq5` into your MT5 terminal's `MQL5/Experts/Nexus/` directory.
+   * Open MetaEditor and compile `NexusBridge.mq5` (`F7`). Ensure no errors are reported in the output log.
+   * Drag the **NexusBridge** expert advisor onto your target chart, checking **"Allow Algo Trading"** and **"Allow DLL Imports"** in the EA options dialog.
