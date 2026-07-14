@@ -16,6 +16,19 @@ namespace Nexus.Application.Ports
         string LastErrorMessage { get; }
         IReadOnlyCollection<string> SubscribedSymbols { get; }
 
+        // EA status & file properties
+        bool IsEaPresentInRepository { get; }
+        long EaRepositoryFileSize { get; }
+        DateTime EaRepositoryFileLastModifiedUtc { get; }
+        string EaRepositoryFilePath { get; }
+        bool IsEaInstalledConfirmed { get; set; }
+        bool IsHandshakeSucceeded { get; }
+        string EaName { get; }
+        string EaVersion { get; }
+        string ChartSymbol { get; }
+        string HandshakeAccountId { get; }
+        string HandshakeBrokerServer { get; }
+
         event Action<PriceTickEnvelope>? OnTickReceived;
         event Action<string>? OnStatusChanged;
 

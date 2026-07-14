@@ -467,9 +467,45 @@ The UI is strictly separated from any physical infrastructure:
 
 ---
 
-## 10. New Real-Time Subscription & Tick Streaming Commands (Stage B additions)
+## 10. New Real-Time Handshake, Subscription & Tick Streaming Commands (Stage B additions)
 
-To support real-time high-precision market watch widgets and native Core math acceleration, the bridge exposes new JSON protocol frames:
+To support real-time high-precision market watch widgets, live terminal verification, and native Core math acceleration, the bridge exposes new JSON protocol frames:
+
+### 10.0. `Handshake` Command
+
+Triggered immediately upon socket connection.
+
+Request Payload:
+```json
+{
+  "messageType": "Request",
+  "requestId": "req-handshake-01",
+  "command": "Handshake",
+  "payload": {
+    "sessionId": "guid-test-session",
+    "protocolVersion": "1.0",
+    "clientIdentifier": "NTE-Desktop"
+  }
+}
+```
+
+Response Payload:
+```json
+{
+  "messageType": "Response",
+  "requestId": "req-handshake-01",
+  "command": "Handshake",
+  "payload": {
+    "eaName": "NexusBridge",
+    "eaVersion": "1.00",
+    "accountId": 7820491,
+    "brokerServer": "ICMarkets-Demo",
+    "subscribedSymbols": ["EURUSD"],
+    "isInitialized": true,
+    "chartSymbol": "EURUSD"
+  }
+}
+```
 
 ### 10.1. `Login` Command
 

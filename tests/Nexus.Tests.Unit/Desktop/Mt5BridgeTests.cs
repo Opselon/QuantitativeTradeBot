@@ -504,11 +504,14 @@ namespace Nexus.Tests.Unit.Desktop
 
         // --- STUB CLASSES ---
 
+#pragma warning disable 67
         private class StubBridgeClient : IMt5BridgeClient
         {
             private readonly BridgeMessageEnvelope? _responseToReturn;
 
             public event Action<BridgeMessageEnvelope>? OnMessageReceived;
+            public bool IsConnected => true;
+            public event Action<bool>? OnConnectionStatusChanged;
 
             public StubBridgeClient(BridgeMessageEnvelope? responseToReturn)
             {
@@ -537,6 +540,7 @@ namespace Nexus.Tests.Unit.Desktop
             public Task DisconnectAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
             public void Dispose() { }
         }
+#pragma warning restore 67
 
         private class StubAccountService : IMt5AccountService
         {

@@ -13,11 +13,21 @@ using Nexus.Application.Workflows;
 using Nexus.Application.Workflows.DTOs;
 using Nexus.Desktop.Services;
 using Nexus.Infrastructure.Mt5Bridge;
+using Nexus.Desktop.ViewModels.Workspaces;
 
 namespace Nexus.Desktop.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
+        // Workspaces properties
+        public DashboardViewModel Dashboard { get; }
+        public Mt5BridgeViewModel Mt5Bridge { get; }
+        public MarketWatchViewModel MarketWatch { get; }
+        public ManualDeskViewModel ManualDesk { get; }
+        public DiagnosticsViewModel Diagnostics { get; }
+        public TestConsoleViewModel TestConsole { get; }
+        public SettingsViewModel Settings { get; }
+
         public string AppVersion
         {
             get
@@ -209,7 +219,14 @@ namespace Nexus.Desktop.ViewModels
             Mt5TradingViewModel mt5Trading,
             NexusIntelligenceViewModel intelligence,
             IMt5BridgeService bridgeService,
-            MarketDataPipeline pipeline)
+            MarketDataPipeline pipeline,
+            DashboardViewModel dashboard,
+            Mt5BridgeViewModel mt5Bridge,
+            MarketWatchViewModel marketWatch,
+            ManualDeskViewModel manualDesk,
+            DiagnosticsViewModel diagnostics,
+            TestConsoleViewModel testConsole,
+            SettingsViewModel settings)
         {
             _configService = configService;
             _secretStore = secretStore;
@@ -220,6 +237,14 @@ namespace Nexus.Desktop.ViewModels
             Intelligence = intelligence ?? throw new ArgumentNullException(nameof(intelligence));
             _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
             _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
+
+            Dashboard = dashboard ?? throw new ArgumentNullException(nameof(dashboard));
+            Mt5Bridge = mt5Bridge ?? throw new ArgumentNullException(nameof(mt5Bridge));
+            MarketWatch = marketWatch ?? throw new ArgumentNullException(nameof(marketWatch));
+            ManualDesk = manualDesk ?? throw new ArgumentNullException(nameof(manualDesk));
+            Diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
+            TestConsole = testConsole ?? throw new ArgumentNullException(nameof(testConsole));
+            Settings = settings ?? throw new ArgumentNullException(nameof(settings));
 
             // Wire Bridge Connection Commands
             BridgeConnectCommand = new AsyncRelayCommand(OnBridgeConnectAsync);
@@ -244,22 +269,22 @@ namespace Nexus.Desktop.ViewModels
             _launchWorkspaceCmd = new LaunchWorkspaceCommand(_configService);
 
             // Load initial settings
-            var settings = _configService.GetSettings();
-            _isOnboarded = settings.IsOnboarded;
-            _selectedProvider = settings.SelectedProvider;
-            _connectionString = settings.ConnectionString;
+            var configSettings = _configService.GetSettings();
+            _isOnboarded = configSettings.IsOnboarded;
+            _selectedProvider = configSettings.SelectedProvider;
+            _connectionString = configSettings.ConnectionString;
 
             // Map profile properties if exists
-            if (!string.IsNullOrEmpty(settings.ProfileName)) _profileName = settings.ProfileName;
-            if (!string.IsNullOrEmpty(settings.BrokerServer)) _brokerServer = settings.BrokerServer;
-            if (!string.IsNullOrEmpty(settings.LoginAccountId)) _loginAccountId = settings.LoginAccountId;
-            if (!string.IsNullOrEmpty(settings.TerminalPath)) _terminalPath = settings.TerminalPath;
-            _timeoutSeconds = settings.TimeoutSeconds;
-            _autoReconnect = settings.AutoReconnect;
-            _mt5Mode = settings.Mt5Mode;
-            _mt5BridgeHost = settings.Mt5BridgeHost;
-            _mt5BridgePort = settings.Mt5BridgePort;
-            _mt5BridgeUseSsl = settings.Mt5BridgeUseSsl;
+            if (!string.IsNullOrEmpty(configSettings.ProfileName)) _profileName = configSettings.ProfileName;
+            if (!string.IsNullOrEmpty(configSettings.BrokerServer)) _brokerServer = configSettings.BrokerServer;
+            if (!string.IsNullOrEmpty(configSettings.LoginAccountId)) _loginAccountId = configSettings.LoginAccountId;
+            if (!string.IsNullOrEmpty(configSettings.TerminalPath)) _terminalPath = configSettings.TerminalPath;
+            _timeoutSeconds = configSettings.TimeoutSeconds;
+            _autoReconnect = configSettings.AutoReconnect;
+            _mt5Mode = configSettings.Mt5Mode;
+            _mt5BridgeHost = configSettings.Mt5BridgeHost;
+            _mt5BridgePort = configSettings.Mt5BridgePort;
+            _mt5BridgeUseSsl = configSettings.Mt5BridgeUseSsl;
 
             // Wire UI Commands
             SelectProviderNextCommand = new AsyncRelayCommand(OnSelectProviderNextAsync);
