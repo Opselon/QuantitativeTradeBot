@@ -285,12 +285,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Add ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION env var |
+| **Commit Message** | Merge pull request #17 from Opselon/jules-17206006294178522431-2b9dd614 |
 | **Author** | Capsizer |
 | **Branch** | `main` |
-| **Run Number** | `37` |
-| **Commit SHA** | `c935f89b25a31be27058db16e387cd79fec07382` |
-| **Generated At** | `2026-07-14 18:57:46 UTC` |
+| **Run Number** | `42` |
+| **Commit SHA** | `e20ea61a1fd0a5e024e59829c1c7a24785818120` |
+| **Generated At** | `2026-07-14 20:09:39 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -520,6 +520,9 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── IMt5OperatorService.cs
 │   │   │   ├── Mt5BridgeOperatorService.cs
 │   │   │   └── Mt5OperatorService.cs
+│   │   ├── Themes/
+│   │   │   ├── DarkTheme.xaml
+│   │   │   └── LightTheme.xaml
 │   │   ├── ViewModels/
 │   │   │   ├── Workspaces/
 │   │   │   │   ├── DashboardViewModel.cs
@@ -691,7 +694,7 @@ To get started, please review the contribution guidelines outlined above, explor
 | File Type | Count |
 | --- | ---: |
 | C# (.cs) | 233 |
-| WPF (.xaml) | 13 |
+| WPF (.xaml) | 15 |
 | C/C++ Source | 12 |
 | CMake | 1 |
 | MQL5 (.mq5) | 1 |
