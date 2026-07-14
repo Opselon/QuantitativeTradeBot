@@ -1,27 +1,36 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Base Dark Brushes (Deep Space Enterprise) -->
-    <SolidColorBrush x:Key="PrimaryBackgroundBrush" Color="#0A0B0E" po:Freeze="True"/>
-    <SolidColorBrush x:Key="SecondaryBackgroundBrush" Color="#12151B" po:Freeze="True"/>
-    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#12151B" po:Freeze="True"/>
-    <SolidColorBrush x:Key="InteractiveBrush" Color="#1C202B" po:Freeze="True"/>
+    <!-- Dark Base Palette (Prefixed) -->
+    <SolidColorBrush x:Key="DarkPrimaryBackgroundBrush" Color="#0A0B0E"/>
+    <SolidColorBrush x:Key="DarkSecondaryBackgroundBrush" Color="#12151B"/>
+    <SolidColorBrush x:Key="DarkCardBackgroundBrush" Color="#181C26"/>
+    <SolidColorBrush x:Key="DarkInteractiveBrush" Color="#222836"/>
+    <SolidColorBrush x:Key="DarkAccentBrush" Color="#00E5FF"/>
+    <SolidColorBrush x:Key="DarkAccentIndigoBrush" Color="#6366F1"/>
+    <SolidColorBrush x:Key="DarkSuccessBrush" Color="#10B981"/>
+    <SolidColorBrush x:Key="DarkDangerBrush" Color="#EF4444"/>
+    <SolidColorBrush x:Key="DarkWarningBrush" Color="#F59E0B"/>
+    <SolidColorBrush x:Key="DarkTextPrimaryBrush" Color="#F8FAFC"/>
+    <SolidColorBrush x:Key="DarkTextSecondaryBrush" Color="#94A3B8"/>
+    <SolidColorBrush x:Key="DarkBorderBrush" Color="#334155"/>
+    <SolidColorBrush x:Key="DarkBorderTranslucentBrush" Color="#1AFFFFFF"/>
+    <Color x:Key="DarkShadowBrush">#000000</Color>
 
-    <!-- Accent & Status Brushes -->
-    <SolidColorBrush x:Key="AccentBrush" Color="#00E5FF" po:Freeze="True"/> <!-- Cyan accent -->
-    <SolidColorBrush x:Key="AccentIndigoBrush" Color="#6366F1" po:Freeze="True"/>
-    <SolidColorBrush x:Key="SuccessBrush" Color="#10B981" po:Freeze="True"/> <!-- Emerald success -->
-    <SolidColorBrush x:Key="DangerBrush" Color="#EF4444" po:Freeze="True"/> <!-- Red danger -->
-    <SolidColorBrush x:Key="WarningBrush" Color="#F59E0B" po:Freeze="True"/> <!-- Orange warning -->
-
-    <!-- Text Brushes -->
-    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFFFFF" po:Freeze="True"/>
-    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#94A3B8" po:Freeze="True"/>
-
-    <!-- UI Element Brushes -->
-    <SolidColorBrush x:Key="BorderBrush" Color="#1E293B" po:Freeze="True"/>
-    <SolidColorBrush x:Key="BorderTranslucentBrush" Color="#FFFFFF" Opacity="0.08" po:Freeze="True"/>
-    <SolidColorBrush x:Key="ShadowBrush" Color="#000000" po:Freeze="True"/>
+    <!-- Default Interchangeable Keys (pointing to Dark) -->
+    <SolidColorBrush x:Key="PrimaryBackgroundBrush" Color="#0A0B0E"/>
+    <SolidColorBrush x:Key="SecondaryBackgroundBrush" Color="#12151B"/>
+    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#181C26"/>
+    <SolidColorBrush x:Key="InteractiveBrush" Color="#222836"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="#00E5FF"/>
+    <SolidColorBrush x:Key="AccentIndigoBrush" Color="#6366F1"/>
+    <SolidColorBrush x:Key="SuccessBrush" Color="#10B981"/>
+    <SolidColorBrush x:Key="DangerBrush" Color="#EF4444"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="#F59E0B"/>
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F8FAFC"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#94A3B8"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="#334155"/>
+    <SolidColorBrush x:Key="BorderTranslucentBrush" Color="#1AFFFFFF"/>
+    <Color x:Key="ShadowBrush">#000000</Color>
 
 </ResourceDictionary>

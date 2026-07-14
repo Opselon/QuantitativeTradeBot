@@ -5,7 +5,24 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
+                <ResourceDictionary Source="Themes/LightTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Default Brushes (Dark Theme values by default) -->
+            <SolidColorBrush x:Key="PrimaryBackgroundBrush" Color="#0A0B0E"/>
+            <SolidColorBrush x:Key="SecondaryBackgroundBrush" Color="#12151B"/>
+            <SolidColorBrush x:Key="CardBackgroundBrush" Color="#181C26"/>
+            <SolidColorBrush x:Key="InteractiveBrush" Color="#222836"/>
+            <SolidColorBrush x:Key="AccentBrush" Color="#00E5FF"/>
+            <SolidColorBrush x:Key="AccentIndigoBrush" Color="#6366F1"/>
+            <SolidColorBrush x:Key="SuccessBrush" Color="#10B981"/>
+            <SolidColorBrush x:Key="DangerBrush" Color="#EF4444"/>
+            <SolidColorBrush x:Key="WarningBrush" Color="#F59E0B"/>
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F8FAFC"/>
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="#94A3B8"/>
+            <SolidColorBrush x:Key="BorderBrush" Color="#334155"/>
+            <SolidColorBrush x:Key="BorderTranslucentBrush" Color="#1AFFFFFF"/>
+            <Color x:Key="ShadowBrush">#000000</Color>
 
             <!-- Typography & Content Styles -->
             <Style x:Key="EnterpriseHeader" TargetType="TextBlock">
@@ -14,6 +31,11 @@
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
                 <Setter Property="Margin" Value="0,0,0,15"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource LightAccentBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="EnterpriseSubHeader" TargetType="TextBlock">
@@ -22,6 +44,11 @@
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource LightTextPrimaryBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="EnterpriseBodyText" TargetType="TextBlock">
@@ -29,6 +56,11 @@
                 <Setter Property="FontSize" Value="12"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                 <Setter Property="LineHeight" Value="18"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource LightTextSecondaryBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="EnterpriseLabel" TargetType="TextBlock">
@@ -38,16 +70,21 @@
                 <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                 <Setter Property="VerticalAlignment" Value="Center"/>
                 <Setter Property="Margin" Value="0,0,10,0"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource LightTextSecondaryBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
-            <!-- Custom Numeric & Standard TextBox Template -->
+            <!-- Custom TextBox Template -->
             <Style x:Key="EnterpriseTextBox" TargetType="TextBox">
-                <Setter Property="Background" Value="{DynamicResource PrimaryBackgroundBrush}"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource DarkPrimaryBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource DarkTextPrimaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource DarkBorderBrush}"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="Padding" Value="8,6"/>
-                <Setter Property="CaretBrush" Value="{DynamicResource AccentBrush}"/>
+                <Setter Property="CaretBrush" Value="{DynamicResource DarkAccentBrush}"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="FontSize" Value="13"/>
                 <Setter Property="Template">
@@ -73,11 +110,19 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource LightPrimaryBackgroundBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource LightTextPrimaryBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource LightBorderBrush}"/>
+                        <Setter Property="CaretBrush" Value="{DynamicResource LightAccentBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <!-- Vector First Button Templates with Overlay Animations -->
             <Style x:Key="ActionButton" TargetType="Button">
-                <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource DarkAccentBrush}"/>
                 <Setter Property="Foreground" Value="#0A0B0E"/> <!-- High contrast dark text -->
                 <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
@@ -90,6 +135,7 @@
                             <Border x:Name="border"
                                     Background="{TemplateBinding Background}"
                                     CornerRadius="8"
+                                    RenderTransformOrigin="0.5,0.5"
                                     SnapsToDevicePixels="true">
                                 <Grid>
                                     <Border x:Name="HoverOverlay" Background="White" Opacity="0" CornerRadius="8"/>
@@ -135,15 +181,21 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource LightAccentBrush}"/>
+                        <Setter Property="Foreground" Value="White"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="SecondaryButton" TargetType="Button">
-                <Setter Property="Background" Value="{DynamicResource InteractiveBrush}"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource DarkInteractiveBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource DarkTextPrimaryBrush}"/>
                 <Setter Property="FontFamily" Value="Segoe UI"/>
                 <Setter Property="Padding" Value="14,8"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource DarkBorderBrush}"/>
                 <Setter Property="Cursor" Value="Hand"/>
                 <Setter Property="Template">
                     <Setter.Value>
@@ -153,6 +205,7 @@
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="8"
+                                    RenderTransformOrigin="0.5,0.5"
                                     SnapsToDevicePixels="true">
                                 <Grid>
                                     <Border x:Name="HoverOverlay" Background="White" Opacity="0" CornerRadius="8"/>
@@ -197,10 +250,17 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource LightInteractiveBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource LightTextPrimaryBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource LightBorderBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="BuyBtn" TargetType="Button">
-                <Setter Property="Background" Value="{DynamicResource SuccessBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource DarkSuccessBrush}"/>
                 <Setter Property="Foreground" Value="White"/>
                 <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
                 <Setter Property="Padding" Value="20,10"/>
@@ -212,6 +272,7 @@
                             <Border x:Name="border"
                                     Background="{TemplateBinding Background}"
                                     CornerRadius="8"
+                                    RenderTransformOrigin="0.5,0.5"
                                     SnapsToDevicePixels="true">
                                 <Grid>
                                     <Border x:Name="HoverOverlay" Background="White" Opacity="0" CornerRadius="8"/>
@@ -255,10 +316,15 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource LightSuccessBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="SellBtn" TargetType="Button">
-                <Setter Property="Background" Value="{DynamicResource DangerBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource DarkDangerBrush}"/>
                 <Setter Property="Foreground" Value="White"/>
                 <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
                 <Setter Property="Padding" Value="20,10"/>
@@ -270,6 +336,7 @@
                             <Border x:Name="border"
                                     Background="{TemplateBinding Background}"
                                     CornerRadius="8"
+                                    RenderTransformOrigin="0.5,0.5"
                                     SnapsToDevicePixels="true">
                                 <Grid>
                                     <Border x:Name="HoverOverlay" Background="White" Opacity="0" CornerRadius="8"/>
@@ -313,6 +380,11 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource LightDangerBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <!-- Custom ScrollBar & ScrollViewer Templates -->
@@ -348,7 +420,7 @@
 
             <!-- Custom Controls Styles -->
             <Style TargetType="CheckBox">
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource DarkTextPrimaryBrush}"/>
                 <Setter Property="FontSize" Value="12"/>
                 <Setter Property="VerticalAlignment" Value="Center"/>
                 <Setter Property="Cursor" Value="Hand"/>
@@ -387,10 +459,15 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource LightTextPrimaryBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style TargetType="RadioButton">
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource DarkTextPrimaryBrush}"/>
                 <Setter Property="FontSize" Value="12"/>
                 <Setter Property="VerticalAlignment" Value="Center"/>
                 <Setter Property="Cursor" Value="Hand"/>
@@ -428,11 +505,16 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource LightTextPrimaryBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style TargetType="ProgressBar">
-                <Setter Property="Background" Value="{DynamicResource InteractiveBrush}"/>
-                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource DarkInteractiveBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource DarkAccentBrush}"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Height" Value="6"/>
                 <Setter Property="Template">
@@ -449,15 +531,28 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource LightInteractiveBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource LightAccentBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style TargetType="ListView">
-                <Setter Property="Background" Value="{DynamicResource PrimaryBackgroundBrush}"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource DarkPrimaryBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource DarkTextPrimaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource DarkBorderBrush}"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
                 <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource LightPrimaryBackgroundBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource LightTextPrimaryBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource LightBorderBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style TargetType="ListViewItem">
@@ -482,28 +577,45 @@
             </Style>
 
             <Style TargetType="DataGrid">
-                <Setter Property="Background" Value="{DynamicResource PrimaryBackgroundBrush}"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource DarkPrimaryBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource DarkTextPrimaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource DarkBorderBrush}"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="RowBackground" Value="{DynamicResource SecondaryBackgroundBrush}"/>
-                <Setter Property="AlternatingRowBackground" Value="{DynamicResource PrimaryBackgroundBrush}"/>
+                <Setter Property="RowBackground" Value="{DynamicResource DarkSecondaryBackgroundBrush}"/>
+                <Setter Property="AlternatingRowBackground" Value="{DynamicResource DarkPrimaryBackgroundBrush}"/>
                 <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-                <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource DarkBorderBrush}"/>
                 <Setter Property="HeadersVisibility" Value="Column"/>
                 <Setter Property="CanUserAddRows" Value="False"/>
                 <Setter Property="CanUserDeleteRows" Value="False"/>
                 <Setter Property="RowHeaderWidth" Value="0"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource LightPrimaryBackgroundBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource LightTextPrimaryBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource LightBorderBrush}"/>
+                        <Setter Property="RowBackground" Value="{DynamicResource LightSecondaryBackgroundBrush}"/>
+                        <Setter Property="AlternatingRowBackground" Value="{DynamicResource LightPrimaryBackgroundBrush}"/>
+                        <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource LightBorderBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style TargetType="DataGridColumnHeader">
-                <Setter Property="Background" Value="{DynamicResource InteractiveBrush}"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource DarkInteractiveBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource DarkTextSecondaryBrush}"/>
                 <Setter Property="Padding" Value="12,10"/>
                 <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
                 <Setter Property="FontSize" Value="11"/>
                 <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource DarkBorderBrush}"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource LightInteractiveBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource LightTextSecondaryBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource LightBorderBrush}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style TargetType="DataGridRow">
@@ -534,15 +646,15 @@
                 </Setter>
             </Style>
 
-            <!-- Gorgeous XAML Only Dynamic Theme Switch -->
+            <!-- Gorgeous XAML Only Theme Switch Checklist Toggle Style -->
             <Style x:Key="ThemeToggleStyle" TargetType="CheckBox">
                 <Setter Property="Cursor" Value="Hand"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="CheckBox">
-                            <Border x:Name="Track" Width="44" Height="24" Background="{DynamicResource InteractiveBrush}" CornerRadius="12" BorderThickness="1.5" BorderBrush="{DynamicResource BorderBrush}">
+                            <Border x:Name="Track" Width="44" Height="24" Background="{DynamicResource DarkInteractiveBrush}" CornerRadius="12" BorderThickness="1.5" BorderBrush="{DynamicResource DarkBorderBrush}">
                                 <Grid>
-                                    <Border x:Name="Thumb" Width="16" Height="16" Background="{DynamicResource TextPrimaryBrush}" CornerRadius="8" HorizontalAlignment="Left" Margin="3,0,0,0">
+                                    <Border x:Name="Thumb" Width="16" Height="16" Background="{DynamicResource DarkTextPrimaryBrush}" CornerRadius="8" HorizontalAlignment="Left" Margin="3,0,0,0">
                                         <Border.RenderTransform>
                                             <TranslateTransform X="0" x:Name="ThumbTranslate"/>
                                         </Border.RenderTransform>
@@ -551,7 +663,9 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                    <Setter TargetName="Track" Property="Background" Value="{DynamicResource LightAccentBrush}"/>
+                                    <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource LightBorderBrush}"/>
+                                    <Setter TargetName="Thumb" Property="Background" Value="{DynamicResource LightPrimaryBackgroundBrush}"/>
                                     <Trigger.EnterActions>
                                         <BeginStoryboard>
                                             <Storyboard>

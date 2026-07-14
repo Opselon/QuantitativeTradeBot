@@ -5,7 +5,8 @@
         xmlns:views="clr-namespace:Nexus.Desktop.Views"
         Title="{Binding AppVersion, StringFormat='Nexus Trading Engine - Desktop Workstation v{0}'}"
         Height="820" Width="1200"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Tag="{Binding IsChecked, ElementName=ThemeToggle}">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
@@ -22,6 +23,17 @@
                     <DropShadowEffect Color="{DynamicResource ShadowBrush}" BlurRadius="12" Direction="270" ShadowDepth="2" Opacity="0.15"/>
                 </Setter.Value>
             </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource LightCardBackgroundBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource LightBorderTranslucentBrush}"/>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="{DynamicResource LightShadowBrush}" BlurRadius="12" Direction="270" ShadowDepth="2" Opacity="0.1"/>
+                        </Setter.Value>
+                    </Setter>
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <!-- Database Choice Card with Scale Hover Animation -->
@@ -34,6 +46,9 @@
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
+                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource LightSecondaryBackgroundBrush}"/>
+                </DataTrigger>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
                     <Trigger.EnterActions>
@@ -90,16 +105,8 @@
         <Style TargetType="Window">
             <Setter Property="Background" Value="{DynamicResource PrimaryBackgroundBrush}"/>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding IsChecked, ElementName=ThemeToggle}" Value="True">
-                    <Setter Property="Resources">
-                        <Setter.Value>
-                            <ResourceDictionary>
-                                <ResourceDictionary.MergedDictionaries>
-                                    <ResourceDictionary Source="Themes/LightTheme.xaml"/>
-                                </ResourceDictionary.MergedDictionaries>
-                            </ResourceDictionary>
-                        </Setter.Value>
-                    </Setter>
+                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource LightPrimaryBackgroundBrush}"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -119,6 +126,18 @@
         <!-- TOP STATUS BAR / Badge Bar                                          -->
         <!-- =================================================================== -->
         <Border Grid.Row="0" Background="{DynamicResource SecondaryBackgroundBrush}" BorderBrush="{DynamicResource BorderTranslucentBrush}" BorderThickness="0,0,0,1" Padding="16,12">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Background" Value="{DynamicResource SecondaryBackgroundBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource BorderTranslucentBrush}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource LightSecondaryBackgroundBrush}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource LightBorderTranslucentBrush}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -194,6 +213,18 @@
 
             <!-- LEFT NAVIGATION PANEL -->
             <Border Grid.Column="0" Background="{DynamicResource SecondaryBackgroundBrush}" BorderBrush="{DynamicResource BorderTranslucentBrush}" BorderThickness="0,0,1,0">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="{DynamicResource SecondaryBackgroundBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource BorderTranslucentBrush}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource LightSecondaryBackgroundBrush}"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource LightBorderTranslucentBrush}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Grid Margin="12,24">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
@@ -350,6 +381,16 @@
 
             <!-- CENTRAL WORKSPACE PANEL -->
             <Border Grid.Column="1" Background="{DynamicResource PrimaryBackgroundBrush}" Padding="24">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="{DynamicResource PrimaryBackgroundBrush}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource LightPrimaryBackgroundBrush}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Grid>
                     <!-- =============================================================== -->
                     <!-- ONBOARDING WIZARD SCREENS                                       -->
@@ -1184,6 +1225,18 @@
         <!-- BOTTOM DIAGNOSTICS & LOG PANEL                                      -->
         <!-- =================================================================== -->
         <Border Grid.Row="2" Background="{DynamicResource SecondaryBackgroundBrush}" BorderBrush="{DynamicResource BorderTranslucentBrush}" BorderThickness="0,1,0,0">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Background" Value="{DynamicResource SecondaryBackgroundBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource BorderTranslucentBrush}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource LightSecondaryBackgroundBrush}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource LightBorderTranslucentBrush}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <Grid Margin="16,12">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
