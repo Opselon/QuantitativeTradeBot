@@ -244,12 +244,16 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md
           if ! git diff --staged --quiet; then
-            git commit -m "docs(ai): auto-sync architecture & logs into README [skip ci]"
-            git push origin HEAD:${{ github.ref_name }}
+            if [ "${{ github.event_name }}" != "pull_request" ]; then
+              git commit -m "docs(ai): auto-sync architecture & logs into README [skip ci]"
+              git push origin HEAD:${{ github.ref_name }}
+            else
+              echo "Pull request detected. Skipping commit push."
+            fi
           fi
 
 # =====================================================================
-# JOB 5: TELEGRAM NOTIFICATION
+# JOB 5: TELEGRAM NOTIFICATION (With Direct Build Error Display)
 # =====================================================================
   telegram-notify:
     name: 📢 Send Telegram Summary
@@ -257,6 +261,11 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          path: logs_merge/
+
       - shell: bash
         env:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -266,7 +275,35 @@ jobs:
           DOC_STATUS: ${{ needs.finalize-ai-doc.result }}
         run: |
           if [ -z "$BOT_TOKEN" ] || [ -z "$CHAT_ID" ]; then exit 0; fi
+          
+          # HTML Escape helper
+          escape_html() {
+            echo "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'
+          }
+
+          # Error extraction helpers (set +e so grep returning empty doesn't crash bash)
+          set +e
+          UBUNTU_ERR_BLOCK=""
+          if [ -f "logs_merge/ai-doc-ci/ci_logs_summary.md" ] && [ "$CI_STATUS" = "failure" ]; then
+            RAW_UB_ERRORS=$(grep -E "error CS|fatal error" logs_merge/ai-doc-ci/ci_logs_summary.md | head -n 5)
+            if [ -n "$RAW_UB_ERRORS" ]; then
+              ESCAPED_UB=$(escape_html "$RAW_UB_ERRORS")
+              UBUNTU_ERR_BLOCK=$(echo -e "\n🔴 <b>Ubuntu Build Errors:</b>\n<code>$ESCAPED_UB</code>")
+            fi
+          fi
+
+          WINDOWS_ERR_BLOCK=""
+          if [ -f "logs_merge/ai-doc-win/win_logs_summary.md" ] && [ "$WIN_STATUS" = "failure" ]; then
+            RAW_WIN_ERRORS=$(grep -E "error CS|fatal error" logs_merge/ai-doc-win/win_logs_summary.md | head -n 5)
+            if [ -n "$RAW_WIN_ERRORS" ]; then
+              ESCAPED_WIN=$(escape_html "$RAW_WIN_ERRORS")
+              WINDOWS_ERR_BLOCK=$(echo -e "\n🔴 <b>Windows Build Errors:</b>\n<code>$ESCAPED_WIN</code>")
+            fi
+          fi
+          set -e
+
           function get_icon { case $1 in success) echo "✅" ;; failure) echo "❌" ;; cancelled) echo "⚠️" ;; *) echo "❓" ;; esac }
+          
           MSG=$(cat <<EOF
           🚀 <b>NTE - CI Pipeline Completed</b>
 
@@ -278,8 +315,15 @@ jobs:
           $(get_icon "$CI_STATUS") Ubuntu Build & Test: <b>$CI_STATUS</b>
           $(get_icon "$WIN_STATUS") Windows Build Check: <b>$WIN_STATUS</b>
           $(get_icon "$DOC_STATUS") AI Docs Sync: <b>$DOC_STATUS</b>
+          $UBUNTU_ERR_BLOCK
+          $WINDOWS_ERR_BLOCK
 
           🔗 <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Full Run on GitHub</a>
           EOF
           )
-          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" -d "chat_id=${CHAT_ID}" -d "parse_mode=HTML" -d "disable_web_page_preview=true" --data-urlencode "text=$MSG"
+
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${CHAT_ID}" \
+            -d "parse_mode=HTML" \
+            -d "disable_web_page_preview=true" \
+            --data-urlencode "text=$MSG"
