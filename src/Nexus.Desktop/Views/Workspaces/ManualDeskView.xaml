@@ -9,20 +9,17 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="16"/>
+            <RowDefinition Height="10"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Readiness Indicator Banner - Elegant Warning Card -->
-        <Border Grid.Row="0" Background="{DynamicResource WarningBrush}" CornerRadius="12" Padding="20">
-            <Border.Effect>
-                <DropShadowEffect Color="{DynamicResource ShadowBrush}" BlurRadius="12" Direction="270" ShadowDepth="2" Opacity="0.15"/>
-            </Border.Effect>
+        <!-- Readiness Indicator Banner -->
+        <Border Grid.Row="0" Background="#3E2723" BorderBrush="#D65A31" BorderThickness="1" CornerRadius="4" Padding="15">
             <StackPanel Orientation="Horizontal">
-                <Path Data="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 Z M12,13 L12,17 L10,17 L10,13 L10,11 L12,11 L12,13 Z M12,9 C11.45,9 11,8.55 11,8 C11,7.45 11.45,7 12,7 C12.55,7 13,7.45 13,8 C13,8.55 12.55,9 12,9 Z" Fill="White" Width="24" Height="24" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <TextBlock Text="⚠" Foreground="#D65A31" FontSize="20" FontWeight="Bold" Margin="0,0,15,0" VerticalAlignment="Center"/>
                 <StackPanel>
-                    <TextBlock Text="MANUAL OPERATOR DESK - PARTIAL READINESS" Foreground="White" FontSize="14" FontWeight="Bold"/>
-                    <TextBlock Text="Manual executing operations are enabled. Order execution parameters (StopLoss, TakeProfit) bypass strategy automation." Foreground="#E2FDF5" FontSize="12" Margin="0,4,0,0"/>
+                    <TextBlock Text="MANUAL OPERATOR DESK - PARTIAL READINESS" Foreground="White" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="Manual executing operations are enabled. Order execution parameters (StopLoss, TakeProfit) bypass strategy automation." Foreground="#CCCCCC" FontSize="11" Margin="0,3,0,0"/>
                 </StackPanel>
             </StackPanel>
         </Border>
