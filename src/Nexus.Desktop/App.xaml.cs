@@ -78,6 +78,19 @@ namespace Nexus.Desktop
 
                     services.AddSingleton<IMt5BridgeOperatorService, Mt5BridgeOperatorService>();
 
+                    // Register Workspace ViewModels
+                    services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.DashboardViewModel>();
+                    services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.Mt5BridgeViewModel>();
+                    services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.MarketWatchViewModel>();
+                    services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.ManualDeskViewModel>();
+                    services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.DiagnosticsViewModel>();
+                    services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.TestConsoleViewModel>();
+                    services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.SettingsViewModel>();
+
+                    // Register local secure HTTP API background server & ring buffer
+                    services.AddSingleton<Nexus.Application.Observability.DiagnosticRingBuffer>();
+                    services.AddHostedService<Nexus.Infrastructure.Mt5Bridge.LocalHttpApiServer>();
+
                     // Register ViewModels & Windows
                     services.AddSingleton<MainViewModel>();
                     services.AddSingleton<MainWindow>();

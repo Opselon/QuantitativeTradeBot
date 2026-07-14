@@ -1,0 +1,51 @@
+<UserControl x:Class="Nexus.Desktop.Views.Workspaces.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="15"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Welcome column -->
+        <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
+            <StackPanel>
+                <TextBlock Text="Welcome to Nexus Trading Engine!" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5" Margin="0,0,0,15"/>
+                <TextBlock Text="NTE is a real-time, low-latency institutional algorithmic trading desk. Use the left navigation panel to access different terminal views." FontSize="12" Foreground="#BBBBBB" TextWrapping="Wrap" Margin="0,0,0,15"/>
+                <TextBlock Text="✓ Real MT5 Bridge Ready" Foreground="#4CAF50" FontWeight="Bold" Margin="0,0,0,5"/>
+                <TextBlock Text="✓ Native C++ Math Acceleration Active" Foreground="#4CAF50" FontWeight="Bold" Margin="0,0,0,5"/>
+                <TextBlock Text="✓ Multi-Instrument Symbol Subscriptions Enabled" Foreground="#4CAF50" FontWeight="Bold" Margin="0,0,0,5"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Quick Stats column -->
+        <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="20">
+            <StackPanel>
+                <TextBlock Text="LIVE TELEMETRY SUMMARY" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5" Margin="0,0,0,15"/>
+
+                <Grid Margin="0,5,0,8">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="Bridge Connection:" Foreground="#888888" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="{Binding ConnectionStatusText}" Foreground="#00ADB5" FontWeight="Bold" VerticalAlignment="Center"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="Ping Latency:" Foreground="#888888" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="{Binding PingLatencyMs, StringFormat={}{0:F2} ms}" Foreground="#E2C044" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="Total Ticks Ingested:" Foreground="#888888" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="{Binding ProcessedTickCount}" Foreground="#4CAF50" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

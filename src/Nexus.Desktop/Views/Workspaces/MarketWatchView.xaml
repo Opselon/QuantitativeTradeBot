@@ -1,0 +1,68 @@
+<UserControl x:Class="Nexus.Desktop.Views.Workspaces.MarketWatchView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
+            <StackPanel>
+                <TextBlock Text="NEXUS REAL-TIME FEED WATCHLIST" FontFamily="Segoe UI Semibold" FontSize="20" Foreground="#00ADB5" Margin="0,0,0,5"/>
+                <TextBlock Text="Manage active subscriptions for major currency pairs and spot metals. Ingest live market data continuously." FontSize="12" Foreground="#BBBBBB"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Background="#1E1E1E" BorderBrush="#393E46" BorderThickness="1" CornerRadius="4" Padding="15">
+            <DataGrid ItemsSource="{Binding SubscribedSymbolsList}" AutoGenerateColumns="False" IsReadOnly="True" Background="#121212" BorderBrush="#393E46" Foreground="White" RowBackground="#1A1A1A" AlternatingRowBackground="#222222" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#222831" BorderThickness="1">
+                <DataGrid.Resources>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#393E46"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Padding" Value="8,6"/>
+                        <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+                        <Setter Property="FontSize" Value="11"/>
+                    </Style>
+                </DataGrid.Resources>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Instrument Symbol" Binding="{Binding SymbolName}" Width="150"/>
+                    <DataGridTextColumn Header="Subscribed" Binding="{Binding IsSubscribed}" Width="110"/>
+                    <DataGridTextColumn Header="Bid price" Binding="{Binding Bid, StringFormat={}{0:F5}}" Width="120"/>
+                    <DataGridTextColumn Header="Ask price" Binding="{Binding Ask, StringFormat={}{0:F5}}" Width="120"/>
+                    <DataGridTextColumn Header="Spread" Binding="{Binding Spread, StringFormat={}{0:F5}}" Width="100"/>
+                    <DataGridTextColumn Header="Ticks Count" Binding="{Binding TickCount}" Width="110"/>
+                    <DataGridTextColumn Header="Last Updated Time" Binding="{Binding LastUpdateTimeText}" Width="150"/>
+                    <DataGridTemplateColumn Header="Action Controls" Width="130">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="SUBSCRIBE" Command="{Binding DataContext.ToggleSubscriptionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" FontSize="10" Padding="8,4">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#00ADB5"/>
+                                            <Setter Property="Foreground" Value="Black"/>
+                                            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+                                            <Setter Property="Cursor" Value="Hand"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSubscribed}" Value="True">
+                                                    <Setter Property="Content" Value="UNSUBSCRIBE"/>
+                                                    <Setter Property="Background" Value="#C62828"/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

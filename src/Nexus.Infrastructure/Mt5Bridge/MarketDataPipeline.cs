@@ -20,11 +20,16 @@ namespace Nexus.Infrastructure.Mt5Bridge
         private DateTime _lastProcessedTimestamp = DateTime.MinValue;
         private PriceTickEnvelope? _lastProcessedTick;
 
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, PriceTickEnvelope> _latestTicks = new(StringComparer.OrdinalIgnoreCase);
+
         public long ProcessedTickCount => _processedTickCount;
         public double LastProcessingLatencyMs => _lastProcessingLatencyMs;
         public string LastProcessedSymbol => _lastProcessedSymbol;
         public DateTime LastProcessedTimestamp => _lastProcessedTimestamp;
         public PriceTickEnvelope? LastProcessedTick => _lastProcessedTick;
+
+        public System.Collections.Generic.IReadOnlyCollection<PriceTickEnvelope> LatestTicks => (System.Collections.Generic.IReadOnlyCollection<PriceTickEnvelope>)_latestTicks.Values;
+        public PriceTickEnvelope? GetLatestTick(string symbol) => _latestTicks.TryGetValue(symbol, out var t) ? t : null;
 
         public event Action<PriceTickEnvelope>? OnPipelineTickProcessed;
 
@@ -79,6 +84,8 @@ namespace Nexus.Infrastructure.Mt5Bridge
                     // Fallback log or handle gracefully
                     _logger.LogDebug("[MarketDataPipeline] Native core unavailable, bypassing update tick interop call.");
                 }
+
+                _latestTicks[envelope.SymbolName] = envelope;
 
                 sw.Stop();
 
