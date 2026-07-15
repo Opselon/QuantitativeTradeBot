@@ -1,0 +1,44 @@
+# Nexus Trading Engine - Platform Roadmap
+
+This document maps out the release milestones and evolution roadmap for the **Nexus Trading Engine (NTE)** platform.
+
+---
+
+## Milestone Execution & Status
+
+```text
+  Phase 01: Platform Foundation
+  [████████████████████████████████████████████████████████████] 100% (Completed)
+                             │
+                             ▼
+  Phase 02: AI Engine Integration & Live Pipeline
+  [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%   (Pending)
+                             │
+                             ▼
+  Phase 03: Autonomous Strategy Runtime & Native Indicators
+  [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%   (Pending)
+```
+
+---
+
+## Detailed Phase Breakdown
+
+### ■ Phase 01: Platform Foundation (Completed)
+Establish the architecture, database layer, configuration strategies, native interop structures, and core coding principles.
+* [x] **Hexagonal Core Separation**: Isolate the Domain (`Nexus.Core`) and Application (`Nexus.Application`) from Infrastructure and Presentation adapters.
+* [x] **Relational Schema & Abstractions**: Structure database interfaces, generic unit of work blocks, and write dual bootstrapping scripts for SQLite and PostgreSQL.
+* [x] **C-ABI Native Gateway**: Author C++ compilation configs and set up source-generated `[LibraryImport]` bindings along with safe handle lifecycle wrappers.
+* [x] **Secure Logging & Configuration**: Configure profile configurations (Simulated, Paper, Live) and secure sanitizing filters to wipe keys/tokens from diagnostic logs.
+* [x] **Platform Coding Standards**: Formulate official coding rules, approved `#region` zones, and a visual project dependency guide.
+
+### ▢ Phase 02: AI Engine Integration & Live Pipeline (Pending)
+Deploy analytical model evaluations and establish streaming market intelligence processes.
+* [ ] **ONNX Runtime Pipelines**: Connect trained weights to the neural evaluator in `Nexus.AI` without installing python components.
+* [ ] **Live Feature Delta Recalculations**: Feed ticks to the incremental accumulators to extract analytical state features in $O(1)$ constant time complexity.
+* [ ] **Neural Feature Logging**: Record live evaluation result metrics alongside order decisions for retrospective training pipeline feedback.
+
+### ▢ Phase 3: Autonomous Strategy Runtime & Native Indicators (Pending)
+Build sandboxed runtime hosts and high-frequency analytical engines.
+* [ ] **High-Performance Native C++ Indicator Computations**: Execute SIMD-accelerated indicator calculations inside the C++ native core.
+* [ ] **Sandboxed Strategy Supervisor Hosts**: Run strategies inside supervised background loops, routing streamed bar events and managing automated order entry channels.
+* [ ] **Monte Carlo Tree Search Integration**: Perform deep tree search scenario valuations to score risks before executing trades.
