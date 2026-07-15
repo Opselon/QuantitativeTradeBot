@@ -406,7 +406,7 @@ namespace Nexus.Tests.Unit.Desktop
             public bool IsAvailable => false;
             public string LastError => string.Empty;
             public void UpdateTick(Tick tick) { }
-            public MarketVector GetMarketVector() => new MarketVector(new double[10]);
+            public MarketVector GetMarketVector() => new MarketVector(0.5, 0.5, 0.5, 0.2, 0.5, 0.9, 80.0, 1.0, 1.0, 0.1);
             public MarketState GetMarketState() => new MarketState("EURUSD", DateTime.UtcNow, 0.2, 0.5, 0.8, 0.7, 0.5, 0.1, 50.0, "Trend Bullish");
         }
     }
