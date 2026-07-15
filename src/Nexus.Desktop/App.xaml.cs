@@ -77,7 +77,7 @@ namespace Nexus.Desktop
                     services.AddSingleton<NexusIntelligenceViewModel>();
 
                     services.AddSingleton<IMt5BridgeOperatorService, Mt5BridgeOperatorService>();
-
+                    services.AddSingleton<INativeAnalyticsEngine, NativeAnalyticsEngine>();
                     // Register Workspace ViewModels
                     services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.DashboardViewModel>();
                     services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.Mt5BridgeViewModel>();
