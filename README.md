@@ -281,12 +281,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Merge pull request #23 from Opselon/feature/phase02-domain-foundation-18281873259995203115 |
-| **Author** | Capsizer |
-| **Branch** | `main` |
-| **Run Number** | `70` |
-| **Commit SHA** | `16c8fef13071ea59261d9f5dfbf6d668939715f5` |
-| **Generated At** | `2026-07-15 23:06:11 UTC` |
+| **Commit Message** | feat: establish Phase 03 infrastructure foundation |
+| **Author** | google-labs-jules[bot] |
+| **Branch** | `feat/infrastructure-foundation-phase-03-6605060012739411737` |
+| **Run Number** | `71` |
+| **Commit SHA** | `a0f7ada93f4aa6c695594ed8784444752b39acf8` |
+| **Generated At** | `2026-07-15 23:33:15 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -327,7 +327,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │   └── 30_PROJECT_STATE.md
 ├── docs/
 │   ├── Architecture/
-│   │   └── ADR-002-Domain-Model-Design.md
+│   │   ├── ADR-002-Domain-Model-Design.md
+│   │   └── ADR-003-Infrastructure-Data-Architecture.md
 │   ├── 01_ARCHITECTURE.md
 │   ├── 02_AI_ARCHITECTURE.md
 │   ├── 03_DATA_FLOW.md
@@ -431,9 +432,13 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── GatewayConnectionStatus.cs
 │   │   │   ├── IAccountRepository.cs
 │   │   │   ├── IAppConfigurationService.cs
+│   │   │   ├── IApplicationLogger.cs
+│   │   │   ├── IConnectionFactory.cs
 │   │   │   ├── IConnectionHealthMonitor.cs
 │   │   │   ├── IDatabaseBootstrapper.cs
+│   │   │   ├── IDatabaseProvider.cs
 │   │   │   ├── IExecutionGateway.cs
+│   │   │   ├── IFileStorage.cs
 │   │   │   ├── IGatewaySession.cs
 │   │   │   ├── IGatewaySessionFactory.cs
 │   │   │   ├── IMarketDataFeed.cs
@@ -446,6 +451,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── IMt5TradeService.cs
 │   │   │   ├── IOrderRepository.cs
 │   │   │   ├── IPositionRepository.cs
+│   │   │   ├── IRepository.cs
 │   │   │   ├── ITradingPlatformConnector.cs
 │   │   │   ├── IUnitOfWork.cs
 │   │   │   └── PriceTickEnvelope.cs
@@ -634,6 +640,16 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │       ├── SimulatedMt5TradeService.cs
 │   │   │       ├── SimulatedMt5TradingService.cs
 │   │   │       └── SimulatedTradingPlatformConnector.cs
+│   │   ├── Configuration/
+│   │   │   ├── ApplicationSettings.cs
+│   │   │   ├── DatabaseSettings.cs
+│   │   │   └── LoggingSettings.cs
+│   │   ├── Logging/
+│   │   │   └── ApplicationLogger.cs
+│   │   ├── Models/
+│   │   │   ├── ModelMetadata.cs
+│   │   │   ├── ModelStatus.cs
+│   │   │   └── ModelVersion.cs
 │   │   ├── Mt5Bridge/
 │   │   │   ├── LocalHttpApiRoutes.cs
 │   │   │   ├── LocalHttpApiServer.cs
@@ -656,11 +672,14 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   │   └── TradeDbModel.cs
 │   │   │   ├── Repositories/
 │   │   │   │   ├── AccountRepository.cs
+│   │   │   │   ├── EfRepository.cs
 │   │   │   │   ├── MarketDataRepository.cs
 │   │   │   │   ├── OrderRepository.cs
 │   │   │   │   ├── PositionRepository.cs
 │   │   │   │   └── UnitOfWork.cs
 │   │   │   ├── AppConfigurationService.cs
+│   │   │   ├── ConnectionFactory.cs
+│   │   │   ├── DatabaseProvider.cs
 │   │   │   ├── DependencyInjection.cs
 │   │   │   ├── DesignTimeNexusDbContextFactory.cs
 │   │   │   ├── ExperienceDatabaseWriter.cs
@@ -669,6 +688,9 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   └── SqliteDatabaseBootstrapper.cs
 │   │   ├── Security/
 │   │   │   └── WindowsSecretStore.cs
+│   │   ├── Storage/
+│   │   │   └── FileStorage/
+│   │   │       └── LocalFileStorage.cs
 │   │   ├── Workers/
 │   │   │   ├── ExecutionWorker.cs
 │   │   │   ├── MarketDataIngestionWorker.cs
@@ -729,6 +751,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │       │   ├── CandleAndEventTests.cs
 │       │   ├── OrderAndPositionTests.cs
 │       │   └── TickAndBarTests.cs
+│       ├── Infrastructure/
+│       │   └── InfrastructureTest.cs
 │       ├── Intelligence/
 │       │   ├── MarketIntelligenceTests.cs
 │       │   ├── NativeBridgeTests.cs
@@ -749,7 +773,7 @@ To get started, please review the contribution guidelines outlined above, explor
 
 | File Type | Count |
 | --- | ---: |
-| C# (.cs) | 273 |
+| C# (.cs) | 290 |
 | WPF (.xaml) | 15 |
 | C/C++ Source | 12 |
 | CMake | 1 |
@@ -776,8 +800,8 @@ No C# errors.
 ```
 #### 🟡 Warnings
 ```text
-6>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-6>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 ```
