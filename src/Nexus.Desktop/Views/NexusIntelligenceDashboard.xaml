@@ -167,6 +167,46 @@
                 </StackPanel>
             </materialDesign:Card>
 
+            <!-- 1b. STOCKFISH DECISION SEARCH & MTF CONSENSUS -->
+            <materialDesign:Card Style="{StaticResource NtePremiumCard}" Margin="0,0,0,15">
+                <StackPanel>
+                    <TextBlock Text="STOCKFISH 18 DECISION INTELLIGENCE" Style="{StaticResource NteTitleLarge}" Margin="0,0,0,15"/>
+
+                    <Grid Margin="5,0,5,6">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Search Best Move:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="{Binding SearchBestAction}" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontSize="16" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource NteBodyLarge}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SearchBestAction}" Value="WAIT">
+                                            <Setter Property="Foreground" Value="{DynamicResource WarningBrush}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding SearchBestAction}" Value="SELL">
+                                            <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+
+                    <Grid Margin="5,0,5,10">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Search Evaluation:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Top"/>
+                        <TextBlock Grid.Column="1" Text="{Binding SearchReasoning}" Style="{StaticResource NteBodyLarge}" TextWrapping="Wrap" VerticalAlignment="Top"/>
+                    </Grid>
+
+                    <Border BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GlassBorderBrush}" Margin="0,0,0,10"/>
+
+                    <Grid Margin="5,0,5,6">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="MTF Consensus:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Top"/>
+                        <TextBlock Grid.Column="1" Text="{Binding MtfConsensusSummary}" Style="{StaticResource NteBodyLarge}" TextWrapping="Wrap" VerticalAlignment="Top" FontWeight="SemiBold"/>
+                    </Grid>
+                </StackPanel>
+            </materialDesign:Card>
+
             <!-- 2. NATIVE PERFORMANCE CORE -->
             <materialDesign:Card Style="{StaticResource NtePremiumCard}" Margin="0,0,0,15">
                 <StackPanel>
