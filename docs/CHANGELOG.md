@@ -4,6 +4,30 @@ This document tracks all additions, modifications, and updates made across the p
 
 ---
 
+## [Phase 04: C++20 Quantitative Evaluation Engine Foundation] - 2026-04-03
+
+This release delivers the high-performance native C++20 computation engine foundation. Inspired by chess-engine design patterns (Stockfish), this release provides low-latency market state representations, preallocated memory pools, incremental evaluation caching, scalable thread pools, and zero-allocation C# interop.
+
+### Added
+* **src/Nexus.Native.Core/include/nexus_core/market_state_native.h**: Aligned `MarketStateNative` representation containing comprehensive prices, volume, and indicator properties.
+* **src/Nexus.Native.Core/include/nexus_core/market_evaluator.h**: Calculates `EvaluationResult` mapping component scores (Trend, Momentum, Liquidity, Risk).
+* **src/Nexus.Native.Core/include/nexus_core/memory_pool.h**: Pre-allocated memory block template avoiding heap allocation overhead on hot paths.
+* **src/Nexus.Native.Core/include/nexus_core/threading_foundation.h**: Lightweight task runner thread pool and generic queues.
+* **src/Nexus.Native.Core/include/nexus_core/lock_free_foundation.h**: Standard lock-free interface designs for high-frequency market channels.
+* **docs/Architecture/ADR-004-Native-Engine-Architecture.md**: Architecture Decision Record explaining C++20 choices, memory patterns, and interops.
+
+### Modified
+* **src/Nexus.Native.Core/include/nexus_core/interop_abi.h**: Integrated Phase 04 lifecycles (`NativeEngineInitialize`, `NativeEngineEvaluate`, `NativeEngineShutdown`, `RegisterLoggingCallback`).
+* **src/Nexus.Native.Core/include/nexus_core/accumulator.h**: Implemented incremental `AccumulatorState`, `AccumulatorUpdate`, and fast `EvaluationCache`.
+* **src/Nexus.Native.Core/include/nexus_core/market_vector.h**: Implemented spaceship-compared, memory-contiguous `FeatureVector`.
+* **src/Nexus.Native.Core/src/core_runtime.cpp**: C-linkage implementation of all interop boundaries with `noexcept` safety and logging callback support.
+* **tests/Nexus.Native.Core/tests/native_tests.cpp**: Comprehensive native test and microsecond-level latency performance benchmark suite.
+* **docs/NATIVE_ENGINE.md**: Added pipeline diagrams, hot-path memory architectures, and the phase roadmap.
+* **docs/PROGRESS.md**: Marked Phase 04 complete, detailing performance metrics.
+* **docs/ROADMAP.md**: Moved Phase 04 to completed status, outlining Phase 05 targets.
+
+---
+
 ## [Phase 03: Nexus.Infrastructure Foundation] - 2026-04-02
 
 This release delivers the production-grade Infrastructure and Persistence foundation of the autonomous quantitative trading platform, enabling decoupled dual-mode database operations, options configuration, structured logging, file storage abstractions, and AI model version metadata tracking.

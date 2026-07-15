@@ -25,6 +25,54 @@ namespace nexus {
         double low_price = 1e9;
     };
 
+    // Phase 04 structured types
+    struct alignas(32) AccumulatorState {
+        std::array<float, 64> features{};
+        uint64_t version = 0;
+    };
+
+    struct alignas(32) AccumulatorUpdate {
+        double price_change = 0.0;
+        double volume_change = 0.0;
+        double custom_delta = 0.0;
+    };
+
+    // Lightweight, fast, cache-friendly lookups for evaluation state caching
+    class EvaluationCache {
+    private:
+        static constexpr size_t kCacheSize = 1024;
+        struct CacheEntry {
+            uint64_t state_version = 0;
+            float score = 0.0f;
+            bool valid = false;
+        };
+        std::array<CacheEntry, kCacheSize> cache_{};
+
+    public:
+        EvaluationCache() = default;
+
+        bool try_get(uint64_t version, float& out_score) const noexcept {
+            size_t index = version % kCacheSize;
+            const auto& entry = cache_[index];
+            if (entry.valid && entry.state_version == version) {
+                out_score = entry.score;
+                return true;
+            }
+            return false;
+        }
+
+        void put(uint64_t version, float score) noexcept {
+            size_t index = version % kCacheSize;
+            cache_[index] = CacheEntry{ version, score, true };
+        }
+
+        void clear() noexcept {
+            for (auto& entry : cache_) {
+                entry.valid = false;
+            }
+        }
+    };
+
     class AccumulatorEngine {
     private:
         AccumulatorStateInternal state_;

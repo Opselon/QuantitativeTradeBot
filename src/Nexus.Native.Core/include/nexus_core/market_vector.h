@@ -1,11 +1,22 @@
 #ifndef NEXUS_NATIVE_CORE_MARKET_VECTOR_H
 #define NEXUS_NATIVE_CORE_MARKET_VECTOR_H
 
+#include <array>
+#include <compare>
 #include "interop_abi.h"
 #include "market_state.h"
 #include "accumulator.h"
 
 namespace nexus {
+
+    // FeatureVector represents the numerical state of the market
+    struct alignas(32) FeatureVector {
+        static constexpr size_t kSize = 64;
+        std::array<float, kSize> features{};
+
+        // Spaceship operator for fast comparison (C++20 feature)
+        auto operator<=>(const FeatureVector&) const = default;
+    };
 
     class MarketVectorEngine {
     public:
