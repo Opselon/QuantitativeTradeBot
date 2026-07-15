@@ -308,7 +308,14 @@ namespace Nexus.Tests.Unit.Desktop
                 return PositionsToReturn;
             }
 
-            public async Task<DesktopTradeResult> PlaceOrderAsync(string symbol, DesktopOrderSide side, decimal volume, CancellationToken cancellationToken)
+            public async Task<DesktopTradeResult> PlaceOrderAsync(
+                string symbol,
+                DesktopOrderSide side,
+                decimal volume,
+                decimal? stopLoss,
+                decimal? takeProfit,
+                string comment,
+                CancellationToken cancellationToken)
             {
                 PlaceOrderCalled = true;
                 PlaceOrderSymbol = symbol;
@@ -318,6 +325,12 @@ namespace Nexus.Tests.Unit.Desktop
                 if (DelayMilliseconds > 0) await Task.Delay(DelayMilliseconds, cancellationToken);
                 if (ThrowOnPlaceOrder != null) throw ThrowOnPlaceOrder;
                 return PlaceOrderResultToReturn;
+            }
+
+            public async Task<DesktopTradeResult> ModifyPositionAsync(long ticket, string symbol, decimal sl, decimal tp, CancellationToken cancellationToken)
+            {
+                if (DelayMilliseconds > 0) await Task.Delay(DelayMilliseconds, cancellationToken);
+                return new DesktopTradeResult { IsSuccess = true, Ticket = ticket };
             }
 
             public async Task<DesktopTradeResult> ClosePositionAsync(long ticket, string symbol, CancellationToken cancellationToken)
