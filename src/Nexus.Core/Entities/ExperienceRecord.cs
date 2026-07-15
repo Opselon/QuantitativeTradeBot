@@ -1,5 +1,4 @@
 ﻿using System;
-using Nexus.Core.ValueObjects;
 
 namespace Nexus.Core.Entities
 {
@@ -13,7 +12,7 @@ namespace Nexus.Core.Entities
         public string Symbol { get; }
         public DateTime TimestampUtc { get; }
 
-        // C++ Quant Features (64-element space)
+        // C++ Quant Features (Continuous 64-element feature state)
         public float[] MarketVectorFeatures { get; }
 
         // AI Model Metrics

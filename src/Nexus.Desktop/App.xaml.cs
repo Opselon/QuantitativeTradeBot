@@ -66,7 +66,6 @@ namespace Nexus.Desktop
 
                     // Register Intelligence & AI Stack
                     services.AddSingleton<INativeAnalyticsEngine, NativeAnalyticsEngine>();
-                    services.AddSingleton<INativeCoreService, NativeCoreService>();
                     services.AddSingleton<INeuralModelService, Nexus.AI.NeuralModelService>();
                     services.AddSingleton<ICurrencyStrengthEngine, Nexus.Application.Intelligence.CurrencyStrengthEngine>();
                     services.AddSingleton<IAccumulatorService, Nexus.Application.Intelligence.AccumulatorService>();

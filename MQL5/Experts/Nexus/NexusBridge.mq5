@@ -12,7 +12,7 @@
 //--- Input parameters
 input string   InpBridgeHost = "127.0.0.1";  // REST Gateway IP Address
 input int      InpBridgePort = 8080;         // REST Gateway Port (Standard 8080)
-input int      InpPollIntervalMs = 250;      // Polling Interval (ms)
+input int      InpPollIntervalMs = 100;      // Polling Interval (ms)
 
 //--- Structures
 struct SubscribedSymbolState
@@ -124,7 +124,6 @@ void OnTimer()
    PollBridgeMessages();
    StreamLiveTicks();
 }
-
 //+------------------------------------------------------------------+
 //| Test REST Bridge Server Connectivity                              |
 //+------------------------------------------------------------------+
@@ -189,6 +188,8 @@ void PollBridgeMessages()
       // Process payload if a valid command exists
       if(StringLen(json) > 0 && json != "NONE" && json != "{}")
       {
+         // ADDED: Print the raw JSON received from C# to trace exactly what is arriving
+         Print("NexusBridge Raw JSON: ", json);
          ProcessIncomingJson(json);
       }
    }
@@ -197,7 +198,6 @@ void PollBridgeMessages()
       g_is_connected = false;
    }
 }
-
 //+------------------------------------------------------------------+
 //| Route envelope fields to dedicated business handlers             |
 //+------------------------------------------------------------------+
@@ -246,6 +246,10 @@ void ProcessIncomingJson(const string json)
    {
       HandleGetOpenPositions(requestId);
    }
+   else if(command == "ModifyPosition")
+{
+   HandleModifyPosition(requestId, json);
+}
    else
    {
       HandleUnknownCommand(requestId, command);
@@ -450,8 +454,14 @@ void HandlePlaceOrder(const string requestId, const string json)
    string symbol = GetJsonStringValue(json, "symbol");
    string side_str = GetJsonStringValue(json, "side"); 
    double volume = GetJsonDoubleValue(json, "volume");
+   
+   // Accept both camelCase ("stopLoss") and PascalCase ("StopLoss") serialization patterns
    double stopLoss = GetJsonDoubleValue(json, "stopLoss");
+   if(stopLoss <= 0.0) stopLoss = GetJsonDoubleValue(json, "StopLoss");
+
    double takeProfit = GetJsonDoubleValue(json, "takeProfit");
+   if(takeProfit <= 0.0) takeProfit = GetJsonDoubleValue(json, "TakeProfit");
+
    string comment = GetJsonStringValue(json, "comment");
    string clientCorrelationId = GetJsonStringValue(json, "clientCorrelationId");
 
@@ -459,7 +469,8 @@ void HandlePlaceOrder(const string requestId, const string json)
          ", Symbol: ", symbol,
          ", Side: ", side_str,
          ", Volume: ", DoubleToString(volume, 2),
-         ", CorrelationId: ", clientCorrelationId);
+         ", SL (Pips): ", DoubleToString(stopLoss, 2),
+         ", TP (Pips): ", DoubleToString(takeProfit, 2));
 
    if(symbol == "")
    {
@@ -520,11 +531,41 @@ void HandlePlaceOrder(const string requestId, const string json)
       price = (order_type == ORDER_TYPE_BUY) ? SymbolInfoDouble(symbol, SYMBOL_ASK) : SymbolInfoDouble(symbol, SYMBOL_BID);
    }
 
+   // Calculate absolute stop prices using symbol-specific digits
    int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+   double pip_size = 0.0001; // Default Forex Major
+   
+   if(digits == 3 || digits == 5)
+   {
+      pip_size = (digits == 3) ? 0.01 : 0.0001;
+   }
+   else if(digits == 2 || digits == 4)
+   {
+      pip_size = (digits == 2) ? 0.1 : 0.001;
+   }
+   else
+   {
+      pip_size = _Point;
+   }
+
    double sl_normalized = 0.0;
    double tp_normalized = 0.0;
-   if(stopLoss > 0.0) sl_normalized = NormalizeDouble(stopLoss, digits);
-   if(takeProfit > 0.0) tp_normalized = NormalizeDouble(takeProfit, digits);
+
+   if(stopLoss > 0.0)
+   {
+      if(order_type == ORDER_TYPE_BUY)
+         sl_normalized = NormalizeDouble(price - (stopLoss * pip_size), digits);
+       else
+         sl_normalized = NormalizeDouble(price + (stopLoss * pip_size), digits);
+   }
+
+   if(takeProfit > 0.0)
+   {
+      if(order_type == ORDER_TYPE_BUY)
+         tp_normalized = NormalizeDouble(price + (takeProfit * pip_size), digits);
+       else
+         tp_normalized = NormalizeDouble(price - (takeProfit * pip_size), digits);
+   }
 
    uint filling_modes = (uint)SymbolInfoInteger(symbol, SYMBOL_FILLING_MODE);
    ENUM_ORDER_TYPE_FILLING filling = ORDER_FILLING_FOK;
@@ -565,7 +606,7 @@ void HandlePlaceOrder(const string requestId, const string json)
 
    if(ok && result.retcode == TRADE_RETCODE_DONE)
    {
-      Print("NexusBridge: PlaceOrder - Succeeded. Ticket: ", result.order, ", Retcode: ", result.retcode);
+      Print("NexusBridge: PlaceOrder - Succeeded. Ticket: ", result.order, ", Retcode: ", result.retcode, ", SL: ", DoubleToString(sl_normalized, digits), ", TP: ", DoubleToString(tp_normalized, digits));
       payload = "{"
          "\"success\":true,"
          "\"ticket\":" + IntegerToString(result.order) + ","
@@ -1011,4 +1052,76 @@ string StringTrim(const string text)
       result = StringSubstr(result, 0, StringLen(result) - 1);
    }
    return result;
+}
+//+------------------------------------------------------------------+
+//| Command: ModifyPosition - passive broker-side SL/TP update      |
+//+------------------------------------------------------------------+
+void HandleModifyPosition(const string requestId, const string json)
+{
+   ResetLastError();
+
+   long ticket = GetJsonIntValue(json, "ticket");
+   string symbol = GetJsonStringValue(json, "symbol");
+   
+   double sl = GetJsonDoubleValue(json, "sl");
+   if(sl <= 0.0) sl = GetJsonDoubleValue(json, "StopLoss");
+
+   double tp = GetJsonDoubleValue(json, "tp");
+   if(tp <= 0.0) tp = GetJsonDoubleValue(json, "TakeProfit");
+
+   Print("NexusBridge: ModifyPosition - Request ID: ", requestId,
+         ", Ticket: ", ticket,
+         ", Symbol: ", symbol,
+         ", SL Target: ", DoubleToString(sl, 5),
+         ", TP Target: ", DoubleToString(tp, 5));
+
+   if(ticket <= 0)
+   {
+      string errorJson = "{\"code\":\"INVALID_PAYLOAD\",\"message\":\"Ticket must be greater than zero.\"}";
+      SendResponse(BuildEnvelopeJson("Response", requestId, "ModifyPosition", "{}", errorJson));
+      return;
+   }
+
+   MqlTradeRequest request;
+   MqlTradeResult result;
+   ZeroMemory(request);
+   ZeroMemory(result);
+
+   request.action   = TRADE_ACTION_SLTP;
+   request.position = ticket;
+   request.symbol   = symbol;
+   request.sl       = sl;
+   request.tp       = tp;
+
+   bool ok = OrderSend(request, result);
+   int last_err = GetLastError();
+
+   string payload = "";
+   string errorJson = "null";
+
+   if(ok && result.retcode == TRADE_RETCODE_DONE)
+   {
+      Print("NexusBridge: ModifyPosition - Succeeded for ticket: ", ticket);
+      payload = "{"
+         "\"success\":true,"
+         "\"ticket\":" + IntegerToString(ticket) + ","
+         "\"brokerMessage\":\"Position modified successfully.\""
+      "}";
+   }
+   else
+   {
+      string fail_msg = "Modification failed. Retcode: " + IntegerToString(result.retcode) + ", Error: " + IntegerToString(last_err);
+      Print("NexusBridge: ModifyPosition - Failed: ", fail_msg);
+      payload = "{"
+         "\"success\":false,"
+         "\"ticket\":" + IntegerToString(ticket) + ","
+         "\"brokerMessage\":\"" + EscapeJsonString(fail_msg) + "\""
+      "}";
+      errorJson = "{"
+         "\"code\":\"TRADE_REJECTED\","
+         "\"message\":\"" + EscapeJsonString(fail_msg) + "\""
+      "}";
+   }
+
+   SendResponse(BuildEnvelopeJson("Response", requestId, "ModifyPosition", payload, errorJson));
 }

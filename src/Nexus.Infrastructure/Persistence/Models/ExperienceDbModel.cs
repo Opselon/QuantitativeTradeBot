@@ -17,7 +17,7 @@ namespace Nexus.Infrastructure.Persistence.Models
         [Required]
         public DateTime TimestampUtc { get; set; }
 
-        // Vector stored as flat comma-separated values (CSV) for lightweight parsing by Python scripts
+        // Vector stored as flat comma-separated values (CSV) for lightweight parsing
         [Required]
         public string MarketVectorCsv { get; set; } = string.Empty;
 

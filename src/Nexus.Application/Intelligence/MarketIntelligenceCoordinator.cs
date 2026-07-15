@@ -8,17 +8,15 @@ using Nexus.Application.Ports;
 
 namespace Nexus.Application.Intelligence
 {
-    /// <summary>
-    /// Manages the real-time high-performance AI state machine loop.
-    /// Interops with the C++20 Core, runs ONNX neural evaluations, and streams datasets to the Database.
-    /// </summary>
     public class MarketIntelligenceCoordinator : IDisposable
     {
         private readonly INativeCoreService _nativeCore;
         private readonly INeuralModelService _neuralModel;
         private readonly IDecisionEngine _decisionEngine;
-        private readonly IExperienceDatabaseWriter _dbWriter; // Port interface
+        private readonly IExperienceDatabaseWriter _dbWriter;
+        private readonly IMt5BridgeService _bridgeService;
         private readonly ILogger<MarketIntelligenceCoordinator> _logger;
+        private readonly CancellationTokenSource _cts = new();
 
         public event Action<EvaluationResult, TradeDecision>? OnAnalysisCompleted;
 
@@ -27,36 +25,57 @@ namespace Nexus.Application.Intelligence
             INeuralModelService neuralModel,
             IDecisionEngine decisionEngine,
             IExperienceDatabaseWriter dbWriter,
+            IMt5BridgeService bridgeService,
             ILogger<MarketIntelligenceCoordinator> logger)
         {
             _nativeCore = nativeCore ?? throw new ArgumentNullException(nameof(nativeCore));
             _neuralModel = neuralModel ?? throw new ArgumentNullException(nameof(neuralModel));
             _decisionEngine = decisionEngine ?? throw new ArgumentNullException(nameof(decisionEngine));
             _dbWriter = dbWriter ?? throw new ArgumentNullException(nameof(dbWriter));
+            _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            _bridgeService.OnTickReceived += OnLiveTickReceived;
         }
 
-        /// <summary>
-        /// Main high-performance pipeline entry point. Triggered when a new tick is received.
-        /// </summary>
+        private void OnLiveTickReceived(PriceTickEnvelope envelope)
+        {
+            if (envelope == null) return;
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    var symbol = new Core.ValueObjects.Symbol(envelope.SymbolName);
+                    var tick = new Tick(symbol, envelope.Timestamp, envelope.Bid, envelope.Ask);
+
+                    var currentRisk = EvaluateCurrentRiskState();
+                    await ProcessTickAsync(tick, currentRisk, _cts.Token);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[MarketIntelligenceCoordinator] Error running tick interop pipeline.");
+                }
+            });
+        }
+
+        private RiskState EvaluateCurrentRiskState()
+        {
+            return new RiskState(500.0, 10.0, 1.2, 0, 0.10, false);
+        }
+
         public async Task ProcessTickAsync(Tick tick, RiskState currentRiskState, CancellationToken ct)
         {
             try
             {
-                // 1. Ingest tick into native C++20 core (increments volatile standard accumulator)
                 _nativeCore.UpdateTick(tick);
 
-                // 2. Fetch high-performance Market Vector from C++ interop memory layout
                 var marketVector = _nativeCore.GetMarketVector();
                 var marketState = _nativeCore.GetMarketState();
 
-                // 3. Execute ONNX AI model scoring asynchronously
                 var evaluation = await _neuralModel.EvaluateAsync(marketVector, ct);
-
-                // 4. Evaluate risk metrics to yield a final trade decision
                 var decision = _decisionEngine.Evaluate(evaluation, marketState, currentRiskState);
 
-                // 5. Package state into an Experience Record and queue it instantly for database write (Zero-Block)
                 var experience = new ExperienceRecord(
                     tick.Symbol.Name,
                     marketVector.ToFloatArray(),
@@ -70,7 +89,6 @@ namespace Nexus.Application.Intelligence
 
                 _dbWriter.Enqueue(experience);
 
-                // 6. Raise event for UI update loops
                 OnAnalysisCompleted?.Invoke(evaluation, decision);
             }
             catch (Exception ex)
@@ -81,7 +99,9 @@ namespace Nexus.Application.Intelligence
 
         public void Dispose()
         {
-            // Clean up resources
+            _bridgeService.OnTickReceived -= OnLiveTickReceived;
+            _cts.Cancel();
+            _cts.Dispose();
         }
     }
 }
