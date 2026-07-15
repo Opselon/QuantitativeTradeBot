@@ -28,6 +28,7 @@ namespace Nexus.Core.Entities
         public bool IsCompleted { get; set; }
 
         public ExperienceRecord(
+            Guid id,
             string symbol,
             float[] marketVectorFeatures,
             string modelVersion,
@@ -37,7 +38,7 @@ namespace Nexus.Core.Entities
             string marketRegime,
             string executedAction)
         {
-            Id = Guid.NewGuid();
+            Id = id;
             Symbol = symbol ?? throw new ArgumentNullException(nameof(symbol));
             TimestampUtc = DateTime.UtcNow;
             MarketVectorFeatures = marketVectorFeatures ?? new float[64];
@@ -48,6 +49,19 @@ namespace Nexus.Core.Entities
             MarketRegime = marketRegime ?? "Unknown";
             ExecutedAction = executedAction ?? "WAIT";
             IsCompleted = false;
+        }
+
+        public ExperienceRecord(
+            string symbol,
+            float[] marketVectorFeatures,
+            string modelVersion,
+            double buyConfidence,
+            double sellConfidence,
+            double riskScore,
+            string marketRegime,
+            string executedAction)
+            : this(Guid.NewGuid(), symbol, marketVectorFeatures, modelVersion, buyConfidence, sellConfidence, riskScore, marketRegime, executedAction)
+        {
         }
     }
 }
