@@ -1,8 +1,13 @@
 using System;
+using Nexus.Core.Enums;
 using Nexus.Core.ValueObjects;
 
 namespace Nexus.Core.Entities
 {
+    /// <summary>
+    /// Represents an open or closed trading position.
+    /// Integrates newly-defined Value Objects and Enums while keeping full backward compatibility.
+    /// </summary>
     public sealed class Position
     {
         public Guid Id { get; }
@@ -17,8 +22,29 @@ namespace Nexus.Core.Entities
         public decimal UnrealizedPnl { get; private set; }
         public DateTime CreatedAt { get; }
         public DateTime UpdatedAt { get; private set; }
+        public PositionStatus Status { get; private set; }
 
-        public Position(Guid id, string ticketId, Symbol symbol, OrderDirection direction, LotSize volume, double entryPrice, double currentPrice, double? stopLoss = null, double? takeProfit = null)
+        #region Value Object properties
+
+        public Price EntryPriceObj => new Price(EntryPrice);
+        public Price CurrentPriceObj => new Price(CurrentPrice);
+        public Price? StopLossObj => StopLoss.HasValue ? new Price(StopLoss.Value) : null;
+        public Price? TakeProfitObj => TakeProfit.HasValue ? new Price(TakeProfit.Value) : null;
+        public OrderSide Side => Direction == OrderDirection.Buy ? OrderSide.Buy : OrderSide.Sell;
+
+        #endregion
+
+        public Position(
+            Guid id,
+            string ticketId,
+            Symbol symbol,
+            OrderDirection direction,
+            LotSize volume,
+            double entryPrice,
+            double currentPrice,
+            double? stopLoss = null,
+            double? takeProfit = null,
+            PositionStatus status = PositionStatus.Open)
         {
             Id = id;
             TicketId = ticketId ?? throw new ArgumentNullException(nameof(ticketId));
@@ -29,6 +55,7 @@ namespace Nexus.Core.Entities
             CurrentPrice = currentPrice;
             StopLoss = stopLoss;
             TakeProfit = takeProfit;
+            Status = status;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = CreatedAt;
             RecalculatePnl();
@@ -48,28 +75,37 @@ namespace Nexus.Core.Entities
             UpdatedAt = DateTime.UtcNow;
         }
 
+        /// <summary>
+        /// Transitions the position's status to Closed and updates its current price.
+        /// </summary>
+        public void Close(Price closePrice)
+        {
+            CurrentPrice = closePrice.Value;
+            Status = PositionStatus.Closed;
+            UpdatedAt = DateTime.UtcNow;
+            RecalculatePnl();
+        }
+
         private void RecalculatePnl()
         {
-            // Standard Forex/CFD contract size is often 100,000 units. For gold (XAUUSD), it is usually 100 ounces per lot.
-            // Let's use a standard default calculation logic or customizable multiplier based on Symbol name.
             double multiplier = GetContractMultiplier(Symbol.Name);
             double priceDiff = Direction == OrderDirection.Buy
                 ? (CurrentPrice - EntryPrice)
                 : (EntryPrice - CurrentPrice);
 
             double pnlDouble = priceDiff * Volume.Value * multiplier;
-            // Round to 4 decimal places to avoid floating point precision artifacts before converting to decimal
             UnrealizedPnl = (decimal)Math.Round(pnlDouble, 4);
         }
 
         private static double GetContractMultiplier(string symbolName)
         {
             string upper = symbolName.ToUpperInvariant();
-            if (upper.Contains("XAU") || upper.Contains("GOLD")) return 100.0; // 100 oz per standard Gold contract
-            if (upper.Contains("XAG") || upper.Contains("SILVER")) return 5000.0; // 5000 oz per standard Silver contract
-            return 100000.0; // Standard 100k contract for Forex (EURUSD, GBPUSD, etc.)
+            if (upper.Contains("XAU") || upper.Contains("GOLD")) return 100.0;
+            if (upper.Contains("XAG") || upper.Contains("SILVER")) return 5000.0;
+            return 100000.0;
         }
 
-        public override string ToString() => $"[Position {TicketId}] {Symbol} {Direction} {Volume} Entry={EntryPrice:F5} Current={CurrentPrice:F5} PnL={UnrealizedPnl:C2}";
+        public override string ToString() =>
+            $"[Position {TicketId}] {Symbol} {Direction} {Volume} Entry={EntryPrice:F5} Current={CurrentPrice:F5} PnL={UnrealizedPnl:C2} Status={Status}";
     }
 }
