@@ -281,12 +281,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Merge pull request #22 from Opselon/jules-3432804104822125027-1d5acabd |
+| **Commit Message** | Merge pull request #23 from Opselon/feature/phase02-domain-foundation-18281873259995203115 |
 | **Author** | Capsizer |
 | **Branch** | `main` |
-| **Run Number** | `67` |
-| **Commit SHA** | `57edf19b5d3acb22a9be58c1442d7381374b0b41` |
-| **Generated At** | `2026-07-15 22:32:30 UTC` |
+| **Run Number** | `70` |
+| **Commit SHA** | `16c8fef13071ea59261d9f5dfbf6d668939715f5` |
+| **Generated At** | `2026-07-15 23:06:11 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -326,6 +326,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── 26_CHANGELOG.md
 │   └── 30_PROJECT_STATE.md
 ├── docs/
+│   ├── Architecture/
+│   │   └── ADR-002-Domain-Model-Design.md
 │   ├── 01_ARCHITECTURE.md
 │   ├── 02_AI_ARCHITECTURE.md
 │   ├── 03_DATA_FLOW.md
@@ -483,13 +485,18 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── Nexus.Core/
 │   │   ├── DomainEvents/
 │   │   │   ├── MarginCallEvent.cs
-│   │   │   └── OrderExecutedEvent.cs
+│   │   │   ├── MarketStateUpdatedEvent.cs
+│   │   │   ├── OrderExecutedEvent.cs
+│   │   │   ├── PositionClosedEvent.cs
+│   │   │   ├── PositionOpenedEvent.cs
+│   │   │   └── RiskLimitReachedEvent.cs
 │   │   ├── Entities/
 │   │   │   ├── Interfaces/
 │   │   │   │   └── IExperienceDatabaseWriter.cs
 │   │   │   ├── Account.cs
 │   │   │   ├── AccumulatorState.cs
 │   │   │   ├── Bar.cs
+│   │   │   ├── Candle.cs
 │   │   │   ├── ConsensusState.cs
 │   │   │   ├── EvaluationResult.cs
 │   │   │   ├── ExperienceRecord.cs
@@ -507,24 +514,48 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── ScenarioSearchNode.cs
 │   │   │   ├── Tick.cs
 │   │   │   └── TradeDecision.cs
+│   │   ├── Enums/
+│   │   │   ├── MarketRegime.cs
+│   │   │   ├── OrderSide.cs
+│   │   │   ├── PositionStatus.cs
+│   │   │   ├── RiskLevel.cs
+│   │   │   ├── TimeframeType.cs
+│   │   │   └── TradeAction.cs
+│   │   ├── Exceptions/
+│   │   │   ├── DomainException.cs
+│   │   │   ├── InvalidPercentageException.cs
+│   │   │   ├── InvalidPositionException.cs
+│   │   │   ├── InvalidPriceException.cs
+│   │   │   ├── InvalidRiskException.cs
+│   │   │   └── InvalidVolumeException.cs
 │   │   ├── Interfaces/
 │   │   │   ├── IAccumulatorService.cs
 │   │   │   ├── ICurrencyStrengthEngine.cs
 │   │   │   ├── IDecisionEngine.cs
 │   │   │   ├── IExperienceCollector.cs
+│   │   │   ├── IExperienceRecorder.cs
+│   │   │   ├── IMarketEvaluator.cs
 │   │   │   ├── IMultiTimeframeConsensusEngine.cs
 │   │   │   ├── INativeCoreService.cs
 │   │   │   ├── INeuralModelService.cs
 │   │   │   ├── IPatternMemory.cs
+│   │   │   ├── IPositionManager.cs
 │   │   │   ├── IRiskManager.cs
 │   │   │   ├── IScenarioEvaluationEngine.cs
 │   │   │   ├── IScenarioSearchEngine.cs
 │   │   │   ├── IStrategy.cs
+│   │   │   ├── ITradingDecisionEngine.cs
 │   │   │   └── ITrailingManager.cs
 │   │   ├── ValueObjects/
 │   │   │   ├── LotSize.cs
+│   │   │   ├── MarketSession.cs
 │   │   │   ├── Money.cs
-│   │   │   └── Symbol.cs
+│   │   │   ├── Percentage.cs
+│   │   │   ├── Price.cs
+│   │   │   ├── RiskAmount.cs
+│   │   │   ├── Symbol.cs
+│   │   │   ├── Timeframe.cs
+│   │   │   └── Volume.cs
 │   │   └── Nexus.Core.csproj
 │   ├── Nexus.Desktop/
 │   │   ├── Converters/
@@ -695,6 +726,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │       │   └── Mt5TradingViewModelTests.cs
 │       ├── Entities/
 │       │   ├── AccountTests.cs
+│       │   ├── CandleAndEventTests.cs
 │       │   ├── OrderAndPositionTests.cs
 │       │   └── TickAndBarTests.cs
 │       ├── Intelligence/
@@ -703,6 +735,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │       │   └── StockfishTradingEngineTests.cs
 │       ├── ValueObjects/
 │       │   ├── MoneyAndLotSizeTests.cs
+│       │   ├── NewValueObjectTests.cs
 │       │   └── SymbolTests.cs
 │       ├── GlobalUsings.cs
 │       ├── IndicatorEngineTests.cs
@@ -716,7 +749,7 @@ To get started, please review the contribution guidelines outlined above, explor
 
 | File Type | Count |
 | --- | ---: |
-| C# (.cs) | 251 |
+| C# (.cs) | 273 |
 | WPF (.xaml) | 15 |
 | C/C++ Source | 12 |
 | CMake | 1 |
@@ -743,10 +776,10 @@ No C# errors.
 ```
 #### 🟡 Warnings
 ```text
-5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+6>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+6>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 ```
 
 <!-- NEXUS_AUTO_DOC_END -->
