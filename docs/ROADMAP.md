@@ -11,8 +11,8 @@ This document maps out the release milestones and evolution roadmap for the **Ne
   [████████████████████████████████████████████████████████████] 100% (Completed)
                              │
                              ▼
-  Phase 02: AI Engine Integration & Live Pipeline
-  [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%   (Pending)
+  Phase 02: Nexus.Core Domain Foundation
+  [████████████████████████████████████████████████████████████] 100% (Completed)
                              │
                              ▼
   Phase 03: Autonomous Strategy Runtime & Native Indicators
@@ -31,13 +31,14 @@ Establish the architecture, database layer, configuration strategies, native int
 * [x] **Secure Logging & Configuration**: Configure profile configurations (Simulated, Paper, Live) and secure sanitizing filters to wipe keys/tokens from diagnostic logs.
 * [x] **Platform Coding Standards**: Formulate official coding rules, approved `#region` zones, and a visual project dependency guide.
 
-### ▢ Phase 02: AI Engine Integration & Live Pipeline (Pending)
-Deploy analytical model evaluations and establish streaming market intelligence processes.
-* [ ] **ONNX Runtime Pipelines**: Connect trained weights to the neural evaluator in `Nexus.AI` without installing python components.
-* [ ] **Live Feature Delta Recalculations**: Feed ticks to the incremental accumulators to extract analytical state features in $O(1)$ constant time complexity.
-* [ ] **Neural Feature Logging**: Record live evaluation result metrics alongside order decisions for retrospective training pipeline feedback.
+### ■ Phase 02: Nexus.Core Domain Foundation (Completed)
+Build the pure domain foundation of the autonomous quantitative trading platform.
+* [x] **Zero External Dependency Core**: Secure the cleanest core workspace layer with 0 external references.
+* [x] **Avoid Primitive Obsession**: Create rich self-validating Value Objects (`Price`, `Volume`, `Percentage`, `RiskAmount`, `Timeframe`, `MarketSession`).
+* [x] **Domain Entities and Enums**: Implement `Candle` OHLCV representation and domain enums.
+* [x] **Domain Events and Interfaces**: Author `PositionOpenedEvent`, `RiskLimitReachedEvent`, etc., and define ports like `IMarketEvaluator` and `ITradingDecisionEngine`.
 
-### ▢ Phase 3: Autonomous Strategy Runtime & Native Indicators (Pending)
+### ▢ Phase 03: Autonomous Strategy Runtime & Native Indicators (Pending)
 Build sandboxed runtime hosts and high-frequency analytical engines.
 * [ ] **High-Performance Native C++ Indicator Computations**: Execute SIMD-accelerated indicator calculations inside the C++ native core.
 * [ ] **Sandboxed Strategy Supervisor Hosts**: Run strategies inside supervised background loops, routing streamed bar events and managing automated order entry channels.
