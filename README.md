@@ -281,12 +281,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Enhance NexusBridge and Market Intelligence features |
+| **Commit Message** | Merge pull request #21 from Opselon/stockfish-trading-intelligence-9071390709839937580 |
 | **Author** | Capsizer |
 | **Branch** | `main` |
-| **Run Number** | `53` |
-| **Commit SHA** | `80ab2e5854756cf292b8c57c05f2d3d1a349dcc0` |
-| **Generated At** | `2026-07-15 20:00:18 UTC` |
+| **Run Number** | `65` |
+| **Commit SHA** | `6e7164315c0b2d7011ab2abbc9cb2ca7cf8824c6` |
+| **Generated At** | `2026-07-15 21:48:49 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -365,10 +365,13 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── AccumulatorService.cs
 │   │   │   ├── CurrencyStrengthEngine.cs
 │   │   │   ├── DecisionEngine.cs
+│   │   │   ├── ExperienceCollector.cs
 │   │   │   ├── MarketIntelligenceCoordinator.cs
+│   │   │   ├── MultiTimeframeConsensusEngine.cs
 │   │   │   ├── NativeMarketIntelligenceService.cs
 │   │   │   ├── PatternMemory.cs
-│   │   │   └── ScenarioEvaluationEngine.cs
+│   │   │   ├── ScenarioEvaluationEngine.cs
+│   │   │   └── ScenarioSearchEngine.cs
 │   │   ├── Mt5/
 │   │   │   ├── ClosePositionResult.cs
 │   │   │   ├── IMt5TradingService.cs
@@ -479,27 +482,35 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── Account.cs
 │   │   │   ├── AccumulatorState.cs
 │   │   │   ├── Bar.cs
+│   │   │   ├── ConsensusState.cs
 │   │   │   ├── EvaluationResult.cs
 │   │   │   ├── ExperienceRecord.cs
+│   │   │   ├── ExperienceSample.cs
 │   │   │   ├── FeatureDelta.cs
 │   │   │   ├── MarketState.cs
+│   │   │   ├── MarketStateScenario.cs
 │   │   │   ├── MarketVector.cs
+│   │   │   ├── MultiTimeframeSignal.cs
 │   │   │   ├── Order.cs
 │   │   │   ├── PatternMatchResult.cs
 │   │   │   ├── Position.cs
 │   │   │   ├── RiskState.cs
 │   │   │   ├── ScenarioScore.cs
+│   │   │   ├── ScenarioSearchNode.cs
 │   │   │   ├── Tick.cs
 │   │   │   └── TradeDecision.cs
 │   │   ├── Interfaces/
 │   │   │   ├── IAccumulatorService.cs
 │   │   │   ├── ICurrencyStrengthEngine.cs
 │   │   │   ├── IDecisionEngine.cs
+│   │   │   ├── IExperienceCollector.cs
+│   │   │   ├── IMultiTimeframeConsensusEngine.cs
 │   │   │   ├── INativeCoreService.cs
 │   │   │   ├── INeuralModelService.cs
 │   │   │   ├── IPatternMemory.cs
 │   │   │   ├── IRiskManager.cs
 │   │   │   ├── IScenarioEvaluationEngine.cs
+│   │   │   ├── IScenarioSearchEngine.cs
 │   │   │   ├── IStrategy.cs
 │   │   │   └── ITrailingManager.cs
 │   │   ├── ValueObjects/
@@ -680,7 +691,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │       │   └── TickAndBarTests.cs
 │       ├── Intelligence/
 │       │   ├── MarketIntelligenceTests.cs
-│       │   └── NativeBridgeTests.cs
+│       │   ├── NativeBridgeTests.cs
+│       │   └── StockfishTradingEngineTests.cs
 │       ├── ValueObjects/
 │       │   ├── MoneyAndLotSizeTests.cs
 │       │   └── SymbolTests.cs
@@ -696,7 +708,7 @@ To get started, please review the contribution guidelines outlined above, explor
 
 | File Type | Count |
 | --- | ---: |
-| C# (.cs) | 239 |
+| C# (.cs) | 251 |
 | WPF (.xaml) | 15 |
 | C/C++ Source | 12 |
 | CMake | 1 |
@@ -715,18 +727,18 @@ No explicit C# warnings.
 ```
 
 ### 🚀 Pipeline Diagnostics (Build Stage - Windows)
-- **Job Status:** failure
+- **Job Status:** success
 
 #### 🔴 Errors
 ```text
-7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(281,45): error CS0535: 'Mt5TradingViewModelTests.StubOperatorService' does not implement interface member 'IMt5OperatorService.ModifyPositionAsync(long, string, decimal, decimal, CancellationToken)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(281,45): error CS0535: 'Mt5TradingViewModelTests.StubOperatorService' does not implement interface member 'IMt5OperatorService.PlaceOrderAsync(string, DesktopOrderSide, decimal, decimal?, decimal?, string, CancellationToken)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(281,45): error CS0535: 'Mt5TradingViewModelTests.StubOperatorService' does not implement interface member 'IMt5OperatorService.ModifyPositionAsync(long, string, decimal, decimal, CancellationToken)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(281,45): error CS0535: 'Mt5TradingViewModelTests.StubOperatorService' does not implement interface member 'IMt5OperatorService.PlaceOrderAsync(string, DesktopOrderSide, decimal, decimal?, decimal?, string, CancellationToken)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+No C# errors.
 ```
 #### 🟡 Warnings
 ```text
-No C# warnings.
+5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 ```
 
 <!-- NEXUS_AUTO_DOC_END -->
