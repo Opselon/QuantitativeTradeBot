@@ -281,12 +281,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Merge pull request #22 from Opselon/jules-3432804104822125027-1d5acabd |
-| **Author** | Capsizer |
-| **Branch** | `main` |
-| **Run Number** | `67` |
-| **Commit SHA** | `57edf19b5d3acb22a9be58c1442d7381374b0b41` |
-| **Generated At** | `2026-07-15 22:32:30 UTC` |
+| **Commit Message** | feat: establish Phase 03 infrastructure foundation |
+| **Author** | google-labs-jules[bot] |
+| **Branch** | `feat/infrastructure-foundation-phase-03-6605060012739411737` |
+| **Run Number** | `71` |
+| **Commit SHA** | `a0f7ada93f4aa6c695594ed8784444752b39acf8` |
+| **Generated At** | `2026-07-15 23:33:15 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -326,6 +326,9 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── 26_CHANGELOG.md
 │   └── 30_PROJECT_STATE.md
 ├── docs/
+│   ├── Architecture/
+│   │   ├── ADR-002-Domain-Model-Design.md
+│   │   └── ADR-003-Infrastructure-Data-Architecture.md
 │   ├── 01_ARCHITECTURE.md
 │   ├── 02_AI_ARCHITECTURE.md
 │   ├── 03_DATA_FLOW.md
@@ -429,9 +432,13 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── GatewayConnectionStatus.cs
 │   │   │   ├── IAccountRepository.cs
 │   │   │   ├── IAppConfigurationService.cs
+│   │   │   ├── IApplicationLogger.cs
+│   │   │   ├── IConnectionFactory.cs
 │   │   │   ├── IConnectionHealthMonitor.cs
 │   │   │   ├── IDatabaseBootstrapper.cs
+│   │   │   ├── IDatabaseProvider.cs
 │   │   │   ├── IExecutionGateway.cs
+│   │   │   ├── IFileStorage.cs
 │   │   │   ├── IGatewaySession.cs
 │   │   │   ├── IGatewaySessionFactory.cs
 │   │   │   ├── IMarketDataFeed.cs
@@ -444,6 +451,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── IMt5TradeService.cs
 │   │   │   ├── IOrderRepository.cs
 │   │   │   ├── IPositionRepository.cs
+│   │   │   ├── IRepository.cs
 │   │   │   ├── ITradingPlatformConnector.cs
 │   │   │   ├── IUnitOfWork.cs
 │   │   │   └── PriceTickEnvelope.cs
@@ -483,13 +491,18 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── Nexus.Core/
 │   │   ├── DomainEvents/
 │   │   │   ├── MarginCallEvent.cs
-│   │   │   └── OrderExecutedEvent.cs
+│   │   │   ├── MarketStateUpdatedEvent.cs
+│   │   │   ├── OrderExecutedEvent.cs
+│   │   │   ├── PositionClosedEvent.cs
+│   │   │   ├── PositionOpenedEvent.cs
+│   │   │   └── RiskLimitReachedEvent.cs
 │   │   ├── Entities/
 │   │   │   ├── Interfaces/
 │   │   │   │   └── IExperienceDatabaseWriter.cs
 │   │   │   ├── Account.cs
 │   │   │   ├── AccumulatorState.cs
 │   │   │   ├── Bar.cs
+│   │   │   ├── Candle.cs
 │   │   │   ├── ConsensusState.cs
 │   │   │   ├── EvaluationResult.cs
 │   │   │   ├── ExperienceRecord.cs
@@ -507,24 +520,48 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── ScenarioSearchNode.cs
 │   │   │   ├── Tick.cs
 │   │   │   └── TradeDecision.cs
+│   │   ├── Enums/
+│   │   │   ├── MarketRegime.cs
+│   │   │   ├── OrderSide.cs
+│   │   │   ├── PositionStatus.cs
+│   │   │   ├── RiskLevel.cs
+│   │   │   ├── TimeframeType.cs
+│   │   │   └── TradeAction.cs
+│   │   ├── Exceptions/
+│   │   │   ├── DomainException.cs
+│   │   │   ├── InvalidPercentageException.cs
+│   │   │   ├── InvalidPositionException.cs
+│   │   │   ├── InvalidPriceException.cs
+│   │   │   ├── InvalidRiskException.cs
+│   │   │   └── InvalidVolumeException.cs
 │   │   ├── Interfaces/
 │   │   │   ├── IAccumulatorService.cs
 │   │   │   ├── ICurrencyStrengthEngine.cs
 │   │   │   ├── IDecisionEngine.cs
 │   │   │   ├── IExperienceCollector.cs
+│   │   │   ├── IExperienceRecorder.cs
+│   │   │   ├── IMarketEvaluator.cs
 │   │   │   ├── IMultiTimeframeConsensusEngine.cs
 │   │   │   ├── INativeCoreService.cs
 │   │   │   ├── INeuralModelService.cs
 │   │   │   ├── IPatternMemory.cs
+│   │   │   ├── IPositionManager.cs
 │   │   │   ├── IRiskManager.cs
 │   │   │   ├── IScenarioEvaluationEngine.cs
 │   │   │   ├── IScenarioSearchEngine.cs
 │   │   │   ├── IStrategy.cs
+│   │   │   ├── ITradingDecisionEngine.cs
 │   │   │   └── ITrailingManager.cs
 │   │   ├── ValueObjects/
 │   │   │   ├── LotSize.cs
+│   │   │   ├── MarketSession.cs
 │   │   │   ├── Money.cs
-│   │   │   └── Symbol.cs
+│   │   │   ├── Percentage.cs
+│   │   │   ├── Price.cs
+│   │   │   ├── RiskAmount.cs
+│   │   │   ├── Symbol.cs
+│   │   │   ├── Timeframe.cs
+│   │   │   └── Volume.cs
 │   │   └── Nexus.Core.csproj
 │   ├── Nexus.Desktop/
 │   │   ├── Converters/
@@ -603,6 +640,16 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │       ├── SimulatedMt5TradeService.cs
 │   │   │       ├── SimulatedMt5TradingService.cs
 │   │   │       └── SimulatedTradingPlatformConnector.cs
+│   │   ├── Configuration/
+│   │   │   ├── ApplicationSettings.cs
+│   │   │   ├── DatabaseSettings.cs
+│   │   │   └── LoggingSettings.cs
+│   │   ├── Logging/
+│   │   │   └── ApplicationLogger.cs
+│   │   ├── Models/
+│   │   │   ├── ModelMetadata.cs
+│   │   │   ├── ModelStatus.cs
+│   │   │   └── ModelVersion.cs
 │   │   ├── Mt5Bridge/
 │   │   │   ├── LocalHttpApiRoutes.cs
 │   │   │   ├── LocalHttpApiServer.cs
@@ -625,11 +672,14 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   │   └── TradeDbModel.cs
 │   │   │   ├── Repositories/
 │   │   │   │   ├── AccountRepository.cs
+│   │   │   │   ├── EfRepository.cs
 │   │   │   │   ├── MarketDataRepository.cs
 │   │   │   │   ├── OrderRepository.cs
 │   │   │   │   ├── PositionRepository.cs
 │   │   │   │   └── UnitOfWork.cs
 │   │   │   ├── AppConfigurationService.cs
+│   │   │   ├── ConnectionFactory.cs
+│   │   │   ├── DatabaseProvider.cs
 │   │   │   ├── DependencyInjection.cs
 │   │   │   ├── DesignTimeNexusDbContextFactory.cs
 │   │   │   ├── ExperienceDatabaseWriter.cs
@@ -638,6 +688,9 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   └── SqliteDatabaseBootstrapper.cs
 │   │   ├── Security/
 │   │   │   └── WindowsSecretStore.cs
+│   │   ├── Storage/
+│   │   │   └── FileStorage/
+│   │   │       └── LocalFileStorage.cs
 │   │   ├── Workers/
 │   │   │   ├── ExecutionWorker.cs
 │   │   │   ├── MarketDataIngestionWorker.cs
@@ -695,14 +748,18 @@ To get started, please review the contribution guidelines outlined above, explor
 │       │   └── Mt5TradingViewModelTests.cs
 │       ├── Entities/
 │       │   ├── AccountTests.cs
+│       │   ├── CandleAndEventTests.cs
 │       │   ├── OrderAndPositionTests.cs
 │       │   └── TickAndBarTests.cs
+│       ├── Infrastructure/
+│       │   └── InfrastructureTest.cs
 │       ├── Intelligence/
 │       │   ├── MarketIntelligenceTests.cs
 │       │   ├── NativeBridgeTests.cs
 │       │   └── StockfishTradingEngineTests.cs
 │       ├── ValueObjects/
 │       │   ├── MoneyAndLotSizeTests.cs
+│       │   ├── NewValueObjectTests.cs
 │       │   └── SymbolTests.cs
 │       ├── GlobalUsings.cs
 │       ├── IndicatorEngineTests.cs
@@ -716,7 +773,7 @@ To get started, please review the contribution guidelines outlined above, explor
 
 | File Type | Count |
 | --- | ---: |
-| C# (.cs) | 251 |
+| C# (.cs) | 290 |
 | WPF (.xaml) | 15 |
 | C/C++ Source | 12 |
 | CMake | 1 |
@@ -743,10 +800,10 @@ No C# errors.
 ```
 #### 🟡 Warnings
 ```text
-5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 ```
 
 <!-- NEXUS_AUTO_DOC_END -->
