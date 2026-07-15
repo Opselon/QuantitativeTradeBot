@@ -5,16 +5,16 @@
 //+------------------------------------------------------------------+
 #property copyright "Nexus Trading Engine"
 #property link      "https://nexus.example.com"
-#property version   "1.00"
-#property description "Nexus MT5 Bridge EA - Connects MT5 Terminal to C# Nexus Brain."
+#property version   "5.1"
+#property description "Nexus MT5 Bridge EA - Connects MT5 Terminal to C# REST Gateway."
 #property strict
 
-//--- input parameters
-input string   InpBridgeHost = "127.0.0.1";  // Bridge Host IP Address
-input int      InpBridgePort = 5000;         // Bridge Port
-input int      InpPollIntervalMs = 250;      // Message Polling Interval (ms)
+//--- Input parameters
+input string   InpBridgeHost = "127.0.0.1";  // REST Gateway IP Address
+input int      InpBridgePort = 8080;         // REST Gateway Port (Standard 8080)
+input int      InpPollIntervalMs = 250;      // Polling Interval (ms)
 
-//--- structures
+//--- Structures
 struct SubscribedSymbolState
 {
    string symbol;
@@ -23,16 +23,18 @@ struct SubscribedSymbolState
    double last_ask;
 };
 
-//--- global variables
-int      g_socket = INVALID_HANDLE;          // Direct network socket handle
+//--- Global variables
 bool     g_is_connected = false;             // Active connection flag
 string   g_incoming_buffer = "";             // Buffer for stream assembly
 datetime g_last_recon_time = 0;              // Last reconnect attempt timestamp
+string   g_poll_url = "";                    // REST Polling URL
+string   g_response_url = "";                // REST Response POST URL
+string   g_tick_url = "";                    // REST Tick Ingestion URL
 
 SubscribedSymbolState g_symbols_state[20];   // active subscribed symbols states
 int      g_symbols_count = 0;                // subscribed symbols counter
 
-//--- function declarations
+//--- Function declarations
 bool ConnectToBridge();
 void DisconnectFromBridge();
 void PollBridgeMessages();
@@ -50,7 +52,7 @@ string BuildEnvelopeJson(const string messageType, const string requestId, const
 void SendResponse(const string responseJson);
 void StreamLiveTicks();
 
-//--- simple JSON helpers
+//--- Simple JSON helpers
 string GetJsonStringValue(const string json, const string key);
 double GetJsonDoubleValue(const string json, const string key);
 long GetJsonIntValue(const string json, const string key);
@@ -62,19 +64,35 @@ string StringTrim(const string text);
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   Print("NexusBridge: Initializing Expert Advisor...");
+   Print("================================================");
+   Print("=== NEXUS HTTP REST BRIDGE STARTUP DIAGNOSTICS ===");
+   Print("================================================");
 
-   // Clear subscriptions
+   // Configure HTTP Endpoint Routing Targets
+   g_poll_url     = "http://" + InpBridgeHost + ":" + IntegerToString(InpBridgePort) + "/api/v1/bridge/poll";
+   g_response_url = "http://" + InpBridgeHost + ":" + IntegerToString(InpBridgePort) + "/api/v1/bridge/response";
+   g_tick_url     = "http://" + InpBridgeHost + ":" + IntegerToString(InpBridgePort) + "/api/v1/bridge/tick";
+
+   Print("Polling Endpoint: ", g_poll_url);
+   Print("Response Endpoint: ", g_response_url);
+   Print("Tick Ingestion Endpoint: ", g_tick_url);
+
+   // State Setup
    g_symbols_count = 0;
+   g_is_connected = false;
 
-   // Attempt to open initial bridge socket
+   // Test Initial HTTP Gateway Connectivity
    if(!ConnectToBridge())
    {
-      Print("NexusBridge: Warning - Initial bridge connection failed. Will retry periodically in timer loop.");
+      Print("NexusBridge: Warning - Initial gateway check failed. Verify Kestrel server is running on port 8080.");
    }
 
-   // Initialize high-precision polling timer
-   EventSetMillisecondTimer(InpPollIntervalMs);
+   // Register Polling Timer
+   if(!EventSetMillisecondTimer(InpPollIntervalMs))
+   {
+      Print("NexusBridge: Failed to start millisecond timer.");
+      return(INIT_FAILED);
+   }
 
    Print("NexusBridge: Initialization completed successfully.");
    return(INIT_SUCCEEDED);
@@ -85,21 +103,17 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
 {
-   // Terminate the polling timer
    EventKillTimer();
-
-   // Cleanly close connection resources
    DisconnectFromBridge();
-
-   Print("NexusBridge: Deinitialized. Reason code: ", reason);
+   Print("NexusBridge: Deinitialized.");
 }
 
 //+------------------------------------------------------------------+
-//| Expert tick function (optional for bridge, handled by Timer)    |
+//| Expert tick function                                             |
 //+------------------------------------------------------------------+
 void OnTick()
 {
-   // Empty - we drive message consumption in high-frequency timer loop
+   // Handled via Polling Timer
 }
 
 //+------------------------------------------------------------------+
@@ -107,115 +121,80 @@ void OnTick()
 //+------------------------------------------------------------------+
 void OnTimer()
 {
-   // Handle automatic reconnection if offline
-   if(!g_is_connected)
-   {
-      datetime now = TimeLocal();
-      if(now - g_last_recon_time >= 5) // retry every 5 seconds
-      {
-         Print("NexusBridge: Connection offline. Attempting automatic reconnect...");
-         ConnectToBridge();
-      }
-      return;
-   }
-
-   // Consume stream and parse discrete newline-terminated lines
    PollBridgeMessages();
-
-   // Stream ticks for subscribed symbols
    StreamLiveTicks();
 }
 
 //+------------------------------------------------------------------+
-//| Establish TCP Socket connection to C# Server                     |
+//| Test REST Bridge Server Connectivity                              |
 //+------------------------------------------------------------------+
 bool ConnectToBridge()
 {
    g_last_recon_time = TimeLocal();
 
-   // Create socket using MQL5 Native Network API
-   g_socket = SocketCreate();
-   if(g_socket == INVALID_HANDLE)
-   {
-      Print("NexusBridge: SocketCreate failed. Error code: ", GetLastError());
-      return false;
-   }
+   char data[];
+   char result[];
+   string headers;
 
-   // Connect to the C# Host/Port
-   if(!SocketConnect(g_socket, InpBridgeHost, InpBridgePort, 3000))
-   {
-      Print("NexusBridge: SocketConnect to ", InpBridgeHost, ":", InpBridgePort, " failed. Error code: ", GetLastError());
-      SocketClose(g_socket);
-      g_socket = INVALID_HANDLE;
-      return false;
-   }
+   ResetLastError();
+   
+   // Request basic status check from Kestrel to test route
+   int res = WebRequest("GET", "http://" + InpBridgeHost + ":" + IntegerToString(InpBridgePort) + "/api/v1/health", "", NULL, 2000, 
+                        data, 0, result, headers);
 
-   g_is_connected = true;
-   g_incoming_buffer = "";
-   Print("NexusBridge: Successfully connected to Nexus Bridge Server at ", InpBridgeHost, ":", InpBridgePort);
-   return true;
+   if(res == 200)
+   {
+      g_is_connected = true;
+      Print("NexusBridge: Handshake connection established successfully over WebRequest.");
+      return true;
+   }
+   
+   int last_err = GetLastError();
+   Print("NexusBridge: WebRequest connection failed. HTTP Status: ", res, ", Error Code: ", last_err);
+   Print("NexusBridge: Ensure 'http://", InpBridgeHost, ":", InpBridgePort, "' is added to whitelisted WebRequest URLs.");
+   
+   g_is_connected = false;
+   return false;
 }
 
 //+------------------------------------------------------------------+
-//| Gracefully terminate the socket connection                       |
+//| Disconnect from bridge                                           |
 //+------------------------------------------------------------------+
 void DisconnectFromBridge()
 {
-   if(g_socket != INVALID_HANDLE)
-   {
-      SocketClose(g_socket);
-      g_socket = INVALID_HANDLE;
-   }
    g_is_connected = false;
    Print("NexusBridge: Disconnected from bridge server.");
 }
 
 //+------------------------------------------------------------------+
-//| Read incoming stream chunk, accumulate, and extract full JSONs   |
+//| Poll outstanding Command envelopes from C# Queue                 |
 //+------------------------------------------------------------------+
 void PollBridgeMessages()
 {
-   if(g_socket == INVALID_HANDLE) return;
+   char data[];
+   char result[];
+   string headers;
 
-   // Verify socket is still active
-   if(!SocketIsConnected(g_socket))
+   ResetLastError();
+
+   int res = WebRequest("GET", g_poll_url, "", NULL, 1500, 
+                        data, 0, result, headers);
+
+   if(res == 200)
    {
-      Print("NexusBridge: Socket disconnected detected in poll. Disconnecting.");
-      DisconnectFromBridge();
-      return;
-   }
-
-   // Fetch total readable bytes
-   uint data_ready = SocketIsReadable(g_socket);
-   if(data_ready == 0) return;
-
-   uchar buffer[];
-   ArrayResize(buffer, (int)data_ready);
-
-   int bytes_read = SocketRead(g_socket, buffer, data_ready, 100);
-   if(bytes_read <= 0)
-   {
-      Print("NexusBridge: Socket read returned empty or error. Disconnecting.");
-      DisconnectFromBridge();
-      return;
-   }
-
-   // Convert array to string and append to workspace buffer
-   string data_str = CharArrayToString(buffer, 0, bytes_read, CP_UTF8);
-   g_incoming_buffer += data_str;
-
-   // Process newline-separated message packets
-   int newline_idx;
-   while((newline_idx = StringFind(g_incoming_buffer, "\n")) >= 0)
-   {
-      string single_message = StringSubstr(g_incoming_buffer, 0, newline_idx);
-      g_incoming_buffer = StringSubstr(g_incoming_buffer, newline_idx + 1);
-
-      single_message = StringTrim(single_message);
-      if(StringLen(single_message) > 0)
+      g_is_connected = true;
+      string json = CharArrayToString(result);
+      json = StringTrim(json);
+      
+      // Process payload if a valid command exists
+      if(StringLen(json) > 0 && json != "NONE" && json != "{}")
       {
-         ProcessIncomingJson(single_message);
+         ProcessIncomingJson(json);
       }
+   }
+   else
+   {
+      g_is_connected = false;
    }
 }
 
@@ -230,11 +209,10 @@ void ProcessIncomingJson(const string json)
 
    if(messageType != "Request")
    {
-      // Ignore or log non-request envelope flows
       return;
    }
 
-   Print("NexusBridge: Received command '", command, "' with Request ID: ", requestId);
+   Print("NexusBridge: Received Command: '", command, "' with Request ID: ", requestId);
 
    if(command == "GetAccountSnapshot")
    {
@@ -303,7 +281,6 @@ void HandleGetAccountSnapshot(const string requestId)
       "}";
    }
 
-   // Format the JSON payload matching the C# contract GetAccountSnapshotResponse fields
    string payload = "{"
       "\"accountId\":"        + IntegerToString(accountId) + ","
       "\"broker\":\""         + EscapeJsonString(broker)   + "\","
@@ -316,9 +293,7 @@ void HandleGetAccountSnapshot(const string requestId)
       "\"connectionHealth\":\"" + connectionHealth        + "\""
    "}";
 
-   // Build the outer envelope matching the C# contract BridgeMessageEnvelope fields
    string responseEnvelopeJson = BuildEnvelopeJson("Response", requestId, "GetAccountSnapshot", payload, errorJson);
-
    SendResponse(responseEnvelopeJson);
 }
 
@@ -337,7 +312,6 @@ void HandlePing(const string requestId)
    "}";
 
    string responseEnvelopeJson = BuildEnvelopeJson("Response", requestId, "Ping", payload, "null");
-
    SendResponse(responseEnvelopeJson);
 }
 
@@ -347,8 +321,6 @@ void HandlePing(const string requestId)
 void HandleLogin(const string requestId, const string json)
 {
    string accountId = GetJsonStringValue(json, "accountId");
-   string brokerServer = GetJsonStringValue(json, "brokerServer");
-
    long current_login = AccountInfoInteger(ACCOUNT_LOGIN);
 
    bool success = true;
@@ -385,7 +357,6 @@ void HandleSubscribeSymbol(const string requestId, const string json)
    }
    else
    {
-      // Select the symbol in terminal Market Watch
       if(!SymbolSelect(symbol, true))
       {
          success = false;
@@ -393,7 +364,6 @@ void HandleSubscribeSymbol(const string requestId, const string json)
       }
       else
       {
-         // Add to tracking array if not already present
          bool exists = false;
          for(int i = 0; i < g_symbols_count; i++)
          {
@@ -448,7 +418,6 @@ void HandleUnsubscribeSymbol(const string requestId, const string json)
       {
          if(g_symbols_state[i].symbol == symbol)
          {
-            // Remove by shifting remaining elements
             for(int j = i; j < g_symbols_count - 1; j++)
             {
                g_symbols_state[j] = g_symbols_state[j + 1];
@@ -479,7 +448,7 @@ void HandlePlaceOrder(const string requestId, const string json)
    ResetLastError();
 
    string symbol = GetJsonStringValue(json, "symbol");
-   string side_str = GetJsonStringValue(json, "side"); // "Buy" or "Sell"
+   string side_str = GetJsonStringValue(json, "side"); 
    double volume = GetJsonDoubleValue(json, "volume");
    double stopLoss = GetJsonDoubleValue(json, "stopLoss");
    double takeProfit = GetJsonDoubleValue(json, "takeProfit");
@@ -492,7 +461,6 @@ void HandlePlaceOrder(const string requestId, const string json)
          ", Volume: ", DoubleToString(volume, 2),
          ", CorrelationId: ", clientCorrelationId);
 
-   // Validations
    if(symbol == "")
    {
       string errorJson = "{\"code\":\"INVALID_PAYLOAD\",\"message\":\"Symbol parameter is required.\"}";
@@ -500,7 +468,6 @@ void HandlePlaceOrder(const string requestId, const string json)
       return;
    }
 
-   // Verify symbol is selectable
    if(!SymbolSelect(symbol, true))
    {
       string errorJson = "{\"code\":\"INVALID_PAYLOAD\",\"message\":\"Symbol " + EscapeJsonString(symbol) + " is not available or cannot be selected.\"}";
@@ -531,7 +498,6 @@ void HandlePlaceOrder(const string requestId, const string json)
       return;
    }
 
-   // Normalize Volume
    double vol_step = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
    if(vol_step > 0)
    {
@@ -543,7 +509,6 @@ void HandlePlaceOrder(const string requestId, const string json)
    if(volume < min_volume) volume = min_volume;
    if(volume > max_volume) volume = max_volume;
 
-   // Get latest price
    double price = 0.0;
    MqlTick tick;
    if(SymbolInfoTick(symbol, tick))
@@ -555,14 +520,12 @@ void HandlePlaceOrder(const string requestId, const string json)
       price = (order_type == ORDER_TYPE_BUY) ? SymbolInfoDouble(symbol, SYMBOL_ASK) : SymbolInfoDouble(symbol, SYMBOL_BID);
    }
 
-   // Normalize StopLoss and TakeProfit
    int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
    double sl_normalized = 0.0;
    double tp_normalized = 0.0;
    if(stopLoss > 0.0) sl_normalized = NormalizeDouble(stopLoss, digits);
    if(takeProfit > 0.0) tp_normalized = NormalizeDouble(takeProfit, digits);
 
-   // Determine Filling Mode
    uint filling_modes = (uint)SymbolInfoInteger(symbol, SYMBOL_FILLING_MODE);
    ENUM_ORDER_TYPE_FILLING filling = ORDER_FILLING_FOK;
    if((filling_modes & SYMBOL_FILLING_FOK) != 0)
@@ -578,7 +541,6 @@ void HandlePlaceOrder(const string requestId, const string json)
       filling = ORDER_FILLING_RETURN;
    }
 
-   // Prepare trade request
    MqlTradeRequest request;
    MqlTradeResult result;
    ZeroMemory(request);
@@ -595,7 +557,6 @@ void HandlePlaceOrder(const string requestId, const string json)
    request.comment      = comment;
    request.type_filling = filling;
 
-   // Send order
    bool ok = OrderSend(request, result);
    int last_err = GetLastError();
 
@@ -656,7 +617,6 @@ void HandleClosePosition(const string requestId, const string json)
       return;
    }
 
-   // Validate position exists
    if(!PositionSelectByTicket(ticket))
    {
       string errorJson = "{\"code\":\"POSITION_NOT_FOUND\",\"message\":\"Position with ticket " + IntegerToString(ticket) + " not found.\"}";
@@ -670,11 +630,10 @@ void HandleClosePosition(const string requestId, const string json)
 
    if(volume <= 0.0 || volume > pos_volume)
    {
-      volume = pos_volume; // Default to full close
+      volume = pos_volume;
    }
    else
    {
-      // Normalize volume to step
       double vol_step = SymbolInfoDouble(pos_symbol, SYMBOL_VOLUME_STEP);
       if(vol_step > 0)
       {
@@ -682,7 +641,6 @@ void HandleClosePosition(const string requestId, const string json)
       }
    }
 
-   // Determine Filling Mode
    uint filling_modes = (uint)SymbolInfoInteger(pos_symbol, SYMBOL_FILLING_MODE);
    ENUM_ORDER_TYPE_FILLING filling = ORDER_FILLING_FOK;
    if((filling_modes & SYMBOL_FILLING_FOK) != 0)
@@ -698,10 +656,8 @@ void HandleClosePosition(const string requestId, const string json)
       filling = ORDER_FILLING_RETURN;
    }
 
-   // Opposite order type for closing
    ENUM_ORDER_TYPE order_type = (pos_type == POSITION_TYPE_BUY) ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
 
-   // Get latest price for closing trade
    double price = 0.0;
    MqlTick tick_data;
    if(SymbolInfoTick(pos_symbol, tick_data))
@@ -713,7 +669,6 @@ void HandleClosePosition(const string requestId, const string json)
       price = (order_type == ORDER_TYPE_BUY) ? SymbolInfoDouble(pos_symbol, SYMBOL_ASK) : SymbolInfoDouble(pos_symbol, SYMBOL_BID);
    }
 
-   // Prepare close deal order
    MqlTradeRequest request;
    MqlTradeResult result;
    ZeroMemory(request);
@@ -857,24 +812,31 @@ string BuildEnvelopeJson(const string messageType, const string requestId, const
 }
 
 //+------------------------------------------------------------------+
-//| Transmit serialized message over socket with trailing newline    |
+//| Transmit serialized message over WebRequest REST Endpoint         |
 //+------------------------------------------------------------------+
 void SendResponse(const string responseJson)
 {
-   if(g_socket == INVALID_HANDLE) return;
-
-   // Append the protocol standard line delimiter
-   string outbound_data = responseJson + "\n";
-
-   uchar buffer[];
-   int bytes_converted = StringToCharArray(outbound_data, buffer, 0, WHOLE_ARRAY, CP_UTF8);
-
-   // We skip the null-terminator byte added by StringToCharArray (bytes_converted - 1)
-   int bytes_sent = SocketSend(g_socket, buffer, (uint)(bytes_converted - 1));
-   if(bytes_sent < 0)
+   char data[];
+   int bytes_converted = StringToCharArray(responseJson, data, 0, WHOLE_ARRAY, CP_UTF8);
+   
+   // Trim the null-terminator byte added by StringToCharArray
+   if(bytes_converted > 0)
    {
-      Print("NexusBridge: SocketSend failed. Error code: ", GetLastError());
-      DisconnectFromBridge();
+      ArrayResize(data, bytes_converted - 1);
+   }
+
+   char result[];
+   string headers = "Content-Type: application/json\r\n";
+   
+   ResetLastError();
+   
+   // Deliver execution response to Kestrel REST Ingestion API on port 8080
+   int res = WebRequest("POST", g_response_url, headers, NULL, 3000, 
+                        data, 0, result, headers);
+                        
+   if(res == -1)
+   {
+      Print("NexusBridge: WebRequest SendResponse failed. Error Code: ", GetLastError());
    }
 }
 
@@ -891,14 +853,12 @@ void StreamLiveTicks()
       MqlTick tick;
       if(SymbolInfoTick(symbol, tick))
       {
-         // Check if bid or ask changed
          if(tick.bid != g_symbols_state[i].last_bid || tick.ask != g_symbols_state[i].last_ask)
          {
             g_symbols_state[i].last_time = tick.time;
             g_symbols_state[i].last_bid = tick.bid;
             g_symbols_state[i].last_ask = tick.ask;
 
-            // Format tick JSON payload matching C# TickNotification class
             MqlDateTime mqlTime;
             TimeToStruct(tick.time, mqlTime);
             string time_str = StringFormat("%04d-%02d-%02dT%02d:%02d:%02dZ", mqlTime.year, mqlTime.mon, mqlTime.day, mqlTime.hour, mqlTime.min, mqlTime.sec);
@@ -915,7 +875,19 @@ void StreamLiveTicks()
             string requestId = "tick-" + symbol + "-" + IntegerToString(TimeLocal());
             string envelopeJson = BuildEnvelopeJson("Request", requestId, "ReceiveTickStream", payload, "null");
 
-            SendResponse(envelopeJson);
+            // Dispatch high-frequency tick payload to Kestrel REST Tick Ingestion API
+            char data[];
+            int bytes_converted = StringToCharArray(envelopeJson, data, 0, WHOLE_ARRAY, CP_UTF8);
+            if(bytes_converted > 0)
+            {
+               ArrayResize(data, bytes_converted - 1);
+            }
+
+            char result[];
+            string headers = "Content-Type: application/json\r\n";
+            
+            WebRequest("POST", g_tick_url, headers, NULL, 2000, 
+                       data, 0, result, headers);
          }
       }
    }

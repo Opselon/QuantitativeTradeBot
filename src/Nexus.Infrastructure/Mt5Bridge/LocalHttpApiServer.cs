@@ -11,30 +11,43 @@ using Nexus.Core.Interfaces;
 
 namespace Nexus.Infrastructure.Mt5Bridge
 {
+    /// <summary>
+    /// Hosted background service running the Kestrel REST Server on Port 8080.
+    /// Handles incoming HTTP traffic from MQL5 WebRequests.
+    /// </summary>
     public class LocalHttpApiServer : IHostedService
     {
         private readonly IServiceProvider _serviceProvider;
         private WebApplication? _app;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LocalHttpApiServer"/> class.
+        /// </summary>
         public LocalHttpApiServer(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
         }
 
+        #region NEW VERSION - Kestrel Server on Port 8080
+        /// <summary>
+        /// Configures and boots the WebApplication listening on localhost:8080.
+        /// </summary>
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             var builder = WebApplication.CreateBuilder();
             builder.WebHost.ConfigureKestrel(options =>
             {
-                options.ListenLocalhost(5005);
+                // Converted port 5005 -> 8080 to support native MT5 WebRequests directly
+                options.ListenLocalhost(8080);
             });
 
-            // Register parent singletons in the nested Kestrel container
+            // Register parent singletons in Kestrel dependency injection
             builder.Services.AddSingleton(_serviceProvider.GetRequiredService<IMt5BridgeService>());
             builder.Services.AddSingleton(_serviceProvider.GetRequiredService<INativeCoreService>());
             builder.Services.AddSingleton(_serviceProvider.GetRequiredService<MarketDataPipeline>());
             builder.Services.AddSingleton(_serviceProvider.GetRequiredService<IAppConfigurationService>());
             builder.Services.AddSingleton(_serviceProvider.GetRequiredService<DiagnosticRingBuffer>());
+            builder.Services.AddSingleton(_serviceProvider.GetRequiredService<IMt5BridgeClient>());
 
             var app = builder.Build();
 
@@ -46,8 +59,12 @@ namespace Nexus.Infrastructure.Mt5Bridge
 
             _app = app;
             await _app.StartAsync(cancellationToken);
+            Console.WriteLine("[LocalHttpApiServer] Kestrel REST Server listening on http://localhost:8080");
         }
 
+        /// <summary>
+        /// Shuts down the local WebApplication.
+        /// </summary>
         public async Task StopAsync(CancellationToken cancellationToken)
         {
             if (_app != null)
@@ -55,5 +72,6 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 await _app.StopAsync(cancellationToken);
             }
         }
+        #endregion
     }
 }

@@ -25,9 +25,12 @@ namespace Nexus.Infrastructure.Adapters.Mt5
         private IMt5ConnectionService GetActiveService()
         {
             var settings = _configService.GetSettings();
-            return string.Equals(settings.Mt5Mode, "Real", StringComparison.OrdinalIgnoreCase)
-                ? _realService
-                : _simulatedService;
+
+            // Evaluates both "Real" and "RealBridge" inputs from settings to route traffic properly.
+            bool isRealMode = string.Equals(settings.Mt5Mode, "Real", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(settings.Mt5Mode, "RealBridge", StringComparison.OrdinalIgnoreCase);
+
+            return isRealMode ? _realService : _simulatedService;
         }
 
         public Task<ConnectionTestResultDto> TestConnectionAsync(ConnectionProfileDto profile, CancellationToken cancellationToken = default)

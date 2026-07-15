@@ -26,9 +26,11 @@ namespace Nexus.Infrastructure.Adapters.Mt5
         private IMt5TradeService GetActiveService()
         {
             var settings = _configService.GetSettings();
-            return string.Equals(settings.Mt5Mode, "Real", StringComparison.OrdinalIgnoreCase)
-                ? _realService
-                : _simulatedService;
+
+            bool isRealMode = string.Equals(settings.Mt5Mode, "Real", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(settings.Mt5Mode, "RealBridge", StringComparison.OrdinalIgnoreCase);
+
+            return isRealMode ? _realService : _simulatedService;
         }
 
         public Task<PlaceOrderResponse> PlaceOrderAsync(IMt5Session session, PlaceOrderRequest request, CancellationToken cancellationToken = default)

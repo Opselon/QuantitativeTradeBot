@@ -20,6 +20,10 @@ using Nexus.Core.Interfaces;
 
 namespace Nexus.Infrastructure.Mt5Bridge
 {
+    /// <summary>
+    /// Definitions and routes mapped to the local Kestrel HTTP API.
+    /// Handles polling, response, and tick streams specifically for MQL5's WebRequest engine.
+    /// </summary>
     public static class LocalHttpApiRoutes
     {
         private static readonly DateTime _startTime = DateTime.UtcNow;
@@ -32,12 +36,17 @@ namespace Nexus.Infrastructure.Mt5Bridge
         public static int TotalLoginFailures { get; set; }
         public static DateTime? LastCriticalErrorTime { get; set; }
 
-        // Stateful Smoke Tests Manager
         private static readonly ConcurrentDictionary<string, SmokeTestSession> SmokeTests = new();
 
+        #region NEW VERSION - Kestrel REST Controller Endpoints (Port 8080)
+        /// <summary>
+        /// Maps API routes to the application routing pipeline.
+        /// Includes the polling, responses, tick streams, health, and test controls.
+        /// </summary>
+        /// <param name="endpoints">The target endpoint route builder.</param>
         public static void Map(IEndpointRouteBuilder endpoints)
         {
-            // Middleware helper for token validation
+            // --- Helper verification delegates
             bool IsAuthorized(HttpContext context)
             {
                 if (!context.Request.Headers.TryGetValue("X-Nexus-Token", out var tokenValues))
@@ -49,28 +58,76 @@ namespace Nexus.Infrastructure.Mt5Bridge
 
             IResult UnauthorizedResult()
             {
-                return Results.Json(new
-                {
-                    title = "Unauthorized",
-                    status = 401,
-                    detail = "Invalid or missing X-Nexus-Token header."
-                }, statusCode: 401, contentType: "application/problem+json");
+                return Results.Json(new { title = "Unauthorized", status = 401, detail = "Invalid X-Nexus-Token header." }, statusCode: 401, contentType: "application/problem+json");
             }
 
             IResult ProblemResult(string detail, int statusCode = 400)
             {
-                return Results.Json(new
-                {
-                    title = "Bad Request",
-                    status = statusCode,
-                    detail = detail
-                }, statusCode: statusCode, contentType: "application/problem+json");
+                return Results.Json(new { title = "Bad Request", status = statusCode, detail = detail }, statusCode: statusCode, contentType: "application/problem+json");
             }
 
-            // 1. GET /api/v1/health
-            endpoints.MapGet("/api/v1/health", (
-                IMt5BridgeService bridgeService,
-                INativeCoreService nativeCore) =>
+            string hostElString(JsonElement el) => el.ValueKind == JsonValueKind.String ? el.GetString() ?? string.Empty : el.GetRawText();
+
+            // 1. GET /api/v1/bridge/poll - Evaluated by MT5 timer loop to fetch queued commands
+            endpoints.MapGet("/api/v1/bridge/poll", (IMt5BridgeClient bridgeClient) =>
+            {
+                if (bridgeClient is TcpMt5BridgeClient httpQueueBridge)
+                {
+                    var queuedRequest = httpQueueBridge.DequeueRequest();
+                    if (queuedRequest != null)
+                    {
+                        return Results.Ok(queuedRequest);
+                    }
+                }
+                return Results.Text("NONE", "text/plain");
+            });
+
+            // 2. POST /api/v1/bridge/response - Called by MT5 to deliver transaction results
+            endpoints.MapPost("/api/v1/bridge/response", async (HttpContext context, IMt5BridgeClient bridgeClient) =>
+            {
+                try
+                {
+                    using var reader = new StreamReader(context.Request.Body);
+                    var body = await reader.ReadToEndAsync();
+
+                    var responseEnvelope = JsonSerializer.Deserialize<BridgeMessageEnvelope>(body);
+                    if (responseEnvelope != null && bridgeClient is TcpMt5BridgeClient httpQueueBridge)
+                    {
+                        httpQueueBridge.RegisterResponse(responseEnvelope);
+                        return Results.Ok(new { success = true });
+                    }
+                    return ProblemResult("Failed to parse response payload.");
+                }
+                catch (Exception ex)
+                {
+                    return ProblemResult(ex.Message);
+                }
+            });
+
+            // 3. POST /api/v1/bridge/tick - Stream ticks from MT5 WebRequest
+            endpoints.MapPost("/api/v1/bridge/tick", async (HttpContext context, IMt5BridgeClient bridgeClient) =>
+            {
+                try
+                {
+                    using var reader = new StreamReader(context.Request.Body);
+                    var body = await reader.ReadToEndAsync();
+
+                    var envelope = JsonSerializer.Deserialize<BridgeMessageEnvelope>(body);
+                    if (envelope != null && bridgeClient is TcpMt5BridgeClient httpQueueBridge)
+                    {
+                        httpQueueBridge.RegisterResponse(envelope);
+                        return Results.Ok(new { success = true });
+                    }
+                    return ProblemResult("Invalid tick envelope received.");
+                }
+                catch (Exception ex)
+                {
+                    return ProblemResult(ex.Message);
+                }
+            });
+
+            // 4. GET /api/v1/health
+            endpoints.MapGet("/api/v1/health", (IMt5BridgeService bridgeService, INativeCoreService nativeCore) =>
             {
                 double uptime = (DateTime.UtcNow - _startTime).TotalSeconds;
                 return Results.Ok(new
@@ -82,7 +139,7 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 });
             });
 
-            // 2. GET /api/v1/bridge/status
+            // 5. GET /api/v1/bridge/status
             endpoints.MapGet("/api/v1/bridge/status", (IMt5BridgeService bridgeService) =>
             {
                 string transportState = bridgeService.IsConnected ? "connected" : "disconnected";
@@ -101,7 +158,7 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 });
             });
 
-            // 3. GET /api/v1/bridge/capabilities
+            // 6. GET /api/v1/bridge/capabilities
             endpoints.MapGet("/api/v1/bridge/capabilities", (IAppConfigurationService configService) =>
             {
                 var settings = configService.GetSettings();
@@ -119,10 +176,8 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 });
             });
 
-            // 4. GET /api/v1/bridge/subscriptions
-            endpoints.MapGet("/api/v1/bridge/subscriptions", (
-                IMt5BridgeService bridgeService,
-                MarketDataPipeline pipeline) =>
+            // 7. GET /api/v1/bridge/subscriptions
+            endpoints.MapGet("/api/v1/bridge/subscriptions", (IMt5BridgeService bridgeService, MarketDataPipeline pipeline) =>
             {
                 var activeSymbols = bridgeService.SubscribedSymbols;
                 var list = activeSymbols.Select(symbol =>
@@ -133,14 +188,14 @@ namespace Nexus.Infrastructure.Mt5Bridge
                         symbolName = symbol,
                         subscriptionState = "active",
                         timeOfLastTick = lastTick != null ? lastTick.Timestamp.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") : "Never",
-                        ticksCount = lastTick != null ? 1 : 0 // fallback
+                        ticksCount = lastTick != null ? 1 : 0
                     };
                 }).ToList();
 
                 return Results.Ok(list);
             });
 
-            // 5. GET /api/v1/market/latest
+            // 8. GET /api/v1/market/latest
             endpoints.MapGet("/api/v1/market/latest", (MarketDataPipeline pipeline) =>
             {
                 var ticks = pipeline.LatestTicks;
@@ -156,17 +211,15 @@ namespace Nexus.Infrastructure.Mt5Bridge
                         tickTimestamp = tick.Timestamp.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                         receiveTimestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                         ageSeconds = Math.Max(0, Math.Round(age, 2)),
-                        tickRate = 1.0 // telemetry tick rate
+                        tickRate = 1.0
                     };
                 }).ToList();
 
                 return Results.Ok(list);
             });
 
-            // 6. GET /api/v1/account/snapshot
-            endpoints.MapGet("/api/v1/account/snapshot", async (
-                IMt5BridgeService bridgeService,
-                CancellationToken ct) =>
+            // 9. GET /api/v1/account/snapshot
+            endpoints.MapGet("/api/v1/account/snapshot", async (IMt5BridgeService bridgeService, CancellationToken ct) =>
             {
                 if (!bridgeService.IsConnected)
                 {
@@ -200,10 +253,8 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 }
             });
 
-            // 7. GET /api/v1/native/status
-            endpoints.MapGet("/api/v1/native/status", (
-                INativeCoreService nativeCore,
-                MarketDataPipeline pipeline) =>
+            // 10. GET /api/v1/native/status
+            endpoints.MapGet("/api/v1/native/status", (INativeCoreService nativeCore, MarketDataPipeline pipeline) =>
             {
                 return Results.Ok(new
                 {
@@ -215,10 +266,8 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 });
             });
 
-            // 8. GET /api/v1/diagnostics/summary
-            endpoints.MapGet("/api/v1/diagnostics/summary", (
-                MarketDataPipeline pipeline,
-                IAppConfigurationService configService) =>
+            // 11. GET /api/v1/diagnostics/summary
+            endpoints.MapGet("/api/v1/diagnostics/summary", (MarketDataPipeline pipeline, IAppConfigurationService configService) =>
             {
                 var settings = configService.GetSettings();
                 return Results.Ok(new
@@ -234,28 +283,21 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 });
             });
 
-            // 9. GET /api/v1/logs
-            endpoints.MapGet("/api/v1/logs", (
-                DiagnosticRingBuffer ringBuffer,
-                string? level,
-                string? category,
-                int? limit) =>
+            // 12. GET /api/v1/logs
+            endpoints.MapGet("/api/v1/logs", (DiagnosticRingBuffer ringBuffer, string? level, string? category, int? limit) =>
             {
                 var logs = ringBuffer.Query(level, category, limit: limit ?? 100);
                 return Results.Ok(logs);
             });
 
-            // 10. POST /api/v1/bridge/connect
-            endpoints.MapPost("/api/v1/bridge/connect", async (
-                HttpContext context,
-                IMt5BridgeService bridgeService,
-                CancellationToken ct) =>
+            // 13. POST /api/v1/bridge/connect
+            endpoints.MapPost("/api/v1/bridge/connect", async (HttpContext context, IMt5BridgeService bridgeService, CancellationToken ct) =>
             {
                 if (!IsAuthorized(context)) return UnauthorizedResult();
 
                 using var doc = await JsonDocument.ParseAsync(context.Request.Body, cancellationToken: ct);
                 string host = "127.0.0.1";
-                int port = 5000;
+                int port = 8080;
 
                 if (doc.RootElement.TryGetProperty("host", out var hostEl)) host = hostEl.GetString() ?? "127.0.0.1";
                 if (doc.RootElement.TryGetProperty("port", out var portEl)) port = portEl.GetInt32();
@@ -277,11 +319,8 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 }
             });
 
-            // 11. POST /api/v1/bridge/disconnect
-            endpoints.MapPost("/api/v1/bridge/disconnect", async (
-                HttpContext context,
-                IMt5BridgeService bridgeService,
-                CancellationToken ct) =>
+            // 14. POST /api/v1/bridge/disconnect
+            endpoints.MapPost("/api/v1/bridge/disconnect", async (HttpContext context, IMt5BridgeService bridgeService, CancellationToken ct) =>
             {
                 if (!IsAuthorized(context)) return UnauthorizedResult();
 
@@ -297,11 +336,8 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 }
             });
 
-            // 12. POST /api/v1/bridge/ping
-            endpoints.MapPost("/api/v1/bridge/ping", async (
-                HttpContext context,
-                IMt5BridgeService bridgeService,
-                CancellationToken ct) =>
+            // 15. POST /api/v1/bridge/ping
+            endpoints.MapPost("/api/v1/bridge/ping", async (HttpContext context, IMt5BridgeService bridgeService, CancellationToken ct) =>
             {
                 if (!IsAuthorized(context)) return UnauthorizedResult();
 
@@ -328,11 +364,8 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 }
             });
 
-            // 13. POST /api/v1/bridge/subscriptions
-            endpoints.MapPost("/api/v1/bridge/subscriptions", async (
-                HttpContext context,
-                IMt5BridgeService bridgeService,
-                CancellationToken ct) =>
+            // 16. POST /api/v1/bridge/subscriptions
+            endpoints.MapPost("/api/v1/bridge/subscriptions", async (HttpContext context, IMt5BridgeService bridgeService, CancellationToken ct) =>
             {
                 if (!IsAuthorized(context)) return UnauthorizedResult();
 
@@ -364,12 +397,8 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 }
             });
 
-            // 14. DELETE /api/v1/bridge/subscriptions/{symbol}
-            endpoints.MapDelete("/api/v1/bridge/subscriptions/{symbol}", async (
-                HttpContext context,
-                string symbol,
-                IMt5BridgeService bridgeService,
-                CancellationToken ct) =>
+            // 17. DELETE /api/v1/bridge/subscriptions/{symbol}
+            endpoints.MapDelete("/api/v1/bridge/subscriptions/{symbol}", async (HttpContext context, string symbol, IMt5BridgeService bridgeService, CancellationToken ct) =>
             {
                 if (!IsAuthorized(context)) return UnauthorizedResult();
 
@@ -388,12 +417,8 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 }
             });
 
-            // 15. POST /api/v1/smoke-tests/real
-            endpoints.MapPost("/api/v1/smoke-tests/real", async (
-                HttpContext context,
-                IMt5BridgeService bridgeService,
-                MarketDataPipeline pipeline,
-                CancellationToken ct) =>
+            // 18. POST /api/v1/smoke-tests/real
+            endpoints.MapPost("/api/v1/smoke-tests/real", async (HttpContext context, IMt5BridgeService bridgeService, MarketDataPipeline pipeline, CancellationToken ct) =>
             {
                 if (!IsAuthorized(context)) return UnauthorizedResult();
 
@@ -412,7 +437,6 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 var session = new SmokeTestSession(testId, testSymbol, accountId, password, brokerServer, bridgeService, pipeline);
                 SmokeTests[testId] = session;
 
-                // Start the stateful smoke test asynchronously
                 session.Start();
 
                 return Results.Accepted($"/api/v1/smoke-tests/{testId}", new
@@ -423,10 +447,7 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 });
             });
 
-            // Helper to get string safely
-            string hostElString(JsonElement el) => el.ValueKind == JsonValueKind.String ? el.GetString() ?? string.Empty : el.GetRawText();
-
-            // 16. GET /api/v1/smoke-tests/{id}
+            // 19. GET /api/v1/smoke-tests/{id}
             endpoints.MapGet("/api/v1/smoke-tests/{id}", (string id) =>
             {
                 if (!SmokeTests.TryGetValue(id, out var session))
@@ -440,16 +461,13 @@ namespace Nexus.Infrastructure.Mt5Bridge
                     currentStep = session.CurrentStep,
                     stepsCompleted = session.CompletedSteps,
                     success = session.Status == "Passed",
-                    outcome = session.Status, // Passed, Failed, Inconclusive
+                    outcome = session.Status,
                     sanitizedLogs = session.Logs
                 });
             });
 
-            // 17. POST /api/v1/bridge/login
-            endpoints.MapPost("/api/v1/bridge/login", async (
-                HttpContext context,
-                IMt5BridgeService bridgeService,
-                CancellationToken ct) =>
+            // 20. POST /api/v1/bridge/login
+            endpoints.MapPost("/api/v1/bridge/login", async (HttpContext context, IMt5BridgeService bridgeService, CancellationToken ct) =>
             {
                 if (!IsAuthorized(context)) return UnauthorizedResult();
 
@@ -488,11 +506,8 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 }
             });
 
-            // 18. POST /api/v1/bridge/force-reconnect
-            endpoints.MapPost("/api/v1/bridge/force-reconnect", async (
-                HttpContext context,
-                IMt5BridgeService bridgeService,
-                CancellationToken ct) =>
+            // 21. POST /api/v1/bridge/force-reconnect
+            endpoints.MapPost("/api/v1/bridge/force-reconnect", async (HttpContext context, IMt5BridgeService bridgeService, CancellationToken ct) =>
             {
                 if (!IsAuthorized(context)) return UnauthorizedResult();
 
@@ -502,14 +517,11 @@ namespace Nexus.Infrastructure.Mt5Bridge
                     await bridgeService.DisconnectAsync(ct);
                     await Task.Delay(1000, ct);
 
-                    // Reconnect listener
-                    // Note: In real app host & port are saved in config, resolve them here or fallback
                     string host = "127.0.0.1";
-                    int port = 5000;
+                    int port = 8080;
 
                     await bridgeService.ConnectAsync(host, port, ct);
 
-                    // Restore subscriptions
                     foreach (var sym in symbols)
                     {
                         await bridgeService.SubscribeSymbolAsync(sym, ct);
@@ -527,8 +539,13 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 }
             });
         }
+        #endregion
     }
 
+    #region SUPPORTING DIAGNOSTICS & TELEMETRY
+    /// <summary>
+    /// Managed session orchestrating asynchronous stateful integration testing scenarios.
+    /// </summary>
     public class SmokeTestSession
     {
         public string TestId { get; }
@@ -605,7 +622,7 @@ namespace Nexus.Infrastructure.Mt5Bridge
             // Step 3: Connect
             CurrentStep = "Step 3: Connect to bridge";
             AddLog("Connecting to local bridge listener...");
-            await _bridgeService.ConnectAsync("127.0.0.1", 5000);
+            await _bridgeService.ConnectAsync("127.0.0.1", 8080);
             CompletedSteps.Add("Connect to bridge");
 
             // Step 4: Login with memory-only credentials
@@ -636,7 +653,6 @@ namespace Nexus.Infrastructure.Mt5Bridge
             // Step 6: Ping
             CurrentStep = "Step 6: Heartbeat Ping";
             AddLog("Sending ping to MT5...");
-            // Use snapshot to ping
             var initialSnapshot = await _bridgeService.GetAccountSnapshotAsync();
             AddLog($"Ping complete. Latency: {_bridgeService.PingLatencyMs} ms");
             CompletedSteps.Add("Heartbeat Ping");
@@ -698,4 +714,5 @@ namespace Nexus.Infrastructure.Mt5Bridge
             CurrentStep = "Completed";
         }
     }
+    #endregion
 }
