@@ -281,12 +281,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Merge pull request #21 from Opselon/stockfish-trading-intelligence-9071390709839937580 |
+| **Commit Message** | Merge pull request #22 from Opselon/jules-3432804104822125027-1d5acabd |
 | **Author** | Capsizer |
 | **Branch** | `main` |
-| **Run Number** | `65` |
-| **Commit SHA** | `6e7164315c0b2d7011ab2abbc9cb2ca7cf8824c6` |
-| **Generated At** | `2026-07-15 21:48:49 UTC` |
+| **Run Number** | `67` |
+| **Commit SHA** | `57edf19b5d3acb22a9be58c1442d7381374b0b41` |
+| **Generated At** | `2026-07-15 22:32:30 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -339,7 +339,15 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── 11_ROADMAP.md
 │   ├── ACCUMULATOR_DESIGN.md
 │   ├── AI_TRAINING_PIPELINE.md
-│   └── PATTERN_MEMORY.md
+│   ├── ARCHITECTURE.md
+│   ├── CHANGELOG.md
+│   ├── CODING_STANDARDS.md
+│   ├── DATABASE.md
+│   ├── DEPENDENCY_GRAPH.md
+│   ├── NATIVE_ENGINE.md
+│   ├── PATTERN_MEMORY.md
+│   ├── PROGRESS.md
+│   └── ROADMAP.md
 ├── MQL5/
 │   └── Experts/
 │       └── Nexus/
