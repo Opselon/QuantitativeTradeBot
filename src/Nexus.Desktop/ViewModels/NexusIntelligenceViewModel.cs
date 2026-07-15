@@ -26,6 +26,10 @@ namespace Nexus.Desktop.ViewModels
         private readonly INativeCoreService _nativeCore;
         private readonly NativeMarketIntelligenceService _marketIntelligence;
 
+        // Stockfish Intelligence additions
+        private readonly IScenarioSearchEngine _scenarioSearchEngine;
+        private readonly IMultiTimeframeConsensusEngine _mtfConsensusEngine;
+
         private readonly CancellationTokenSource _cts = new();
         private readonly Random _random = new();
 
@@ -70,6 +74,11 @@ namespace Nexus.Desktop.ViewModels
         private string _neuralInferenceTime = "1.10 ms";
         private string _totalDecisionPipelineTime = "1.30 ms";
 
+        // 6. Stockfish Search and Multi-Timeframe UI Properties
+        private string _searchBestAction = "WAIT";
+        private string _searchReasoning = "Evaluating probabilistic path scenarios...";
+        private string _mtfConsensusSummary = "Awaiting multi-timeframe consensus signals...";
+
         // Getters and Setters
         public string NativeCoreStatus { get => _nativeCoreStatus; set => SetProperty(ref _nativeCoreStatus, value); }
         public string LibraryLoaded { get => _libraryLoaded; set => SetProperty(ref _libraryLoaded, value); }
@@ -107,6 +116,11 @@ namespace Nexus.Desktop.ViewModels
         public string NeuralInferenceTime { get => _neuralInferenceTime; set => SetProperty(ref _neuralInferenceTime, value); }
         public string TotalDecisionPipelineTime { get => _totalDecisionPipelineTime; set => SetProperty(ref _totalDecisionPipelineTime, value); }
 
+        // Stockfish Getters & Setters
+        public string SearchBestAction { get => _searchBestAction; set => SetProperty(ref _searchBestAction, value); }
+        public string SearchReasoning { get => _searchReasoning; set => SetProperty(ref _searchReasoning, value); }
+        public string MtfConsensusSummary { get => _mtfConsensusSummary; set => SetProperty(ref _mtfConsensusSummary, value); }
+
         public ICommand RunModelInferenceCommand { get; }
 
         public NexusIntelligenceViewModel(
@@ -119,6 +133,8 @@ namespace Nexus.Desktop.ViewModels
             INativeAnalyticsEngine nativeEngine,
             INativeCoreService nativeCore,
             NativeMarketIntelligenceService marketIntelligence,
+            IScenarioSearchEngine scenarioSearchEngine,
+            IMultiTimeframeConsensusEngine mtfConsensusEngine,
             IDiagnosticService diagnosticService)
         {
             _neuralService = neuralService ?? throw new ArgumentNullException(nameof(neuralService));
@@ -130,6 +146,8 @@ namespace Nexus.Desktop.ViewModels
             _nativeEngine = nativeEngine ?? throw new ArgumentNullException(nameof(nativeEngine));
             _nativeCore = nativeCore ?? throw new ArgumentNullException(nameof(nativeCore));
             _marketIntelligence = marketIntelligence ?? throw new ArgumentNullException(nameof(marketIntelligence));
+            _scenarioSearchEngine = scenarioSearchEngine ?? throw new ArgumentNullException(nameof(scenarioSearchEngine));
+            _mtfConsensusEngine = mtfConsensusEngine ?? throw new ArgumentNullException(nameof(mtfConsensusEngine));
             _diagnosticService = diagnosticService ?? throw new ArgumentNullException(nameof(diagnosticService));
 
             RunModelInferenceCommand = new AsyncRelayCommand(OnExecuteInferenceAsync);
@@ -166,14 +184,15 @@ namespace Nexus.Desktop.ViewModels
             sw.Stop();
 
             // Read evaluated values dynamically from the NativeCore state or fallback state
+            MarketState marketState;
             if (_nativeCore.IsAvailable)
             {
-                var state = _nativeCore.GetMarketState();
-                CurrentMarketState = state.MarketRegime;
-                PriceStructure = state.PriceStructure;
-                Momentum = state.Momentum;
-                Volatility = state.Volatility;
-                Liquidity = state.Liquidity;
+                marketState = _nativeCore.GetMarketState();
+                CurrentMarketState = marketState.MarketRegime;
+                PriceStructure = marketState.PriceStructure;
+                Momentum = marketState.Momentum;
+                Volatility = marketState.Volatility;
+                Liquidity = marketState.Liquidity;
 
                 // Load performance telemetry from real native measurements
                 NativeExecutionLatency = $"{_marketIntelligence.TickProcessingLatencyMs:F4} ms";
@@ -184,6 +203,18 @@ namespace Nexus.Desktop.ViewModels
             else
             {
                 CurrentMarketState = _marketIntelligence.ActiveRegime;
+                marketState = new MarketState(
+                    "EURUSD",
+                    DateTime.UtcNow,
+                    Volatility,
+                    Momentum,
+                    Liquidity,
+                    PriceStructure,
+                    0.5,
+                    0.1,
+                    UsdStrength,
+                    CurrentMarketState
+                );
 
                 // Generate managed telemetry
                 NativeExecutionLatency = $"{_marketIntelligence.TickProcessingLatencyMs:F3} ms";
@@ -220,6 +251,45 @@ namespace Nexus.Desktop.ViewModels
 
             // Format status with Mode
             ModelStatus = $"{_neuralService.CurrentMode} ({_marketIntelligence.CurrentMode})";
+
+            // Stockfish Decision search integration
+            try
+            {
+                var searchNode = await _scenarioSearchEngine.SearchBestActionAsync(
+                    marketState,
+                    risk,
+                    BuyConfidence,
+                    SellConfidence,
+                    CancellationToken.None
+                );
+                SearchBestAction = searchNode.Action.ToString();
+                SearchReasoning = searchNode.Reasoning;
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Log("Intelligence", "Error", $"Scenario search failed: {ex.Message}");
+            }
+
+            // Multi-Timeframe Consensus signal simulation & integration
+            try
+            {
+                var d1Signal = new MultiTimeframeSignal(TimeframeInterval.D1, BuyConfidence > SellConfidence ? TrendDirection.BULLISH : TrendDirection.BEARISH, 0.85, Volatility, Momentum, EvaluationScore, DateTime.UtcNow);
+                var h4Signal = new MultiTimeframeSignal(TimeframeInterval.H4, BuyConfidence > SellConfidence ? TrendDirection.BULLISH : TrendDirection.BEARISH, 0.78, Volatility, Momentum, EvaluationScore, DateTime.UtcNow);
+                var m30Signal = new MultiTimeframeSignal(TimeframeInterval.M30, BuyConfidence > SellConfidence ? TrendDirection.BULLISH : TrendDirection.BEARISH, 0.72, Volatility, Momentum, EvaluationScore, DateTime.UtcNow);
+                var m5Signal = new MultiTimeframeSignal(TimeframeInterval.M5, BuyConfidence > SellConfidence ? TrendDirection.BULLISH : TrendDirection.BEARISH, 0.68, Volatility, Momentum, EvaluationScore, DateTime.UtcNow);
+
+                _mtfConsensusEngine.RegisterTimeframeSignal(d1Signal);
+                _mtfConsensusEngine.RegisterTimeframeSignal(h4Signal);
+                _mtfConsensusEngine.RegisterTimeframeSignal(m30Signal);
+                _mtfConsensusEngine.RegisterTimeframeSignal(m5Signal);
+
+                var consensusState = _mtfConsensusEngine.GetCurrentConsensus();
+                MtfConsensusSummary = consensusState.ConsensusSummary;
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Log("Intelligence", "Error", $"MTF consensus failed: {ex.Message}");
+            }
         }
 
         private async Task RunLiveTelemetryLoopAsync(CancellationToken token)

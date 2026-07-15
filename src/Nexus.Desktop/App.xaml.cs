@@ -65,6 +65,11 @@ namespace Nexus.Desktop
                     services.AddSingleton<Mt5TradingViewModel>();
 
                     // Register Intelligence & AI Stack
+                    services.AddSingleton<INativeCoreService, NativeCoreService>();
+                    services.AddSingleton<IScenarioSearchEngine, Nexus.Application.Intelligence.ScenarioSearchEngine>();
+                    services.AddSingleton<IMultiTimeframeConsensusEngine, Nexus.Application.Intelligence.MultiTimeframeConsensusEngine>();
+                    services.AddSingleton<IExperienceCollector, Nexus.Application.Intelligence.ExperienceCollector>();
+
                     services.AddSingleton<INativeAnalyticsEngine, NativeAnalyticsEngine>();
                     services.AddSingleton<INeuralModelService, Nexus.AI.NeuralModelService>();
                     services.AddSingleton<ICurrencyStrengthEngine, Nexus.Application.Intelligence.CurrencyStrengthEngine>();

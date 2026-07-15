@@ -8,11 +8,27 @@ using Nexus.Application.Ports;
 using Nexus.Desktop.Models;
 using Nexus.Desktop.Services;
 using Nexus.Desktop.ViewModels;
+using Nexus.Infrastructure.Mt5Bridge;
+using Nexus.Core.Interfaces;
+using Nexus.Core.Entities;
+using Nexus.Application.Workflows.DTOs;
 
 namespace Nexus.Tests.Unit.Desktop
 {
     public class Mt5TradingViewModelTests
     {
+        private Mt5TradingViewModel CreateViewModel(
+            IMt5OperatorService opService,
+            IDiagnosticService diagService,
+            IAppConfigurationService configService)
+        {
+            var fakeBridge = new FakeBridgeService();
+            var fakeNative = new FakeNativeCore();
+            var nullLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MarketDataPipeline>.Instance;
+            var pipeline = new MarketDataPipeline(fakeBridge, fakeNative, nullLogger);
+            return new Mt5TradingViewModel(opService, diagService, configService, pipeline);
+        }
+
         [Fact]
         public async Task Refresh_Success_PopulatesPositionsAndSetsState()
         {
@@ -37,7 +53,7 @@ namespace Nexus.Tests.Unit.Desktop
             var stubDiagnostics = new StubDiagnosticService();
             var stubConfig = new StubAppConfigurationService();
 
-            using var viewModel = new Mt5TradingViewModel(stubOperator, stubDiagnostics, stubConfig);
+            using var viewModel = CreateViewModel(stubOperator, stubDiagnostics, stubConfig);
 
             // Act
             await viewModel.RefreshPositionsCommand.ExecuteAsync(null);
@@ -59,7 +75,7 @@ namespace Nexus.Tests.Unit.Desktop
             var stubDiagnostics = new StubDiagnosticService();
             var stubConfig = new StubAppConfigurationService();
 
-            using var viewModel = new Mt5TradingViewModel(stubOperator, stubDiagnostics, stubConfig);
+            using var viewModel = CreateViewModel(stubOperator, stubDiagnostics, stubConfig);
 
             // Act
             await viewModel.RefreshPositionsCommand.ExecuteAsync(null);
@@ -81,11 +97,9 @@ namespace Nexus.Tests.Unit.Desktop
             var stubDiagnostics = new StubDiagnosticService();
             var stubConfig = new StubAppConfigurationService();
 
-            using var viewModel = new Mt5TradingViewModel(stubOperator, stubDiagnostics, stubConfig)
-            {
-                SelectedSymbol = "EURUSD",
-                OrderVolume = 1.0m
-            };
+            using var viewModel = CreateViewModel(stubOperator, stubDiagnostics, stubConfig);
+            viewModel.SelectedSymbol = "EURUSD";
+            viewModel.OrderVolume = 1.0m;
 
             // Act
             await viewModel.BuyCommand.ExecuteAsync(null);
@@ -113,11 +127,9 @@ namespace Nexus.Tests.Unit.Desktop
             var stubDiagnostics = new StubDiagnosticService();
             var stubConfig = new StubAppConfigurationService();
 
-            using var viewModel = new Mt5TradingViewModel(stubOperator, stubDiagnostics, stubConfig)
-            {
-                SelectedSymbol = "EURUSD",
-                OrderVolume = 0.5m
-            };
+            using var viewModel = CreateViewModel(stubOperator, stubDiagnostics, stubConfig);
+            viewModel.SelectedSymbol = "EURUSD";
+            viewModel.OrderVolume = 0.5m;
 
             // Act
             await viewModel.BuyCommand.ExecuteAsync(null);
@@ -137,11 +149,9 @@ namespace Nexus.Tests.Unit.Desktop
             var stubDiagnostics = new StubDiagnosticService();
             var stubConfig = new StubAppConfigurationService();
 
-            using var viewModel = new Mt5TradingViewModel(stubOperator, stubDiagnostics, stubConfig)
-            {
-                SelectedSymbol = "GBPUSD",
-                OrderVolume = 2.0m
-            };
+            using var viewModel = CreateViewModel(stubOperator, stubDiagnostics, stubConfig);
+            viewModel.SelectedSymbol = "GBPUSD";
+            viewModel.OrderVolume = 2.0m;
 
             // Act
             await viewModel.SellCommand.ExecuteAsync(null);
@@ -162,7 +172,7 @@ namespace Nexus.Tests.Unit.Desktop
             var stubDiagnostics = new StubDiagnosticService();
             var stubConfig = new StubAppConfigurationService();
 
-            using var viewModel = new Mt5TradingViewModel(stubOperator, stubDiagnostics, stubConfig);
+            using var viewModel = CreateViewModel(stubOperator, stubDiagnostics, stubConfig);
 
             var positionVm = new DesktopPositionViewModel(new DesktopPositionDto
             {
@@ -193,7 +203,7 @@ namespace Nexus.Tests.Unit.Desktop
             var stubDiagnostics = new StubDiagnosticService();
             var stubConfig = new StubAppConfigurationService();
 
-            using var viewModel = new Mt5TradingViewModel(stubOperator, stubDiagnostics, stubConfig);
+            using var viewModel = CreateViewModel(stubOperator, stubDiagnostics, stubConfig);
 
             // Act
             viewModel.SelectedSymbol = symbol;
@@ -213,7 +223,7 @@ namespace Nexus.Tests.Unit.Desktop
             var stubDiagnostics = new StubDiagnosticService();
             var stubConfig = new StubAppConfigurationService();
 
-            using var viewModel = new Mt5TradingViewModel(stubOperator, stubDiagnostics, stubConfig);
+            using var viewModel = CreateViewModel(stubOperator, stubDiagnostics, stubConfig);
 
             // Act
             viewModel.SelectedSymbol = "EURUSD";
@@ -233,11 +243,9 @@ namespace Nexus.Tests.Unit.Desktop
             var stubDiagnostics = new StubDiagnosticService();
             var stubConfig = new StubAppConfigurationService();
 
-            using var viewModel = new Mt5TradingViewModel(stubOperator, stubDiagnostics, stubConfig)
-            {
-                SelectedSymbol = "EURUSD",
-                OrderVolume = 1.0m
-            };
+            using var viewModel = CreateViewModel(stubOperator, stubDiagnostics, stubConfig);
+            viewModel.SelectedSymbol = "EURUSD";
+            viewModel.OrderVolume = 1.0m;
 
             // Act - Start trade buy and immediately check states
             var buyTask = viewModel.BuyCommand.ExecuteAsync(null);
@@ -260,11 +268,9 @@ namespace Nexus.Tests.Unit.Desktop
             var stubDiagnostics = new StubDiagnosticService();
             var stubConfig = new StubAppConfigurationService();
 
-            using var viewModel = new Mt5TradingViewModel(stubOperator, stubDiagnostics, stubConfig)
-            {
-                SelectedSymbol = "EURUSD",
-                OrderVolume = 0.5m
-            };
+            using var viewModel = CreateViewModel(stubOperator, stubDiagnostics, stubConfig);
+            viewModel.SelectedSymbol = "EURUSD";
+            viewModel.OrderVolume = 0.5m;
 
             // Act & Assert
             await Assert.ThrowsAsync<OperationCanceledException>(async () =>
@@ -308,7 +314,20 @@ namespace Nexus.Tests.Unit.Desktop
                 return PositionsToReturn;
             }
 
-            public async Task<DesktopTradeResult> PlaceOrderAsync(string symbol, DesktopOrderSide side, decimal volume, CancellationToken cancellationToken)
+            public async Task<DesktopTradeResult> ModifyPositionAsync(long ticket, string symbol, decimal sl, decimal tp, CancellationToken cancellationToken)
+            {
+                if (DelayMilliseconds > 0) await Task.Delay(DelayMilliseconds, cancellationToken);
+                return new DesktopTradeResult { IsSuccess = true };
+            }
+
+            public async Task<DesktopTradeResult> PlaceOrderAsync(
+                string symbol,
+                DesktopOrderSide side,
+                decimal volume,
+                decimal? stopLoss,
+                decimal? takeProfit,
+                string comment,
+                CancellationToken cancellationToken)
             {
                 PlaceOrderCalled = true;
                 PlaceOrderSymbol = symbol;
@@ -348,6 +367,47 @@ namespace Nexus.Tests.Unit.Desktop
             public AppSettings Settings { get; set; } = new AppSettings();
             public AppSettings GetSettings() => Settings;
             public void SaveSettings(AppSettings settings) => Settings = settings;
+        }
+
+        private class FakeBridgeService : IMt5BridgeService
+        {
+            public event Action<PriceTickEnvelope>? OnTickReceived;
+            public event Action<string>? OnStatusChanged;
+
+            public string ConnectionStatusText => "Disconnected";
+            public double PingLatencyMs => 0;
+            public DateTime LastHeartbeatUtc => DateTime.MinValue;
+            public string LastErrorMessage => string.Empty;
+            public IReadOnlyCollection<string> SubscribedSymbols => Array.Empty<string>();
+            public bool IsConnected => false;
+            public bool IsAuthenticated => false;
+            public bool IsEaPresentInRepository => false;
+            public long EaRepositoryFileSize => 0;
+            public DateTime EaRepositoryFileLastModifiedUtc => DateTime.MinValue;
+            public string EaRepositoryFilePath => string.Empty;
+            public bool IsEaInstalledConfirmed { get; set; }
+            public bool IsHandshakeSucceeded => false;
+            public string EaName => string.Empty;
+            public string EaVersion => string.Empty;
+            public string ChartSymbol => string.Empty;
+            public string HandshakeAccountId => string.Empty;
+            public string HandshakeBrokerServer => string.Empty;
+
+            public Task ConnectAsync(string host, int port, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task DisconnectAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task<bool> LoginAsync(string accountId, string password, string server, CancellationToken cancellationToken) => Task.FromResult(true);
+            public Task<AccountSnapshotDto?> GetAccountSnapshotAsync(CancellationToken cancellationToken) => Task.FromResult<AccountSnapshotDto?>(new AccountSnapshotDto());
+            public Task SubscribeSymbolAsync(string symbol, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task UnsubscribeSymbolAsync(string symbol, CancellationToken cancellationToken) => Task.CompletedTask;
+        }
+
+        private class FakeNativeCore : INativeCoreService
+        {
+            public bool IsAvailable => false;
+            public string LastError => string.Empty;
+            public void UpdateTick(Tick tick) { }
+            public MarketVector GetMarketVector() => new MarketVector(0.5, 0.5, 0.5, 0.2, 0.5, 0.9, 80.0, 1.0, 1.0, 0.1);
+            public MarketState GetMarketState() => new MarketState("EURUSD", DateTime.UtcNow, 0.2, 0.5, 0.8, 0.7, 0.5, 0.1, 50.0, "Trend Bullish");
         }
     }
 }
