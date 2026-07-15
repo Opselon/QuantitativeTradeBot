@@ -308,7 +308,20 @@ namespace Nexus.Tests.Unit.Desktop
                 return PositionsToReturn;
             }
 
-            public async Task<DesktopTradeResult> PlaceOrderAsync(string symbol, DesktopOrderSide side, decimal volume, CancellationToken cancellationToken)
+            public async Task<DesktopTradeResult> ModifyPositionAsync(long ticket, string symbol, decimal sl, decimal tp, CancellationToken cancellationToken)
+            {
+                if (DelayMilliseconds > 0) await Task.Delay(DelayMilliseconds, cancellationToken);
+                return new DesktopTradeResult { IsSuccess = true };
+            }
+
+            public async Task<DesktopTradeResult> PlaceOrderAsync(
+                string symbol,
+                DesktopOrderSide side,
+                decimal volume,
+                decimal? stopLoss,
+                decimal? takeProfit,
+                string comment,
+                CancellationToken cancellationToken)
             {
                 PlaceOrderCalled = true;
                 PlaceOrderSymbol = symbol;
