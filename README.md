@@ -281,12 +281,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | # |
+| **Commit Message** | Enhance NexusBridge and Market Intelligence features |
 | **Author** | Capsizer |
 | **Branch** | `main` |
-| **Run Number** | `51` |
-| **Commit SHA** | `0fd796c2175d7789c45485878d954d788c46f0ad` |
-| **Generated At** | `2026-07-15 15:53:58 UTC` |
+| **Run Number** | `53` |
+| **Commit SHA** | `80ab2e5854756cf292b8c57c05f2d3d1a349dcc0` |
+| **Generated At** | `2026-07-15 20:00:18 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -365,6 +365,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── AccumulatorService.cs
 │   │   │   ├── CurrencyStrengthEngine.cs
 │   │   │   ├── DecisionEngine.cs
+│   │   │   ├── MarketIntelligenceCoordinator.cs
 │   │   │   ├── NativeMarketIntelligenceService.cs
 │   │   │   ├── PatternMemory.cs
 │   │   │   └── ScenarioEvaluationEngine.cs
@@ -473,10 +474,13 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── MarginCallEvent.cs
 │   │   │   └── OrderExecutedEvent.cs
 │   │   ├── Entities/
+│   │   │   ├── Interfaces/
+│   │   │   │   └── IExperienceDatabaseWriter.cs
 │   │   │   ├── Account.cs
 │   │   │   ├── AccumulatorState.cs
 │   │   │   ├── Bar.cs
 │   │   │   ├── EvaluationResult.cs
+│   │   │   ├── ExperienceRecord.cs
 │   │   │   ├── FeatureDelta.cs
 │   │   │   ├── MarketState.cs
 │   │   │   ├── MarketVector.cs
@@ -505,7 +509,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   └── Nexus.Core.csproj
 │   ├── Nexus.Desktop/
 │   │   ├── Converters/
-│   │   │   └── EqualityToBooleanConverter.cs
+│   │   │   ├── EqualityToBooleanConverter.cs
+│   │   │   └── ProfitToBrushConverter.cs
 │   │   ├── Models/
 │   │   │   ├── DesktopOrderSide.cs
 │   │   │   ├── DesktopPositionDto.cs
@@ -595,6 +600,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   │   └── 20260101000000_InitialTradingState.cs
 │   │   │   ├── Models/
 │   │   │   │   ├── AccountDbModel.cs
+│   │   │   │   ├── ExperienceDbModel.cs
 │   │   │   │   ├── OrderDbModel.cs
 │   │   │   │   ├── PositionDbModel.cs
 │   │   │   │   └── TradeDbModel.cs
@@ -607,6 +613,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── AppConfigurationService.cs
 │   │   │   ├── DependencyInjection.cs
 │   │   │   ├── DesignTimeNexusDbContextFactory.cs
+│   │   │   ├── ExperienceDatabaseWriter.cs
 │   │   │   ├── NexusDbContext.cs
 │   │   │   ├── PostgreSqlDatabaseBootstrapper.cs
 │   │   │   └── SqliteDatabaseBootstrapper.cs
@@ -689,7 +696,7 @@ To get started, please review the contribution guidelines outlined above, explor
 
 | File Type | Count |
 | --- | ---: |
-| C# (.cs) | 233 |
+| C# (.cs) | 239 |
 | WPF (.xaml) | 15 |
 | C/C++ Source | 12 |
 | CMake | 1 |
@@ -708,11 +715,14 @@ No explicit C# warnings.
 ```
 
 ### 🚀 Pipeline Diagnostics (Build Stage - Windows)
-- **Job Status:** success
+- **Job Status:** failure
 
 #### 🔴 Errors
 ```text
-No C# errors.
+7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(281,45): error CS0535: 'Mt5TradingViewModelTests.StubOperatorService' does not implement interface member 'IMt5OperatorService.ModifyPositionAsync(long, string, decimal, decimal, CancellationToken)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(281,45): error CS0535: 'Mt5TradingViewModelTests.StubOperatorService' does not implement interface member 'IMt5OperatorService.PlaceOrderAsync(string, DesktopOrderSide, decimal, decimal?, decimal?, string, CancellationToken)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(281,45): error CS0535: 'Mt5TradingViewModelTests.StubOperatorService' does not implement interface member 'IMt5OperatorService.ModifyPositionAsync(long, string, decimal, decimal, CancellationToken)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(281,45): error CS0535: 'Mt5TradingViewModelTests.StubOperatorService' does not implement interface member 'IMt5OperatorService.PlaceOrderAsync(string, DesktopOrderSide, decimal, decimal?, decimal?, string, CancellationToken)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 ```
 #### 🟡 Warnings
 ```text
