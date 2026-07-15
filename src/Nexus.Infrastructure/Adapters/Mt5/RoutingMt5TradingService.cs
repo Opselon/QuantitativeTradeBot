@@ -46,6 +46,19 @@ namespace Nexus.Infrastructure.Adapters.Mt5
             return GetActiveService().PlaceMarketOrderAsync(symbol, side, volume, stopLoss, takeProfit, comment, clientCorrelationId, cancellationToken);
         }
 
+
+
+        public Task<PlaceOrderResult> ModifyPositionAsync(
+    long positionTicket,
+    string symbol,
+    decimal sl,
+    decimal tp,
+    CancellationToken cancellationToken)
+        {
+            return GetActiveService().ModifyPositionAsync(positionTicket, symbol, sl, tp, cancellationToken);
+        }
+
+
         public Task<ClosePositionResult> ClosePositionAsync(
             long positionTicket,
             string symbol,

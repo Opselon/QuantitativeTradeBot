@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:Nexus.Desktop.Views"
+             xmlns:converters="clr-namespace:Nexus.Desktop.Converters"
              xmlns:vm="clr-namespace:Nexus.Desktop.ViewModels"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
@@ -11,6 +12,7 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+        <converters:ProfitToBrushConverter x:Key="ProfitToBrushConverter"/>
     </UserControl.Resources>
 
     <Grid>
@@ -124,67 +126,90 @@
             </Grid>
         </materialDesign:Card>
 
-        <!-- 2. Manual Order Entry (Emerald and Coral material themed Buy/Sell ticket) -->
+        <!-- 2. Manual Order Entry -->
         <materialDesign:Card Grid.Row="2" Style="{StaticResource NtePremiumCard}">
             <StackPanel>
-                <TextBlock Text="MANUAL ORDER TICK ENTRY" Style="{StaticResource NteTitleLarge}" Margin="0,0,0,20"/>
+                <TextBlock Text="MANUAL ORDER TICK &amp; DYNAMIC RISK ENTRY" Style="{StaticResource NteTitleLarge}" Margin="0,0,0,20"/>
 
                 <Grid Margin="10,0,10,15">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="15"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="30"/>
+                        <ColumnDefinition Width="20"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="40"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="15"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Instrument Symbol input -->
-                    <TextBox Grid.Column="0" Text="{Binding SelectedSymbol, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}" materialDesign:HintAssist.Hint="Trading Instrument Symbol (e.g. EURUSD)"/>
+                    <!-- Row 0: Inputs -->
+                    <!-- Editable ComboBox allowing typing or selecting from list -->
+                    <ComboBox Grid.Row="0" Grid.Column="0" 
+                              Text="{Binding SelectedSymbol, UpdateSourceTrigger=PropertyChanged}" 
+                              ItemsSource="{Binding AvailableSymbols}"
+                              IsEditable="True"
+                              Style="{StaticResource MaterialDesignFloatingHintComboBox}"
+                              materialDesign:HintAssist.Hint="Trading Instrument Symbol (e.g. EURUSD)"/>
 
                     <!-- Order volume lots input -->
-                    <TextBox Grid.Column="2" Text="{Binding OrderVolume, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}" materialDesign:HintAssist.Hint="Trade Position Volume Lots (e.g. 0.10)"/>
+                    <TextBox Grid.Row="0" Grid.Column="2" Text="{Binding OrderVolume, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}" materialDesign:HintAssist.Hint="Trade Position Volume Lots (e.g. 0.10)"/>
 
-                    <!-- BUY Market order control -->
-                    <Button Grid.Column="4" Content="BUY MARKET" Command="{Binding BuyCommand}" Height="42" Padding="25,0" AutomationProperties.Name="BuyButton">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
-                                <Setter Property="Background" Value="{DynamicResource SuccessBrush}"/>
-                                <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}"/>
-                                <Setter Property="Foreground" Value="White"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Opacity" Value="0.9"/>
-                                    </Trigger>
-                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource LightSuccessBrush}"/>
-                                        <Setter Property="BorderBrush" Value="{DynamicResource LightSuccessBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                    <!-- Trailing Stop (Pips) -->
+                    <TextBox Grid.Row="0" Grid.Column="4" Text="{Binding TrailingStopPips, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}" materialDesign:HintAssist.Hint="Dynamic Trailing Stop (Pips, e.g. 15)"/>
 
-                    <!-- SELL Market order control -->
-                    <Button Grid.Column="6" Content="SELL MARKET" Command="{Binding SellCommand}" Height="42" Padding="25,0" AutomationProperties.Name="SellButton">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
-                                <Setter Property="Background" Value="{DynamicResource ErrorBrush}"/>
-                                <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}"/>
-                                <Setter Property="Foreground" Value="White"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Opacity" Value="0.9"/>
-                                    </Trigger>
-                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource LightErrorBrush}"/>
-                                        <Setter Property="BorderBrush" Value="{DynamicResource LightErrorBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                    <!-- Row 2: SL/TP and Action Buttons -->
+                    <!-- Stop Loss (Pips) -->
+                    <TextBox Grid.Row="2" Grid.Column="0" Text="{Binding StopLossPips, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}" materialDesign:HintAssist.Hint="Virtual Stop Loss (Pips, e.g. 20)"/>
+
+                    <!-- Take Profit (Pips) -->
+                    <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding TakeProfitPips, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource NteFloatingHintTextBox}" materialDesign:HintAssist.Hint="Virtual Take Profit (Pips, e.g. 40)"/>
+
+                    <!-- BUY/SELL Operation Panel -->
+                    <Grid Grid.Row="2" Grid.Column="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- BUY Button -->
+                        <Button Grid.Column="0" Content="BUY" Command="{Binding BuyCommand}" Height="40" AutomationProperties.Name="BuyButton">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
+                                    <Setter Property="Background" Value="{DynamicResource SuccessBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource LightSuccessBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource LightSuccessBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!-- SELL Button -->
+                        <Button Grid.Column="2" Content="SELL" Command="{Binding SellCommand}" Height="40" AutomationProperties.Name="SellButton">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
+                                    <Setter Property="Background" Value="{DynamicResource ErrorBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource LightErrorBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource LightErrorBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
                 </Grid>
 
                 <!-- Feedback messaging -->
@@ -223,22 +248,85 @@
                 </Grid>
             </StackPanel>
         </materialDesign:Card>
-
         <!-- 3. Active positions grid -->
         <materialDesign:Card Grid.Row="4" Style="{StaticResource NtePremiumCard}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <!-- Title -->
                     <RowDefinition Height="15"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="15"/>
+                    <!-- Spacer -->
                     <RowDefinition Height="Auto"/>
+                    <!-- Aggregated Real-time Metrics Summary Bar -->
+                    <RowDefinition Height="15"/>
+                    <!-- Spacer -->
+                    <RowDefinition Height="*"/>
+                    <!-- DataGrid -->
+                    <RowDefinition Height="15"/>
+                    <!-- Spacer -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Actions -->
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="ACTIVE TERMINAL POSITIONS" Style="{StaticResource NteTitleLarge}"/>
 
-                <!-- Modern Datagrid for Positions -->
-                <DataGrid Grid.Row="2" ItemsSource="{Binding OpenPositions}" SelectedItem="{Binding SelectedPosition}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}" Background="{DynamicResource BackgroundBrush}" RowBackground="{DynamicResource SurfaceContainerBrush}" AlternatingRowBackground="{DynamicResource SurfaceBrush}">
+                <!-- Real-time Summary Indicators -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="15"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="15"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="15"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="15"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Total Net Profit Card -->
+                    <Border Grid.Column="0" Background="{DynamicResource SurfaceContainerBrush}" CornerRadius="6" Padding="15,10" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}">
+                        <StackPanel>
+                            <TextBlock Text="NET CURRENT P&amp;L" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding TotalProfit, StringFormat={}{0:C2}}" FontSize="18" FontWeight="Bold" FontFamily="Segoe UI Variable, Inter" Foreground="{Binding TotalProfit, Converter={StaticResource ProfitToBrushConverter}}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Active Win Rate Card -->
+                    <Border Grid.Column="2" Background="{DynamicResource SurfaceContainerBrush}" CornerRadius="6" Padding="15,10" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}">
+                        <StackPanel>
+                            <TextBlock Text="ACTIVE WIN RATE" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding WinRate, StringFormat={}{0:F1}%}" FontSize="18" FontWeight="Bold" FontFamily="Segoe UI Variable, Inter" Foreground="{DynamicResource PrimaryBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Winning Trades Card -->
+                    <Border Grid.Column="4" Background="{DynamicResource SurfaceContainerBrush}" CornerRadius="6" Padding="15,10" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}">
+                        <StackPanel>
+                            <TextBlock Text="WINNING TRADES" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding TotalWins}" FontSize="18" FontWeight="Bold" FontFamily="Segoe UI Variable, Inter" Foreground="{DynamicResource SuccessBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Losing Trades Card -->
+                    <Border Grid.Column="6" Background="{DynamicResource SurfaceContainerBrush}" CornerRadius="6" Padding="15,10" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}">
+                        <StackPanel>
+                            <TextBlock Text="LOSING TRADES" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding TotalLosses}" FontSize="18" FontWeight="Bold" FontFamily="Segoe UI Variable, Inter" Foreground="{DynamicResource ErrorBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Total Open Volume Card -->
+                    <Border Grid.Column="8" Background="{DynamicResource SurfaceContainerBrush}" CornerRadius="6" Padding="15,10" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}">
+                        <StackPanel>
+                            <TextBlock Text="TOTAL OPEN LOTS" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding TotalVolume, StringFormat={}{0:F2} Lots}" FontSize="18" FontWeight="Bold" FontFamily="Segoe UI Variable, Inter" Foreground="{DynamicResource WarningBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Modern Datagrid for Positions (shifted to Grid.Row 4) -->
+                <DataGrid Grid.Row="4" ItemsSource="{Binding OpenPositions}" SelectedItem="{Binding SelectedPosition}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}" Background="{DynamicResource BackgroundBrush}" RowBackground="{DynamicResource SurfaceContainerBrush}" AlternatingRowBackground="{DynamicResource SurfaceBrush}">
                     <DataGrid.Style>
                         <Style TargetType="DataGrid" BasedOn="{StaticResource MaterialDesignDataGrid}">
                             <Style.Triggers>
@@ -286,18 +374,16 @@
                         <DataGridTextColumn Header="Volume" Binding="{Binding Volume, StringFormat={}{0:F2}}" Width="85" ElementStyle="{StaticResource NteTradingDataFont}"/>
                         <DataGridTextColumn Header="Open Price" Binding="{Binding OpenPrice, StringFormat={}{0:F5}}" Width="105" ElementStyle="{StaticResource NteTradingDataFont}"/>
                         <DataGridTextColumn Header="Current Price" Binding="{Binding CurrentPrice, StringFormat={}{0:F5}}" Width="105" ElementStyle="{StaticResource NteTradingDataFont}"/>
+
+                        <!-- Conditionally Colored Profit Column utilizing the ProfitToBrushConverter -->
                         <DataGridTextColumn Header="Profit" Binding="{Binding Profit, StringFormat={}{0:C2}}" Width="105">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource NteTradingDataFont}">
-                                    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
-                                            <Setter Property="Foreground" Value="{DynamicResource LightSuccessBrush}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
+                                    <Setter Property="Foreground" Value="{Binding Profit, Converter={StaticResource ProfitToBrushConverter}}"/>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
+
                         <DataGridTextColumn Header="Swap" Binding="{Binding Swap, StringFormat={}{0:C2}}" Width="85" ElementStyle="{StaticResource NteTradingDataFont}"/>
                         <DataGridTextColumn Header="Comm" Binding="{Binding Commission, StringFormat={}{0:C2}}" Width="85" ElementStyle="{StaticResource NteTradingDataFont}"/>
                         <DataGridTextColumn Header="Open Time" Binding="{Binding OpenTime, StringFormat='HH:mm:ss'}" Width="105" ElementStyle="{StaticResource NteTradingDataFont}"/>
@@ -305,25 +391,92 @@
                     </DataGrid.Columns>
                 </DataGrid>
 
-                <!-- Actions -->
-                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="REFRESH POSITIONS" Command="{Binding RefreshPositionsCommand}" Style="{StaticResource NteSecondaryButton}" Margin="0,0,10,0"/>
-                    <Button Content="CLOSE POSITION" Command="{Binding CloseCommand}" Height="38" Padding="20,0">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
-                                <Setter Property="Background" Value="{DynamicResource ErrorBrush}"/>
-                                <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}"/>
-                                <Setter Property="Foreground" Value="White"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource LightErrorBrush}"/>
-                                        <Setter Property="BorderBrush" Value="{DynamicResource LightErrorBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                </StackPanel>
+                <!-- Actions (shifted to Grid.Row 6) -->
+                <Grid Grid.Row="6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- Refresh Positions (Left-aligned) -->
+                        <ColumnDefinition Width="*"/>
+                        <!-- Divider Spacer -->
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- Operational Actions (Right-aligned) -->
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Manual Grid Refresh -->
+                    <Button Grid.Column="0" Content="REFRESH POSITIONS" Command="{Binding RefreshPositionsCommand}" Style="{StaticResource NteSecondaryButton}" Height="38"/>
+
+                    <!-- Operational Controls -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <!-- Batch Close Profits Button (Emerald Green Theme) -->
+                        <Button Content="CLOSE ALL PROFITS" Command="{Binding CloseAllProfitsCommand}" Height="38" Margin="0,0,10,0" Padding="15,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
+                                    <Setter Property="Background" Value="{DynamicResource SuccessBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource LightSuccessBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource LightSuccessBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!-- Batch Close Losses Button (Coral Orange Theme) -->
+                        <Button Content="CLOSE ALL LOSSES" Command="{Binding CloseAllLossesCommand}" Height="38" Margin="0,0,10,0" Padding="15,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
+                                    <Setter Property="Background" Value="#FFA726"/>
+                                    <Setter Property="BorderBrush" Value="#FFA726"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                            <Setter Property="Background" Value="#FFB74D"/>
+                                            <Setter Property="BorderBrush" Value="#FFB74D"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!-- Close Selected Single Target Position Button (Muted Neutral Theme) -->
+                        <Button Content="CLOSE SELECTED" Command="{Binding CloseCommand}" Height="38" Margin="0,0,10,0" Padding="15,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
+                                    <Setter Property="Background" Value="{DynamicResource SurfaceVariantBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource LightSurfaceVariantBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource LightGlassBorderBrush}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource LightTextPrimaryBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!-- Emergency Close All Positions Button (Solid Ruby Red Theme) -->
+                        <Button Content="CLOSE ALL POSITIONS" Command="{Binding CloseAllCommand}" Height="38" Padding="15,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
+                                    <Setter Property="Background" Value="{DynamicResource ErrorBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource LightErrorBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource LightErrorBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </materialDesign:Card>
     </Grid>

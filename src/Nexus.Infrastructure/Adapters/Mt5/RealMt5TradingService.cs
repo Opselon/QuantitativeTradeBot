@@ -165,6 +165,41 @@ namespace Nexus.Infrastructure.Adapters.Mt5
                     errorMessage: ex.Message);
             }
         }
+    public async Task<PlaceOrderResult> ModifyPositionAsync(
+    long positionTicket,
+    string symbol,
+    decimal sl,
+    decimal tp,
+    CancellationToken cancellationToken)
+        {
+            string requestId = Guid.NewGuid().ToString();
+
+            // Use an anonymous payload model to map exact contract keys cleanly
+            var requestPayload = new
+            {
+                ticket = positionTicket,
+                symbol = symbol,
+                sl = sl,
+                tp = tp
+            };
+
+            var envelopeRequest = BridgeMessageEnvelope.CreateRequest(requestId, "ModifyPosition", requestPayload);
+
+            try
+            {
+                var responseEnvelope = await _bridgeClient.SendAsync(envelopeRequest, cancellationToken);
+                if (responseEnvelope.Error != null)
+                {
+                    return new PlaceOrderResult(false, positionTicket, "Failed", responseEnvelope.Error.Message, null);
+                }
+                return new PlaceOrderResult(true, positionTicket, "Success", "Modified successfully", null);
+            }
+            catch (Exception ex)
+            {
+                return new PlaceOrderResult(false, positionTicket, "Failed", ex.Message, null);
+            }
+        }
+
 
         public async Task<IReadOnlyList<OpenPositionDto>> GetOpenPositionsAsync(
             CancellationToken cancellationToken)

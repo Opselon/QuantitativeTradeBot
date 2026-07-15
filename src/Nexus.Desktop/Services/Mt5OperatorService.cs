@@ -50,7 +50,14 @@ namespace Nexus.Desktop.Services
             }
         }
 
-        public async Task<DesktopTradeResult> PlaceOrderAsync(string symbol, DesktopOrderSide side, decimal volume, CancellationToken cancellationToken)
+        public async Task<DesktopTradeResult> PlaceOrderAsync(
+                string symbol,
+                DesktopOrderSide side,
+                decimal volume,
+                decimal? stopLoss,
+                decimal? takeProfit,
+                string comment, // Forwarded custom comment
+                CancellationToken cancellationToken)
         {
             try
             {
@@ -59,9 +66,9 @@ namespace Nexus.Desktop.Services
                     symbol,
                     bridgeSide,
                     volume,
-                    stopLoss: null,
-                    takeProfit: null,
-                    comment: "Operator Manual Trade",
+                    stopLoss,
+                    takeProfit,
+                    comment, // Applied to the order deal Comment property
                     clientCorrelationId: Guid.NewGuid().ToString(),
                     cancellationToken: cancellationToken
                 );
@@ -79,6 +86,29 @@ namespace Nexus.Desktop.Services
                 throw TranslateException(ex);
             }
         }
+
+
+
+        public async Task<DesktopTradeResult> ModifyPositionAsync(long ticket, string symbol, decimal sl, decimal tp, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await _tradingService.ModifyPositionAsync(ticket, symbol, sl, tp, cancellationToken);
+                return new DesktopTradeResult
+                {
+                    IsSuccess = result.IsSuccess,
+                    Ticket = result.Ticket,
+                    ErrorMessage = result.ErrorMessage,
+                    Message = result.Status
+                };
+            }
+            catch (Exception ex)
+            {
+                throw TranslateException(ex);
+            }
+        }
+
+
 
         public async Task<DesktopTradeResult> ClosePositionAsync(long ticket, string symbol, CancellationToken cancellationToken)
         {

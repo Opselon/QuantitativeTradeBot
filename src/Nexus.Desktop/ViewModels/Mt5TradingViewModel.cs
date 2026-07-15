@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Nexus.Application.Ports;
 using Nexus.Desktop.Models;
 using Nexus.Desktop.Services;
+using Nexus.Infrastructure.Mt5Bridge;
 
 namespace Nexus.Desktop.ViewModels
 {
@@ -14,6 +18,7 @@ namespace Nexus.Desktop.ViewModels
         private readonly IMt5OperatorService _operatorService;
         private readonly IDiagnosticService _diagnosticService;
         private readonly IAppConfigurationService _configService;
+        private readonly MarketDataPipeline _pipeline;
 
         private bool _isConnected;
         private string _connectionStatusText = "Disconnected";
@@ -30,10 +35,69 @@ namespace Nexus.Desktop.ViewModels
         private DesktopPositionViewModel? _selectedPosition;
         private ObservableCollection<DesktopPositionViewModel> _openPositions = new();
 
+        // Preset list of standard selectable symbols
+        private ObservableCollection<string> _availableSymbols = new()
+        {
+            "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "NZDUSD", "XAUUSD"
+        };
+
+        // --- Dynamic Virtual Risk Engine Fields (in Pips) ---
+        private decimal _stopLossPips = 0;
+        private decimal _takeProfitPips = 0;
+        private decimal _trailingStopPips = 0;
+
+        // Tracks peak favorable prices reached for accurate trailing stop trails
+        private readonly ConcurrentDictionary<long, decimal> _peakPrices = new();
+
         private readonly CancellationTokenSource _cts = new();
         private readonly object _refreshLock = new();
         private bool _isRefreshingPositions;
         private readonly int _refreshIntervalSeconds = 5;
+
+        private readonly ConcurrentDictionary<long, decimal> _positionMultipliers = new();
+
+        public ObservableCollection<string> AvailableSymbols
+        {
+            get => _availableSymbols;
+            set => SetProperty(ref _availableSymbols, value);
+        }
+
+        // --- Dynamic Risk Properties ---
+
+        public decimal StopLossPips
+        {
+            get => _stopLossPips;
+            set => SetProperty(ref _stopLossPips, value);
+        }
+
+        public decimal TakeProfitPips
+        {
+            get => _takeProfitPips;
+            set => SetProperty(ref _takeProfitPips, value);
+        }
+
+        public decimal TrailingStopPips
+        {
+            get => _trailingStopPips;
+            set => SetProperty(ref _trailingStopPips, value);
+        }
+
+        // --- Aggregated Real-time Summary Properties ---
+        public decimal TotalProfit => OpenPositions.Sum(p => p.Profit);
+
+        public double WinRate
+        {
+            get
+            {
+                if (OpenPositions.Count == 0) return 0.0;
+                double wins = OpenPositions.Count(p => p.Profit > 0);
+                return (wins / OpenPositions.Count) * 100.0;
+            }
+        }
+
+        public int TotalWins => OpenPositions.Count(p => p.Profit > 0);
+        public int TotalLosses => OpenPositions.Count(p => p.Profit < 0);
+        public decimal TotalVolume => OpenPositions.Sum(p => p.Volume);
 
         public bool IsConnected
         {
@@ -147,26 +211,37 @@ namespace Nexus.Desktop.ViewModels
         public IAsyncRelayCommand BuyCommand { get; }
         public IAsyncRelayCommand SellCommand { get; }
         public IAsyncRelayCommand CloseCommand { get; }
+        public IAsyncRelayCommand CloseAllCommand { get; }
+        public IAsyncRelayCommand CloseAllProfitsCommand { get; }
+        public IAsyncRelayCommand CloseAllLossesCommand { get; }
         public ICommand ClearErrorCommand { get; }
 
         public Mt5TradingViewModel(
             IMt5OperatorService operatorService,
             IDiagnosticService diagnosticService,
-            IAppConfigurationService configService)
+            IAppConfigurationService configService,
+            MarketDataPipeline pipeline)
         {
             _operatorService = operatorService ?? throw new ArgumentNullException(nameof(operatorService));
             _diagnosticService = diagnosticService ?? throw new ArgumentNullException(nameof(diagnosticService));
             _configService = configService ?? throw new ArgumentNullException(nameof(configService));
+            _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
 
             RefreshPositionsCommand = new AsyncRelayCommand(OnRefreshPositionsAsync);
             BuyCommand = new AsyncRelayCommand(OnBuyAsync, CanExecuteTrade);
             SellCommand = new AsyncRelayCommand(OnSellAsync, CanExecuteTrade);
             CloseCommand = new AsyncRelayCommand(OnCloseAsync, CanClosePosition);
+
+            CloseAllCommand = new AsyncRelayCommand(OnCloseAllAsync, CanExecuteBatchClose);
+            CloseAllProfitsCommand = new AsyncRelayCommand(OnCloseAllProfitsAsync, CanExecuteBatchClose);
+            CloseAllLossesCommand = new AsyncRelayCommand(OnCloseAllLossesAsync, CanExecuteBatchClose);
+
             ClearErrorCommand = new RelayCommand(OnClearError);
 
             ValidateInputs();
 
-            // Start auto refresh loop
+            _pipeline.OnPipelineTickProcessed += OnLiveTickProcessed;
+
             Task.Run(() => RunAutoRefreshLoopAsync(_cts.Token));
         }
 
@@ -186,6 +261,11 @@ namespace Nexus.Desktop.ViewModels
         private bool CanClosePosition()
         {
             return SelectedPosition != null && !IsBusy && !IsExecutingTrade;
+        }
+
+        private bool CanExecuteBatchClose()
+        {
+            return OpenPositions.Count > 0 && !IsBusy && !IsExecutingTrade;
         }
 
         private void ValidateInputs()
@@ -221,9 +301,115 @@ namespace Nexus.Desktop.ViewModels
                 }
                 catch (Exception)
                 {
-                    // Ignore background exceptions to keep loop alive
                 }
             }
+        }
+
+        /// <summary>
+        /// Dynamic pip size calculator based on asset specifications.
+        /// </summary>
+        private decimal GetPipSize(string symbol)
+        {
+            if (string.IsNullOrWhiteSpace(symbol)) return 0.0001m;
+            string sym = symbol.ToUpper();
+            if (sym.Contains("JPY")) return 0.01m;
+            if (sym.Contains("XAU") || sym.Contains("GOLD")) return 0.10m; // Gold pip scaling
+            return 0.0001m; // Standard Forex Major Pip scaling
+        }
+
+        private void OnLiveTickProcessed(PriceTickEnvelope tick)
+        {
+            if (tick == null || OpenPositions.Count == 0) return;
+
+            System.Windows.Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
+            {
+                lock (_refreshLock)
+                {
+                    if (_isRefreshingPositions) return;
+                }
+
+                bool updatedAny = false;
+                foreach (var pos in OpenPositions)
+                {
+                    if (string.Equals(pos.Symbol, tick.SymbolName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        decimal pipSize = GetPipSize(pos.Symbol);
+                        decimal currentPrice = string.Equals(pos.Side, "Buy", StringComparison.OrdinalIgnoreCase)
+                            ? (decimal)tick.Bid
+                            : (decimal)tick.Ask;
+
+                        pos.CurrentPrice = currentPrice;
+
+                        // --- C# TRAILING STOP LOGIC ---
+                        if (TrailingStopPips > 0)
+                        {
+                            decimal trailingDistance = TrailingStopPips * pipSize;
+                            decimal targetSl = 0;
+
+                            if (string.Equals(pos.Side, "Buy", StringComparison.OrdinalIgnoreCase))
+                            {
+                                targetSl = Math.Round(currentPrice - trailingDistance, 5);
+
+                                // Only trail upwards (to lock in profits/reduce risk)
+                                if (targetSl > pos.StopLoss || pos.StopLoss == 0)
+                                {
+                                    pos.StopLoss = targetSl;
+                                    var target = pos;
+
+                                    // Dispatch modification command asynchronously to MT5
+                                    Task.Run(async () =>
+                                    {
+                                        await _operatorService.ModifyPositionAsync(target.Ticket, target.Symbol, target.StopLoss, target.TakeProfit, _cts.Token);
+                                    });
+                                }
+                            }
+                            else if (string.Equals(pos.Side, "Sell", StringComparison.OrdinalIgnoreCase))
+                            {
+                                targetSl = Math.Round(currentPrice + trailingDistance, 5);
+
+                                // Only trail downwards
+                                if (targetSl < pos.StopLoss || pos.StopLoss == 0)
+                                {
+                                    pos.StopLoss = targetSl;
+                                    var target = pos;
+
+                                    Task.Run(async () =>
+                                    {
+                                        await _operatorService.ModifyPositionAsync(target.Ticket, target.Symbol, target.StopLoss, target.TakeProfit, _cts.Token);
+                                    });
+                                }
+                            }
+                        }
+
+                        // Recalculate Profit
+                        decimal priceDiff = pos.CurrentPrice - pos.OpenPrice;
+                        if (string.Equals(pos.Side, "Sell", StringComparison.OrdinalIgnoreCase))
+                        {
+                            priceDiff = pos.OpenPrice - pos.CurrentPrice;
+                        }
+
+                        if (_positionMultipliers.TryGetValue((long)pos.Ticket, out decimal multiplier))
+                        {
+                            pos.Profit = priceDiff * pos.Volume * multiplier;
+                            updatedAny = true;
+                        }
+                    }
+                }
+
+                if (updatedAny)
+                {
+                    NotifySummaryMetrics();
+                }
+            }));
+        }
+
+        private void NotifySummaryMetrics()
+        {
+            OnPropertyChanged(nameof(TotalProfit));
+            OnPropertyChanged(nameof(WinRate));
+            OnPropertyChanged(nameof(TotalWins));
+            OnPropertyChanged(nameof(TotalLosses));
+            OnPropertyChanged(nameof(TotalVolume));
         }
 
         public async Task OnRefreshPositionsAsync()
@@ -243,23 +429,68 @@ namespace Nexus.Desktop.ViewModels
             {
                 var positions = await _operatorService.GetPositionsAsync(_cts.Token);
 
+                var tempMultipliers = new Dictionary<long, decimal>();
+                foreach (var pos in positions)
+                {
+                    decimal volume = pos.Volume;
+                    decimal openPrice = pos.OpenPrice;
+                    decimal currentPrice = pos.CurrentPrice;
+                    decimal profit = pos.Profit;
+
+                    decimal priceDiff = currentPrice - openPrice;
+                    if (string.Equals(pos.Side, "Sell", StringComparison.OrdinalIgnoreCase))
+                    {
+                        priceDiff = openPrice - currentPrice;
+                    }
+
+                    decimal multiplier = 100000m;
+                    if (priceDiff != 0 && volume != 0)
+                    {
+                        multiplier = profit / (priceDiff * volume);
+                        if (multiplier < 0) multiplier = Math.Abs(multiplier);
+                    }
+                    tempMultipliers[pos.Ticket] = multiplier;
+                }
+
                 System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
                 {
                     OpenPositions.Clear();
+                    _positionMultipliers.Clear();
+
                     foreach (var pos in positions)
                     {
                         OpenPositions.Add(new DesktopPositionViewModel(pos));
+                        if (tempMultipliers.TryGetValue(pos.Ticket, out decimal mult))
+                        {
+                            _positionMultipliers[pos.Ticket] = mult;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(pos.Symbol) && !AvailableSymbols.Contains(pos.Symbol))
+                        {
+                            AvailableSymbols.Add(pos.Symbol);
+                        }
                     }
+                    NotifySummaryMetrics();
                 });
 
-                // Fail-safe collection update if Application.Current is null (e.g. inside unit tests)
                 if (System.Windows.Application.Current == null)
                 {
                     OpenPositions.Clear();
+                    _positionMultipliers.Clear();
                     foreach (var pos in positions)
                     {
                         OpenPositions.Add(new DesktopPositionViewModel(pos));
+                        if (tempMultipliers.TryGetValue(pos.Ticket, out decimal mult))
+                        {
+                            _positionMultipliers[pos.Ticket] = mult;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(pos.Symbol) && !AvailableSymbols.Contains(pos.Symbol))
+                        {
+                            AvailableSymbols.Add(pos.Symbol);
+                        }
                     }
+                    NotifySummaryMetrics();
                 }
 
                 IsConnected = true;
@@ -319,13 +550,30 @@ namespace Nexus.Desktop.ViewModels
 
             try
             {
-                var result = await _operatorService.PlaceOrderAsync(SelectedSymbol, side, OrderVolume, _cts.Token);
+                decimal? calculatedSl = StopLossPips > 0 ? StopLossPips : null;
+                decimal? calculatedTp = TakeProfitPips > 0 ? TakeProfitPips : null;
+
+                // Format comment to register trailing stop command inside the MT5 order comment
+                string comment = "Operator Manual Trade";
+                if (TrailingStopPips > 0)
+                {
+                    comment = $"TS:{TrailingStopPips}";
+                }
+
+                var result = await _operatorService.PlaceOrderAsync(
+                    SelectedSymbol,
+                    side,
+                    OrderVolume,
+                    calculatedSl,
+                    calculatedTp,
+                    comment, // Passed comment
+                    _cts.Token);
+
                 if (result.IsSuccess)
                 {
                     StatusMessage = $"Trade executed successfully. Ticket: {result.Ticket}";
-                    _diagnosticService.Log("Mt5Operator", "INFO", $"{side} {SelectedSymbol} {OrderVolume} lots completed in {stopwatch.ElapsedMilliseconds} ms. Success: True, Ticket: {result.Ticket}");
+                    _diagnosticService.Log("Mt5Operator", "INFO", $"{side} {SelectedSymbol} {OrderVolume} lots completed in {stopwatch.ElapsedMilliseconds} ms. Success: True, Ticket: {result.Ticket}, SL Pips: {calculatedSl}, TP Pips: {calculatedTp}");
 
-                    // Refresh positions
                     await OnRefreshPositionsAsync();
                 }
                 else
@@ -354,7 +602,6 @@ namespace Nexus.Desktop.ViewModels
                 IsBusy = false;
             }
         }
-
         public async Task OnCloseAsync()
         {
             if (!CanClosePosition()) return;
@@ -376,7 +623,6 @@ namespace Nexus.Desktop.ViewModels
                     StatusMessage = $"Position ticket {targetPosition.Ticket} closed successfully.";
                     _diagnosticService.Log("Mt5Operator", "INFO", $"Close position ticket {targetPosition.Ticket} symbol {targetPosition.Symbol} completed in {stopwatch.ElapsedMilliseconds} ms. Success: True");
 
-                    // Refresh positions
                     await OnRefreshPositionsAsync();
                 }
                 else
@@ -406,8 +652,78 @@ namespace Nexus.Desktop.ViewModels
             }
         }
 
+        private async Task OnCloseAllAsync()
+        {
+            await ExecuteBatchCloseAsync(p => true, "Close All");
+        }
+
+        private async Task OnCloseAllProfitsAsync()
+        {
+            await ExecuteBatchCloseAsync(p => p.Profit > 0, "Close All Profits");
+        }
+
+        private async Task OnCloseAllLossesAsync()
+        {
+            await ExecuteBatchCloseAsync(p => p.Profit < 0, "Close All Losses");
+        }
+
+        private async Task ExecuteBatchCloseAsync(Func<DesktopPositionViewModel, bool> predicate, string operationName)
+        {
+            var targets = OpenPositions.Where(predicate).ToList();
+            if (targets.Count == 0)
+            {
+                StatusMessage = $"No active positions matched criteria for: {operationName}.";
+                return;
+            }
+
+            IsExecutingTrade = true;
+            IsBusy = true;
+            ErrorMessage = string.Empty;
+            StatusMessage = $"Executing {operationName} batch close for {targets.Count} targets...";
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+            int succeededCount = 0;
+            int failedCount = 0;
+
+            try
+            {
+                foreach (var pos in targets)
+                {
+                    var result = await _operatorService.ClosePositionAsync(pos.Ticket, pos.Symbol, _cts.Token);
+                    if (result.IsSuccess)
+                    {
+                        succeededCount++;
+                    }
+                    else
+                    {
+                        failedCount++;
+                    }
+                }
+
+                StatusMessage = $"Batch {operationName} completed. Success: {succeededCount}, Failures: {failedCount}.";
+                _diagnosticService.Log("Mt5Operator", "INFO", $"Batch {operationName} execution completed in {stopwatch.ElapsedMilliseconds} ms. Succeeded: {succeededCount}, Failed: {failedCount}");
+
+                await OnRefreshPositionsAsync();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = ex.Message;
+                StatusMessage = $"Unexpected failure during batch {operationName}.";
+                _diagnosticService.Log("Mt5Operator", "ERROR", $"Batch {operationName} failed: {ex.Message}");
+            }
+            finally
+            {
+                IsExecutingTrade = false;
+                IsBusy = false;
+            }
+        }
+
         public void Dispose()
         {
+            if (_pipeline != null)
+            {
+                _pipeline.OnPipelineTickProcessed -= OnLiveTickProcessed;
+            }
             _cts.Cancel();
             _cts.Dispose();
         }

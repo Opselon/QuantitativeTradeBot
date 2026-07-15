@@ -17,6 +17,13 @@ namespace Nexus.Application.Mt5
             string? clientCorrelationId,
             CancellationToken cancellationToken);
 
+        Task<PlaceOrderResult> ModifyPositionAsync(
+    long positionTicket,
+    string symbol,
+    decimal sl,
+    decimal tp,
+    CancellationToken cancellationToken);
+
         Task<ClosePositionResult> ClosePositionAsync(
             long positionTicket,
             string symbol,

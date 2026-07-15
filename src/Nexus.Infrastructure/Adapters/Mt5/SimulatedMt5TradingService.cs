@@ -80,5 +80,10 @@ namespace Nexus.Infrastructure.Adapters.Mt5
             }
             return list;
         }
+
+        public Task<PlaceOrderResult> ModifyPositionAsync(long positionTicket, string symbol, decimal sl, decimal tp, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
