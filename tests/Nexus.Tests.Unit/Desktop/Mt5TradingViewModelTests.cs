@@ -371,41 +371,34 @@ namespace Nexus.Tests.Unit.Desktop
 
         private class FakeBridgeService : IMt5BridgeService
         {
-            public event Action<string, string>? OnMessageReceived;
             public event Action<PriceTickEnvelope>? OnTickReceived;
-            public event Action<GatewayConnectionStatus>? OnConnectionStatusChanged;
+            public event Action<string>? OnStatusChanged;
 
-            public GatewayConnectionStatus ConnectionStatus => GatewayConnectionStatus.Disconnected;
             public string ConnectionStatusText => "Disconnected";
             public double PingLatencyMs => 0;
             public DateTime LastHeartbeatUtc => DateTime.MinValue;
             public string LastErrorMessage => string.Empty;
-            public IReadOnlyList<string> SubscribedSymbols => Array.Empty<string>();
+            public IReadOnlyCollection<string> SubscribedSymbols => Array.Empty<string>();
             public bool IsConnected => false;
             public bool IsAuthenticated => false;
             public bool IsEaPresentInRepository => false;
             public long EaRepositoryFileSize => 0;
             public DateTime EaRepositoryFileLastModifiedUtc => DateTime.MinValue;
             public string EaRepositoryFilePath => string.Empty;
-            public bool IsEaInstalledConfirmed => false;
+            public bool IsEaInstalledConfirmed { get; set; }
             public bool IsHandshakeSucceeded => false;
             public string EaName => string.Empty;
             public string EaVersion => string.Empty;
             public string ChartSymbol => string.Empty;
             public string HandshakeAccountId => string.Empty;
             public string HandshakeBrokerServer => string.Empty;
-            public event Action<string, double, string, string>? OnStatusChanged;
 
-            public Task<bool> StartAsync(CancellationToken cancellationToken) => Task.FromResult(true);
-            public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-            public Task<string> SendRequestAsync(string requestJson, CancellationToken cancellationToken) => Task.FromResult(string.Empty);
-            public Task<bool> AutoDetectAndInstallEaAsync() => Task.FromResult(true);
-            public Task<bool> ConnectAsync(string host, int port, CancellationToken cancellationToken) => Task.FromResult(true);
+            public Task ConnectAsync(string host, int port, CancellationToken cancellationToken) => Task.CompletedTask;
             public Task DisconnectAsync(CancellationToken cancellationToken) => Task.CompletedTask;
             public Task<bool> LoginAsync(string accountId, string password, string server, CancellationToken cancellationToken) => Task.FromResult(true);
-            public Task<AccountSnapshotDto> GetAccountSnapshotAsync(CancellationToken cancellationToken) => Task.FromResult(new AccountSnapshotDto());
-            public Task<bool> SubscribeSymbolAsync(string symbol, CancellationToken cancellationToken) => Task.FromResult(true);
-            public Task<bool> UnsubscribeSymbolAsync(string symbol, CancellationToken cancellationToken) => Task.FromResult(true);
+            public Task<AccountSnapshotDto?> GetAccountSnapshotAsync(CancellationToken cancellationToken) => Task.FromResult<AccountSnapshotDto?>(new AccountSnapshotDto());
+            public Task SubscribeSymbolAsync(string symbol, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task UnsubscribeSymbolAsync(string symbol, CancellationToken cancellationToken) => Task.CompletedTask;
         }
 
         private class FakeNativeCore : INativeCoreService
