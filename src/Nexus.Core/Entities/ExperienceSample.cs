@@ -23,6 +23,14 @@ namespace Nexus.Core.Entities
         public string MarketRegimeLabel { get; }
         public DateTime TimestampUtc { get; }
 
+        // Continuous learning additions
+        public double Confidence { get; set; }
+        public string ReasoningMetadata { get; set; } = string.Empty;
+        public double Risk { get; set; }
+        public double Reward { get; set; }
+        public double Result { get; set; }
+        public double QualityScore { get; set; }
+
         public ExperienceSample(
             string symbol,
             TimeframeInterval timeframe,
@@ -42,6 +50,14 @@ namespace Nexus.Core.Entities
             MarketRegimeLabel = marketRegimeLabel ?? "Unknown";
             TimestampUtc = DateTime.UtcNow;
             MistakeClassification = "None";
+
+            // Default continuous learning property initialization
+            Confidence = 0.5;
+            ReasoningMetadata = "Initial decision tracking";
+            Risk = 0.0;
+            Reward = 0.0;
+            Result = 0.0;
+            QualityScore = 0.0;
         }
     }
 }

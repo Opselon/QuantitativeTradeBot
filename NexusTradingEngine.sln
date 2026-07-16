@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexus.AI", "src\Nexus.AI\Ne
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexus.Infrastructure.Native", "src\Nexus.Infrastructure.Native\Nexus.Infrastructure.Native.csproj", "{3827758D-0FAD-4464-AA5D-63EC8964B7E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexus.Training", "src\Nexus.Training\Nexus.Training.csproj", "{7FA95773-20A1-4597-BE80-215A6104C8DD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -157,6 +159,18 @@ Global
 		{3827758D-0FAD-4464-AA5D-63EC8964B7E4}.Release|x64.Build.0 = Release|Any CPU
 		{3827758D-0FAD-4464-AA5D-63EC8964B7E4}.Release|x86.ActiveCfg = Release|Any CPU
 		{3827758D-0FAD-4464-AA5D-63EC8964B7E4}.Release|x86.Build.0 = Release|Any CPU
+		{7FA95773-20A1-4597-BE80-215A6104C8DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FA95773-20A1-4597-BE80-215A6104C8DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FA95773-20A1-4597-BE80-215A6104C8DD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7FA95773-20A1-4597-BE80-215A6104C8DD}.Debug|x64.Build.0 = Debug|Any CPU
+		{7FA95773-20A1-4597-BE80-215A6104C8DD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7FA95773-20A1-4597-BE80-215A6104C8DD}.Debug|x86.Build.0 = Debug|Any CPU
+		{7FA95773-20A1-4597-BE80-215A6104C8DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FA95773-20A1-4597-BE80-215A6104C8DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7FA95773-20A1-4597-BE80-215A6104C8DD}.Release|x64.ActiveCfg = Release|Any CPU
+		{7FA95773-20A1-4597-BE80-215A6104C8DD}.Release|x64.Build.0 = Release|Any CPU
+		{7FA95773-20A1-4597-BE80-215A6104C8DD}.Release|x86.ActiveCfg = Release|Any CPU
+		{7FA95773-20A1-4597-BE80-215A6104C8DD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -172,5 +186,6 @@ Global
 		{4ADE68A2-D543-41CE-B5B1-3A36E881DA11} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{E86FDEDA-8A7D-43DD-8B32-325D2DA8E3DD} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{3827758D-0FAD-4464-AA5D-63EC8964B7E4} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{7FA95773-20A1-4597-BE80-215A6104C8DD} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

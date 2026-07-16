@@ -4,6 +4,45 @@ This document tracks all additions, modifications, and updates made across the p
 
 ---
 
+## [Phase 06: Autonomous Learning & Experience Engine Foundation] - 2026-04-05
+
+This release delivers the Autonomous Learning and Experience Engine foundation. It introduces RL-inspired experience buffers, sophisticated multi-dimensional quantitative reward evaluation, model registries with robust security controls, multi-gate statistical validation engines, separate timeframe learning category managers, and a unified offline-first training pipeline orchestrator.
+
+### Added
+* **src/Nexus.Training/Nexus.Training.csproj**: Class library targeting .NET 10.0 for learning, training, and experience processing workflows.
+* **src/Nexus.Training/ExperienceEngine.cs**: Converts trading decisions and market parameters into structured `ExperienceSample` objects, supporting outcome finalization.
+* **src/Nexus.Training/ExperienceReplayBuffer.cs**: Thread-safe reinforcement learning experience replay storage supporting randomized, chronological, and regime-based sampling.
+* **src/Nexus.Training/RewardEvaluator.cs**: Multi-dimensional quantitative reward calculator prioritizing decision quality, risk-adjusted performance, timing, and drawdown over raw profit.
+* **src/Nexus.Training/ModelVersionInfo.cs**: Data models tracking model version, creation date, training dataset version, validation score, performance metrics, and status.
+* **src/Nexus.Training/IModelStorage.cs**: Port interface for saving, loading, and deleting raw model weights and ONNX binaries.
+* **src/Nexus.Training/FileModelStorage.cs**: File-based implementation of model storage, utilizing strict path-traversal prevention checks.
+* **src/Nexus.Training/ModelRegistry.cs**: Thread-safe registry for model tracking, managing life cycle state transitions, and active promotions.
+* **src/Nexus.Training/ValidationResult.cs**: Detailed output from the validation system capturing results of the multi-gate checks.
+* **src/Nexus.Training/ValidationEngine.cs**: Evaluates candidate models against Backtesting, Walk-Forward, Out-of-Sample, and Paper Trading validation gates.
+* **src/Nexus.Training/TimeframeLearningManager.cs**: Partitions datasets, metrics, and models separately for Scalping (M1, M5, M15), Intraday (M30, H1), and Swing (H4, D1).
+* **src/Nexus.Training/TrainingPipeline.cs**: Unified orchestrator implementing the complete offline-first learning lifecycle.
+* **tests/Nexus.Tests.Unit/Training/TrainingEngineTests.cs**: Comprehensive unit tests covering experience creation, replay buffer, reward evaluator, model registry, validation, and training pipeline cycles.
+* **docs/Architecture/ADR-006-Learning-System-Architecture.md**: Architectural record explaining offline-first, experience replay, validation gates, and timeframe separation choices.
+* **docs/TRAINING_ENGINE.md**: Complete engineering documentation detailing learning lifecycles, data flows, and future AI integration plans.
+
+### Modified
+* **src/Nexus.Core/Entities/ExperienceSample.cs**: Extended domain entity with continuous learning properties (`Confidence`, `ReasoningMetadata`, `Risk`, `Reward`, `Result`, and `QualityScore`) with complete backward-compatibility.
+* **tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj**: Added project reference to `Nexus.Training.csproj`.
+* **docs/PROGRESS.md**: Marked Phase 05 and Phase 06 complete.
+* **docs/ROADMAP.md**: Moved Phase 05 and Phase 06 to completed status, outlining Phase 07 targets.
+
+---
+
+## [Phase 05: Autonomous Strategy Runtime & Neural Evaluators] - 2026-04-04
+
+This release completes the Autonomous Strategy Runtime and Neural Evaluators. It integrates Microsoft.ML.OnnxRuntime for deep model evaluations, implements stateful live market intelligence orchestration via NativeMarketIntelligenceService, and integrates MetaTrader 5 Bridge Operations.
+
+### Added
+* **src/Nexus.AI/NeuralModelService.cs**: Loads ONNX model weights and evaluates inference scenarios with high-fidelity deterministic fallback.
+* **src/Nexus.Application/Intelligence/NativeMarketIntelligenceService.cs**: Stateful orchestration connecting tick ingestion, C++ native core, and ONNX evaluations.
+
+---
+
 ## [Phase 04: C++20 Quantitative Evaluation Engine Foundation] - 2026-04-03
 
 This release delivers the high-performance native C++20 computation engine foundation. Inspired by chess-engine design patterns (Stockfish), this release provides low-latency market state representations, preallocated memory pools, incremental evaluation caching, scalable thread pools, and zero-allocation C# interop.
