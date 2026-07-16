@@ -6,7 +6,7 @@ namespace Nexus.Application.Dashboard
 {
     public sealed class ExecutionDashboardService : IExecutionDashboardService
     {
-        public ExecutionDashboardProfile CurrentProfile { get; private set; } = ExecutionDashboardProfile.Live;
+        public ExecutionDashboardProfile CurrentProfile { get; private set; } = ExecutionDashboardProfile.Simulation;
         public bool IsLivePermissionGranted { get; private set; } = false;
 
         private readonly List<string> _permissionAuditLog = new();
@@ -14,8 +14,8 @@ namespace Nexus.Application.Dashboard
 
         public event Action<ExecutionDashboardData>? OnExecutionUpdated;
 
-        private double _balance;
-        private double _equity;
+        private double _balance = 100000.0;
+        private double _equity = 100000.0;
         private double _margin = 0.0;
         private double _exposure = 0.0;
         private double _drawdown = 0.0;
@@ -23,7 +23,7 @@ namespace Nexus.Application.Dashboard
 
         public ExecutionDashboardService()
         {
-            AddAuditLogEntry("Execution system initialized: awaiting authenticated MT5 account snapshot; live permission disabled.");
+            AddAuditLogEntry("Execution system initialized in Simulation mode. Live trading disabled.");
         }
 
         public void SetProfile(ExecutionDashboardProfile profile)

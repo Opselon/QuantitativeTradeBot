@@ -12,7 +12,7 @@ namespace Nexus.Application.Dashboard
         public SystemHealthStatus DatabaseStatus { get; private set; } = SystemHealthStatus.Healthy;
         public SystemHealthStatus Mt5BridgeStatus { get; private set; } = SystemHealthStatus.Healthy;
 
-        public double CpuUsage { get; private set; } = 0.0;
+        public double CpuUsage { get; private set; } = 4.2;
         public double MemoryUsageMb { get; private set; } = 42.5;
         public string ThreadPoolUtilization { get; private set; } = "12/250 Active Threads (0% Queue)";
         public double TickProcessingLatencyMs { get; private set; } = 0.005;

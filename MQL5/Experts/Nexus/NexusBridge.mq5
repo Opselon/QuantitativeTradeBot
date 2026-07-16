@@ -13,14 +13,12 @@
 input string   InpBridgeHost = "127.0.0.1";  // REST Gateway IP Address
 input int      InpBridgePort = 8080;         // REST Gateway Port (Standard 8080)
 input int      InpPollIntervalMs = 100;      // Polling Interval (ms)
-input bool     InpStreamAllMarketWatch = true; // Stream every broker-selected Market Watch symbol
-input int      InpTelemetryIntervalMs = 1000; // Account, positions, and multi-timeframe snapshot cadence
 
 //--- Structures
 struct SubscribedSymbolState
 {
    string symbol;
-   ulong last_time_msc;
+   datetime last_time;
    double last_bid;
    double last_ask;
 };
@@ -32,10 +30,8 @@ datetime g_last_recon_time = 0;              // Last reconnect attempt timestamp
 string   g_poll_url = "";                    // REST Polling URL
 string   g_response_url = "";                // REST Response POST URL
 string   g_tick_url = "";                    // REST Tick Ingestion URL
-string   g_telemetry_url = "";               // REST account/position/candle ingestion URL
-ulong    g_last_telemetry_msc = 0;           // last terminal intelligence publication
 
-SubscribedSymbolState g_symbols_state[];     // dynamically-sized broker symbol subscription set
+SubscribedSymbolState g_symbols_state[20];   // active subscribed symbols states
 int      g_symbols_count = 0;                // subscribed symbols counter
 
 //--- Function declarations
@@ -55,14 +51,7 @@ void HandleGetAvailableSymbols(const string requestId);
 void HandleUnknownCommand(const string requestId, const string command);
 string BuildEnvelopeJson(const string messageType, const string requestId, const string command, const string payloadJson, const string errorJson);
 void SendResponse(const string responseJson);
-void SendJsonToUrl(const string url, const string json);
 void StreamLiveTicks();
-void StreamSymbolTick(const string symbol);
-void StreamTerminalIntelligence();
-void SubscribeMarketWatchSymbols();
-string BuildMultiTimeframeJson(const string symbol);
-string BuildPositionsJson();
-string IsoTimestampFromMilliseconds(const ulong timestampMsc);
 
 //--- Simple JSON helpers
 string GetJsonStringValue(const string json, const string key);
@@ -84,18 +73,14 @@ int OnInit()
    g_poll_url     = "http://" + InpBridgeHost + ":" + IntegerToString(InpBridgePort) + "/api/v1/bridge/poll";
    g_response_url = "http://" + InpBridgeHost + ":" + IntegerToString(InpBridgePort) + "/api/v1/bridge/response";
    g_tick_url     = "http://" + InpBridgeHost + ":" + IntegerToString(InpBridgePort) + "/api/v1/bridge/tick";
-   g_telemetry_url = "http://" + InpBridgeHost + ":" + IntegerToString(InpBridgePort) + "/api/v1/bridge/telemetry";
 
    Print("Polling Endpoint: ", g_poll_url);
    Print("Response Endpoint: ", g_response_url);
    Print("Tick Ingestion Endpoint: ", g_tick_url);
-   Print("Terminal Intelligence Endpoint: ", g_telemetry_url);
 
    // State Setup
    g_symbols_count = 0;
-   ArrayResize(g_symbols_state, 0);
    g_is_connected = false;
-   if(InpStreamAllMarketWatch) SubscribeMarketWatchSymbols();
 
    // Test Initial HTTP Gateway Connectivity
    if(!ConnectToBridge())
@@ -129,8 +114,7 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
-   // The chart symbol is published on every MT5 tick; timer polling only covers non-chart subscriptions.
-   StreamSymbolTick(_Symbol);
+   // Handled via Polling Timer
 }
 
 //+------------------------------------------------------------------+
@@ -140,7 +124,6 @@ void OnTimer()
 {
    PollBridgeMessages();
    StreamLiveTicks();
-   StreamTerminalIntelligence();
 }
 //+------------------------------------------------------------------+
 //| Test REST Bridge Server Connectivity                              |
@@ -402,14 +385,19 @@ void HandleSubscribeSymbol(const string requestId, const string json)
 
          if(!exists)
          {
+            if(g_symbols_count < 20)
             {
-               ArrayResize(g_symbols_state, g_symbols_count + 1);
                g_symbols_state[g_symbols_count].symbol = symbol;
-               g_symbols_state[g_symbols_count].last_time_msc = 0;
+               g_symbols_state[g_symbols_count].last_time = (datetime)0;
                g_symbols_state[g_symbols_count].last_bid = 0;
                g_symbols_state[g_symbols_count].last_ask = 0;
                g_symbols_count++;
                Print("NexusBridge: Subscribed to symbol '", symbol, "'. Current active count: ", g_symbols_count);
+            }
+            else
+            {
+               success = false;
+               error_msg = "Subscription limit of 20 symbols reached.";
             }
          }
       }
@@ -444,7 +432,6 @@ void HandleUnsubscribeSymbol(const string requestId, const string json)
                g_symbols_state[j] = g_symbols_state[j + 1];
             }
             g_symbols_count--;
-            ArrayResize(g_symbols_state, g_symbols_count);
             success = true;
             error_msg = "";
             Print("NexusBridge: Unsubscribed from symbol '", symbol, "'. Current active count: ", g_symbols_count);
@@ -904,166 +891,52 @@ void SendResponse(const string responseJson)
 //+------------------------------------------------------------------+
 void StreamLiveTicks()
 {
-   if(!g_is_connected) return;
-   for(int i = 0; i < g_symbols_count; i++)
-      StreamSymbolTick(g_symbols_state[i].symbol);
-}
-
-//+------------------------------------------------------------------+
-//| Publish an actual broker tick exactly once, including msec time  |
-//+------------------------------------------------------------------+
-void StreamSymbolTick(const string symbol)
-{
-   if(!g_is_connected || symbol == "") return;
-
-   MqlTick tick;
-   if(!SymbolInfoTick(symbol, tick)) return;
-
-   int stateIndex = -1;
-   for(int i = 0; i < g_symbols_count; i++)
-   {
-      if(g_symbols_state[i].symbol == symbol) { stateIndex = i; break; }
-   }
-   if(stateIndex >= 0 && tick.time_msc == g_symbols_state[stateIndex].last_time_msc &&
-      tick.bid == g_symbols_state[stateIndex].last_bid && tick.ask == g_symbols_state[stateIndex].last_ask)
-      return;
-
-   if(stateIndex >= 0)
-   {
-      g_symbols_state[stateIndex].last_time_msc = tick.time_msc;
-      g_symbols_state[stateIndex].last_bid = tick.bid;
-      g_symbols_state[stateIndex].last_ask = tick.ask;
-   }
-
-   int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
-   double volume = tick.volume_real > 0.0 ? tick.volume_real : (double)tick.volume;
-   string payload = "{"
-      "\"symbol\":\"" + EscapeJsonString(symbol) + "\","
-      "\"timestamp\":\"" + IsoTimestampFromMilliseconds(tick.time_msc) + "\","
-      "\"timestampMsc\":" + IntegerToString((long)tick.time_msc) + ","
-      "\"bid\":" + DoubleToString(tick.bid, digits) + ","
-      "\"ask\":" + DoubleToString(tick.ask, digits) + ","
-      "\"spread\":" + DoubleToString(tick.ask - tick.bid, digits) + ","
-      "\"volume\":" + DoubleToString(volume, 2) + "}";
-
-   string envelopeJson = BuildEnvelopeJson("Request", "tick-" + symbol + "-" + IntegerToString((long)tick.time_msc), "ReceiveTickStream", payload, "null");
-   SendJsonToUrl(g_tick_url, envelopeJson);
-}
-
-//+------------------------------------------------------------------+
-//| Publish real account, positions, and M1..D1 candle intelligence |
-//+------------------------------------------------------------------+
-void StreamTerminalIntelligence()
-{
    if(!g_is_connected || g_symbols_count == 0) return;
-   ulong nowMsc = GetTickCount64();
-   if(g_last_telemetry_msc != 0 && nowMsc - g_last_telemetry_msc < (ulong)InpTelemetryIntervalMs) return;
-   g_last_telemetry_msc = nowMsc;
 
-   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
-   double equity = AccountInfoDouble(ACCOUNT_EQUITY);
-   double drawdown = balance > 0.0 ? MathMax(0.0, (balance - equity) / balance) : 0.0;
-   string payload = "{"
-      "\"timestamp\":\"" + TimeToString(TimeGMT(), TIME_DATE|TIME_SECONDS) + "Z\","
-      "\"account\":{"
-         "\"login\":" + IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN)) + ","
-         "\"balance\":" + DoubleToString(balance, 2) + ","
-         "\"equity\":" + DoubleToString(equity, 2) + ","
-         "\"margin\":" + DoubleToString(AccountInfoDouble(ACCOUNT_MARGIN), 2) + ","
-         "\"freeMargin\":" + DoubleToString(AccountInfoDouble(ACCOUNT_MARGIN_FREE), 2) + ","
-         "\"leverage\":" + IntegerToString(AccountInfoInteger(ACCOUNT_LEVERAGE)) + ","
-         "\"currency\":\"" + EscapeJsonString(AccountInfoString(ACCOUNT_CURRENCY)) + "\","
-         "\"drawdown\":" + DoubleToString(drawdown, 8) + "},"
-      "\"positions\":" + BuildPositionsJson() + ","
-      "\"markets\":[";
    for(int i = 0; i < g_symbols_count; i++)
    {
-      if(i > 0) payload += ",";
-      payload += "{\"symbol\":\"" + EscapeJsonString(g_symbols_state[i].symbol) + "\",\"timeframes\":" + BuildMultiTimeframeJson(g_symbols_state[i].symbol) + "}";
+      string symbol = g_symbols_state[i].symbol;
+      MqlTick tick;
+      if(SymbolInfoTick(symbol, tick))
+      {
+         if(tick.bid != g_symbols_state[i].last_bid || tick.ask != g_symbols_state[i].last_ask)
+         {
+            g_symbols_state[i].last_time = tick.time;
+            g_symbols_state[i].last_bid = tick.bid;
+            g_symbols_state[i].last_ask = tick.ask;
+
+            MqlDateTime mqlTime;
+            TimeToStruct(tick.time, mqlTime);
+            string time_str = StringFormat("%04d-%02d-%02dT%02d:%02d:%02dZ", mqlTime.year, mqlTime.mon, mqlTime.day, mqlTime.hour, mqlTime.min, mqlTime.sec);
+
+            string payload = "{"
+               "\"symbol\":\"" + EscapeJsonString(symbol) + "\","
+               "\"timestamp\":\"" + time_str + "\","
+               "\"bid\":" + DoubleToString(tick.bid, 5) + ","
+               "\"ask\":" + DoubleToString(tick.ask, 5) + ","
+               "\"spread\":" + DoubleToString(tick.ask - tick.bid, 5) + ","
+               "\"volume\":" + DoubleToString((double)tick.volume, 2) +
+            "}";
+
+            string requestId = "tick-" + symbol + "-" + IntegerToString(TimeLocal());
+            string envelopeJson = BuildEnvelopeJson("Request", requestId, "ReceiveTickStream", payload, "null");
+
+            // Dispatch high-frequency tick payload to Kestrel REST Tick Ingestion API
+            char data[];
+            int bytes_converted = StringToCharArray(envelopeJson, data, 0, WHOLE_ARRAY, CP_UTF8);
+            if(bytes_converted > 0)
+            {
+               ArrayResize(data, bytes_converted - 1);
+            }
+
+            char result[];
+            string headers = "Content-Type: application/json\r\n";
+            
+            WebRequest("POST", g_tick_url, headers, NULL, 2000, 
+                       data, 0, result, headers);
+         }
+      }
    }
-   payload += "]}";
-   SendJsonToUrl(g_telemetry_url, BuildEnvelopeJson("Request", "telemetry-" + IntegerToString((long)nowMsc), "ReceiveTerminalIntelligence", payload, "null"));
-}
-
-string BuildPositionsJson()
-{
-   string output = "[";
-   for(int i = 0; i < PositionsTotal(); i++)
-   {
-      ulong ticket = PositionGetTicket(i);
-      if(ticket == 0) continue;
-      if(StringLen(output) > 1) output += ",";
-      output += "{\"ticket\":" + IntegerToString(ticket) + ",\"symbol\":\"" + EscapeJsonString(PositionGetString(POSITION_SYMBOL)) +
-         "\",\"type\":\"" + ((PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? "Buy" : "Sell") +
-         "\",\"volume\":" + DoubleToString(PositionGetDouble(POSITION_VOLUME), 2) +
-         ",\"entry\":" + DoubleToString(PositionGetDouble(POSITION_PRICE_OPEN), 8) +
-         ",\"current\":" + DoubleToString(PositionGetDouble(POSITION_PRICE_CURRENT), 8) +
-         ",\"stopLoss\":" + DoubleToString(PositionGetDouble(POSITION_SL), 8) +
-         ",\"takeProfit\":" + DoubleToString(PositionGetDouble(POSITION_TP), 8) +
-         ",\"profit\":" + DoubleToString(PositionGetDouble(POSITION_PROFIT), 2) +
-         ",\"swap\":" + DoubleToString(PositionGetDouble(POSITION_SWAP), 2) + "}";
-   }
-   return output + "]";
-}
-
-string BuildMultiTimeframeJson(const string symbol)
-{
-   ENUM_TIMEFRAMES frames[7] = { PERIOD_M1, PERIOD_M5, PERIOD_M15, PERIOD_M30, PERIOD_H1, PERIOD_H4, PERIOD_D1 };
-   string names[7] = { "M1", "M5", "M15", "M30", "H1", "H4", "D1" };
-   string output = "[";
-   for(int i = 0; i < 7; i++)
-   {
-      MqlRates rates[];
-      ArraySetAsSeries(rates, true);
-      if(CopyRates(symbol, frames[i], 0, 2, rates) < 1) continue;
-      double atrBuffer[];
-      ArraySetAsSeries(atrBuffer, true);
-      int atrHandle = iATR(symbol, frames[i], 14);
-      double atr = 0.0, ema = 0.0, rsi = 0.0;
-      if(atrHandle != INVALID_HANDLE) { if(CopyBuffer(atrHandle, 0, 0, 1, atrBuffer) > 0) atr = atrBuffer[0]; IndicatorRelease(atrHandle); }
-      double indicatorBuffer[]; ArraySetAsSeries(indicatorBuffer, true);
-      int emaHandle = iMA(symbol, frames[i], 20, 0, MODE_EMA, PRICE_CLOSE);
-      if(emaHandle != INVALID_HANDLE) { if(CopyBuffer(emaHandle, 0, 0, 1, indicatorBuffer) > 0) ema = indicatorBuffer[0]; IndicatorRelease(emaHandle); }
-      int rsiHandle = iRSI(symbol, frames[i], 14, PRICE_CLOSE);
-      if(rsiHandle != INVALID_HANDLE) { if(CopyBuffer(rsiHandle, 0, 0, 1, indicatorBuffer) > 0) rsi = indicatorBuffer[0]; IndicatorRelease(rsiHandle); }
-      string trend = rates[0].close > ema ? "Bullish" : (rates[0].close < ema ? "Bearish" : "Neutral");
-      if(StringLen(output) > 1) output += ",";
-      output += "{\"timeframe\":\"" + names[i] + "\",\"timestamp\":\"" + TimeToString(rates[0].time, TIME_DATE|TIME_SECONDS) + "Z\",\"open\":" + DoubleToString(rates[0].open, 8) + ",\"high\":" + DoubleToString(rates[0].high, 8) + ",\"low\":" + DoubleToString(rates[0].low, 8) + ",\"close\":" + DoubleToString(rates[0].close, 8) + ",\"volume\":" + IntegerToString((long)rates[0].tick_volume) + ",\"atr\":" + DoubleToString(atr, 8) + ",\"range\":" + DoubleToString(rates[0].high-rates[0].low, 8) + ",\"body\":" + DoubleToString(rates[0].close-rates[0].open, 8) + "}";
-   }
-   return output + "]";
-}
-
-void SubscribeMarketWatchSymbols()
-{
-   int total = SymbolsTotal(true);
-   for(int i = 0; i < total; i++)
-   {
-      string symbol = SymbolName(i, true);
-      if(symbol == "") continue;
-      ArrayResize(g_symbols_state, g_symbols_count + 1);
-      g_symbols_state[g_symbols_count].symbol = symbol;
-      g_symbols_state[g_symbols_count].last_time_msc = 0;
-      g_symbols_state[g_symbols_count].last_bid = 0.0;
-      g_symbols_state[g_symbols_count].last_ask = 0.0;
-      g_symbols_count++;
-   }
-}
-
-void SendJsonToUrl(const string url, const string json)
-{
-   char data[]; int count = StringToCharArray(json, data, 0, WHOLE_ARRAY, CP_UTF8); if(count > 0) ArrayResize(data, count - 1);
-   char result[]; string headers = "Content-Type: application/json\r\n";
-   ResetLastError();
-   int response = WebRequest("POST", url, headers, NULL, 2000, data, 0, result, headers);
-   if(response < 200 || response >= 300) Print("NexusBridge: telemetry POST failed: ", response, ", error=", GetLastError());
-}
-
-string IsoTimestampFromMilliseconds(const ulong timestampMsc)
-{
-   datetime seconds = (datetime)(timestampMsc / 1000);
-   int milliseconds = (int)(timestampMsc % 1000);
-   MqlDateTime value; TimeToStruct(seconds, value);
-   return StringFormat("%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", value.year, value.mon, value.day, value.hour, value.min, value.sec, milliseconds);
 }
 
 //+------------------------------------------------------------------+

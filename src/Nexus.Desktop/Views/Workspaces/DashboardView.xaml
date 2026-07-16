@@ -352,8 +352,8 @@
                                             <ColumnDefinition Width="80"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="BUY" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
-                                        <ProgressBar Grid.Column="1" Value="{Binding BuyExpectedUtility, Mode=OneWay}" Minimum="-10" Maximum="10" Height="10" Foreground="#10B981" Background="{DynamicResource SurfaceVariantBrush}"/>
-                                        <TextBlock Grid.Column="2" Text="{Binding BuyExpectedUtility, StringFormat={}{0:F2} EV}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource NteTradingDataFont}" Foreground="#10B981"/>
+                                        <ProgressBar Grid.Column="1" Value="{Binding SimulatedBuyExpectedUtility, Mode=OneWay}" Minimum="-10" Maximum="10" Height="10" Foreground="#10B981" Background="{DynamicResource SurfaceVariantBrush}"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding SimulatedBuyExpectedUtility, StringFormat={}{0:F2} EV}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource NteTradingDataFont}" Foreground="#10B981"/>
                                     </Grid>
 
                                     <!-- SELL expected utility -->
@@ -364,8 +364,8 @@
                                             <ColumnDefinition Width="80"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="SELL" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
-                                        <ProgressBar Grid.Column="1" Value="{Binding SellExpectedUtility, Mode=OneWay}" Minimum="-10" Maximum="10" Height="10" Foreground="#EF4444" Background="{DynamicResource SurfaceVariantBrush}"/>
-                                        <TextBlock Grid.Column="2" Text="{Binding SellExpectedUtility, StringFormat={}{0:F2} EV}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource NteTradingDataFont}" Foreground="#EF4444"/>
+                                        <ProgressBar Grid.Column="1" Value="{Binding SimulatedSellExpectedUtility, Mode=OneWay}" Minimum="-10" Maximum="10" Height="10" Foreground="#EF4444" Background="{DynamicResource SurfaceVariantBrush}"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding SimulatedSellExpectedUtility, StringFormat={}{0:F2} EV}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource NteTradingDataFont}" Foreground="#EF4444"/>
                                     </Grid>
 
                                     <!-- WAIT expected utility -->
@@ -376,19 +376,39 @@
                                             <ColumnDefinition Width="80"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="WAIT" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
-                                        <ProgressBar Grid.Column="1" Value="{Binding WaitExpectedUtility, Mode=OneWay}" Minimum="-10" Maximum="10" Height="10" Foreground="#3B82F6" Background="{DynamicResource SurfaceVariantBrush}"/>
-                                        <TextBlock Grid.Column="2" Text="{Binding WaitExpectedUtility, StringFormat={}{0:F2} EV}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource NteTradingDataFont}" Foreground="#3B82F6"/>
+                                        <ProgressBar Grid.Column="1" Value="{Binding SimulatedWaitExpectedUtility, Mode=OneWay}" Minimum="-10" Maximum="10" Height="10" Foreground="#3B82F6" Background="{DynamicResource SurfaceVariantBrush}"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding SimulatedWaitExpectedUtility, StringFormat={}{0:F2} EV}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource NteTradingDataFont}" Foreground="#3B82F6"/>
                                     </Grid>
                                 </StackPanel>
 
                                 <Border Grid.Column="1" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource GlassBorderBrush}" Margin="10,0"/>
 
-                                <!-- Live scenario provenance; no interactive override can alter a production decision. -->
+                                <!-- Right Side: Interactive Sliders Simulation Panel -->
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="LIVE SCENARIO PROVENANCE" Style="{StaticResource NteLabelSmall}" Foreground="#10B981" FontWeight="Bold" Margin="0,0,0,10"/>
-                                    <TextBlock Text="Candidate utilities are emitted by the native evaluator, decision pipeline, and risk gate from the latest MT5 snapshot." FontSize="10.5" Style="{StaticResource NteBodyMedium}" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" FontStyle="Italic"/>
+                                    <TextBlock Text="WHAT-IF SCENARIO PARAMETERS OVERRIDES" Style="{StaticResource NteLabelSmall}" Foreground="#F59E0B" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                    <!-- Volatility Slider -->
+                                    <StackPanel Margin="0,0,0,10">
+                                        <Grid>
+                                            <TextBlock Text="Simulated Volatility:" Style="{StaticResource NteLabelLarge}"/>
+                                            <TextBlock Text="{Binding WhatIfVolatility, StringFormat={}{0:P1}}" Foreground="#F59E0B" FontWeight="Bold" HorizontalAlignment="Right" Style="{StaticResource NteTradingDataFont}"/>
+                                        </Grid>
+                                        <Slider Value="{Binding WhatIfVolatility}" Minimum="0.0" Maximum="1.0" TickFrequency="0.05" IsSnapToTickEnabled="True" Margin="0,4,0,0"/>
+                                    </StackPanel>
+
+                                    <!-- Momentum Slider -->
+                                    <StackPanel Margin="0,0,0,10">
+                                        <Grid>
+                                            <TextBlock Text="Simulated Momentum Vector:" Style="{StaticResource NteLabelLarge}"/>
+                                            <TextBlock Text="{Binding WhatIfMomentum, StringFormat={}{0:F2}}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="Bold" HorizontalAlignment="Right" Style="{StaticResource NteTradingDataFont}"/>
+                                        </Grid>
+                                        <Slider Value="{Binding WhatIfMomentum}" Minimum="-1.0" Maximum="1.0" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,4,0,0"/>
+                                    </StackPanel>
+
+                                    <TextBlock Text="{Binding WhatIfReasonText}" FontSize="10.5" Style="{StaticResource NteBodyMedium}" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" FontStyle="Italic"/>
                                 </StackPanel>
                             </Grid>
+
                             <Border BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GlassBorderBrush}" Margin="0,10,0,10"/>
 
                             <TextBlock Text="ENGINE SELECTION REASONING" Style="{StaticResource NteLabelSmall}" Margin="5,0,0,6"/>
