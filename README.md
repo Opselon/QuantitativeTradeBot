@@ -281,12 +281,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Merge pull request #28 from Opselon/phase08-decision-engine-1463495862043842494 |
-| **Author** | Capsizer |
-| **Branch** | `main` |
-| **Run Number** | `87` |
-| **Commit SHA** | `e123d67817c180f25315e81ecfe8ae6b501335b4` |
-| **Generated At** | `2026-07-16 01:36:23 UTC` |
+| **Commit Message** | feat: implement phase 09 market intelligence and data fusion engine |
+| **Author** | google-labs-jules[bot] |
+| **Branch** | `feature/phase09-market-intelligence-6201300601270579929` |
+| **Run Number** | `88` |
+| **Commit SHA** | `4ad91a39dc8e252a8f5731e4ae083e93af06627a` |
+| **Generated At** | `2026-07-16 02:05:53 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -332,7 +332,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   ├── ADR-004-Native-Engine-Architecture.md
 │   │   ├── ADR-006-Learning-System-Architecture.md
 │   │   ├── ADR-007-Execution-Architecture.md
-│   │   └── ADR-008-Decision-Intelligence-Architecture.md
+│   │   ├── ADR-008-Decision-Intelligence-Architecture.md
+│   │   └── ADR-009-Market-Intelligence-Architecture.md
 │   ├── 01_ARCHITECTURE.md
 │   ├── 02_AI_ARCHITECTURE.md
 │   ├── 03_DATA_FLOW.md
@@ -353,6 +354,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── DECISION_ENGINE.md
 │   ├── DEPENDENCY_GRAPH.md
 │   ├── EXECUTION_ENGINE.md
+│   ├── MARKET_INTELLIGENCE.md
 │   ├── NATIVE_ENGINE.md
 │   ├── PATTERN_MEMORY.md
 │   ├── PROGRESS.md
@@ -750,6 +752,31 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   ├── NativeCoreSafeHandle.cs
 │   │   ├── NativeCoreService.cs
 │   │   └── Nexus.Infrastructure.Native.csproj
+│   ├── Nexus.MarketIntelligence/
+│   │   ├── Aggregation/
+│   │   │   └── TickAggregator.cs
+│   │   ├── DataSources/
+│   │   │   ├── Interfaces.cs
+│   │   │   └── Models.cs
+│   │   ├── Features/
+│   │   │   ├── ExtractedFeatures.cs
+│   │   │   └── FeatureExtractor.cs
+│   │   ├── Memory/
+│   │   │   ├── HistoricalMatch.cs
+│   │   │   ├── IMarketStateMemory.cs
+│   │   │   └── LocalStateMemory.cs
+│   │   ├── MultiTimeframe/
+│   │   │   ├── MultiTimeframeEngine.cs
+│   │   │   └── MultiTimeframeState.cs
+│   │   ├── Quality/
+│   │   │   ├── MarketQualityEvaluator.cs
+│   │   │   └── MarketQualityScore.cs
+│   │   ├── Regimes/
+│   │   │   ├── MarketRegimeDetector.cs
+│   │   │   └── RegimeClassification.cs
+│   │   ├── MarketIntelligenceEngine.cs
+│   │   ├── MarketIntelligenceSnapshot.cs
+│   │   └── Nexus.MarketIntelligence.csproj
 │   ├── Nexus.Native.Core/
 │   │   ├── include/
 │   │   │   └── nexus_core/
@@ -824,6 +851,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │       ├── Infrastructure/
 │       │   └── InfrastructureTest.cs
 │       ├── Intelligence/
+│       │   ├── MarketIntelligencePhase09Tests.cs
 │       │   ├── MarketIntelligenceTests.cs
 │       │   ├── NativeBridgeTests.cs
 │       │   └── StockfishTradingEngineTests.cs
@@ -845,12 +873,12 @@ To get started, please review the contribution guidelines outlined above, explor
 
 | File Type | Count |
 | --- | ---: |
-| C# (.cs) | 334 |
+| C# (.cs) | 351 |
 | WPF (.xaml) | 15 |
 | C/C++ Source | 17 |
 | CMake | 1 |
 | MQL5 (.mq5) | 1 |
-| Projects (.sln, .csproj) | 14 |
+| Projects (.sln, .csproj) | 15 |
 
 ### 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)
 - **Job Status:** success

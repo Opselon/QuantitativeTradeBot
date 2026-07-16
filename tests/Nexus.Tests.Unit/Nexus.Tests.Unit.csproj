@@ -30,6 +30,7 @@
     <ProjectReference Include="..\..\src\Nexus.Infrastructure\Nexus.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Nexus.Training\Nexus.Training.csproj" />
     <ProjectReference Include="..\..\src\Nexus.DecisionEngine\Nexus.DecisionEngine.csproj" />
+    <ProjectReference Include="..\..\src\Nexus.MarketIntelligence\Nexus.MarketIntelligence.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
