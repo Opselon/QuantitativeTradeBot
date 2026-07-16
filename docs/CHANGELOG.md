@@ -4,6 +4,38 @@ This document tracks all additions, modifications, and updates made across the p
 
 ---
 
+## [Phase 09: Market Intelligence & Data Fusion Engine] - 2026-04-08
+
+This release delivers the Market Intelligence & Data Fusion Engine (Phase 09), the single source of truth quantitative analytics subsystem of the Nexus Trading Engine. It implements abstract data sources, centralized multi-timeframe synchronization, automatic classification of 9 structural market regimes, normalized market quality and execution risk scores, deterministic feature extraction pipelines, and decoupled cosine-similarity pattern memory contracts.
+
+### Added
+* **src/Nexus.MarketIntelligence/Nexus.MarketIntelligence.csproj**: Class library targeting .NET 10.0 containing the market intelligence and data fusion logic.
+* **src/Nexus.MarketIntelligence/DataSources/Interfaces.cs**: Abstract interfaces for Tick, OHLC, Volume, Spread, Order Book, Calendar, News, Sessions, and Broker Metadata.
+* **src/Nexus.MarketIntelligence/DataSources/Models.cs**: Supporting model types for heterogeneous data streams.
+* **src/Nexus.MarketIntelligence/MultiTimeframe/MultiTimeframeState.cs**: Class modeling aligned Trend, Momentum, Volatility, and Structure across timeframes with a consolidated consensus score.
+* **src/Nexus.MarketIntelligence/MultiTimeframe/MultiTimeframeEngine.cs**: Implementation synchronizing and aggregating multi-timeframe chart resolutions (M1 to D1).
+* **src/Nexus.MarketIntelligence/Regimes/RegimeClassification.cs**: Output containing Confidence, Strength, and Reason for classified regimes.
+* **src/Nexus.MarketIntelligence/Regimes/MarketRegimeDetector.cs**: Class classifying 9 key market regimes.
+* **src/Nexus.MarketIntelligence/Quality/MarketQualityScore.cs**: Output representing normalized metrics and execution risk.
+* **src/Nexus.MarketIntelligence/Quality/MarketQualityEvaluator.cs**: Component calculating multidimensional quality scores.
+* **src/Nexus.MarketIntelligence/Features/ExtractedFeatures.cs**: Payload holding deterministic feature dictionary and sorted float/double vectors.
+* **src/Nexus.MarketIntelligence/Features/FeatureExtractor.cs**: Engine generating alphabetical, stable feature sets.
+* **src/Nexus.MarketIntelligence/Memory/IMarketStateMemory.cs**: Cosine pattern memory interface enabling similarity comparison.
+* **src/Nexus.MarketIntelligence/Memory/LocalStateMemory.cs**: Thread-safe memory cache implementing `IMarketStateMemory`.
+* **src/Nexus.MarketIntelligence/Aggregation/TickAggregator.cs**: Thread-safe aggregator compiling live streaming ticks into completed candles.
+* **src/Nexus.MarketIntelligence/MarketIntelligenceSnapshot.cs**: Unified payload representing the centralized source of truth.
+* **src/Nexus.MarketIntelligence/MarketIntelligenceEngine.cs**: Central orchestrator coordinating all fusion processes.
+* **tests/Nexus.Tests.Unit/Intelligence/MarketIntelligencePhase09Tests.cs**: Unit test suite verifying synchronization, regime detection, feature determinism, and end-to-end snapshots.
+* **docs/MARKET_INTELLIGENCE.md**: Comprehensive structural guide and rationale.
+* **docs/Architecture/ADR-009-Market-Intelligence-Architecture.md**: Architectural record explaining normalization, decoupling, and centralized synchronization.
+
+### Modified
+* **tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj**: Added project reference to `Nexus.MarketIntelligence.csproj`.
+* **docs/ROADMAP.md**: Incremented Phase 09 status to completed and updated goals.
+* **docs/PROGRESS.md**: Documented completed Phase 09 milestones and updated progress percentages.
+
+---
+
 ## [Phase 08: Autonomous Decision Intelligence Engine] - 2026-04-07
 
 This release delivers the Autonomous Decision Intelligence Engine (Phase 08), the central reasoning quantitative intelligence layer of the Nexus Trading Engine. It implements a complete 9-stage Decision Pipeline, an advanced Stockfish-inspired tree scenario search engine, competing market hypothesis engines, modular multi-model consensus, first-class explainability telemetry, and uncertainty-driven risk management.
