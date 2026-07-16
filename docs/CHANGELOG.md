@@ -4,6 +4,34 @@ This document tracks all additions, modifications, and updates made across the p
 
 ---
 
+## [Phase 08: Autonomous Decision Intelligence Engine] - 2026-04-07
+
+This release delivers the Autonomous Decision Intelligence Engine (Phase 08), the central reasoning quantitative intelligence layer of the Nexus Trading Engine. It implements a complete 9-stage Decision Pipeline, an advanced Stockfish-inspired tree scenario search engine, competing market hypothesis engines, modular multi-model consensus, first-class explainability telemetry, and uncertainty-driven risk management.
+
+### Added
+* **src/Nexus.DecisionEngine/Nexus.DecisionEngine.csproj**: Class library targeting .NET 10.0 containing the central quantitative reasoning logic.
+* **src/Nexus.DecisionEngine/DecisionPackage.cs**: Represents the ultimate, explainable decision package containing Selected Action, Confidence, Evidence, Alternatives, Risk Summary, Expected Outcome, and Execution Readiness.
+* **src/Nexus.DecisionEngine/MarketHypothesis.cs**: Represents a competing market hypothesis with its probability, expected reward, risk, and expected utility.
+* **src/Nexus.DecisionEngine/IModelEvaluator.cs**: Modular contract and models supporting multi-model consensus aggregation.
+* **src/Nexus.DecisionEngine/ModelEvaluators.cs**: Implements specialized evaluators (Trend, Volatility, Momentum, Liquidity, Pattern, Order Flow, Macro) alongside a stub market memory.
+* **src/Nexus.DecisionEngine/IMarketMemory.cs**: Interface enabling retrieval of historical match success rates and pattern frequencies without tight coupling to training.
+* **src/Nexus.DecisionEngine/DecisionScenarioSearchEngine.cs**: Stockfish-inspired tree-search algorithm evaluating action paths over an expanded action space.
+* **src/Nexus.DecisionEngine/MarketHypothesisEngine.cs**: Compares competing hypotheses (Trend Continuation vs Trend Reversal vs Sideways Mean Reversion).
+* **src/Nexus.DecisionEngine/MultiModelConsensusAggregator.cs**: Weighs and merges modular model evaluation results into an aggregated score, confidence, and dominant bias.
+* **src/Nexus.DecisionEngine/UncertaintyEngine.cs**: Classifies uncertainty (High, Medium, Low, Unknown) to protect capital during market volatility or model divergence.
+* **src/Nexus.DecisionEngine/DecisionPipelineOrchestrator.cs**: Coordinates the 9-stage pipeline from market snapshot to final executable decision packages.
+* **tests/Nexus.Tests.Unit/DecisionEngine/DecisionEngineTests.cs**: Comprehensive test suite verifying scenario search ranking, hypothesis comparison, consensus, uncertainty triggers, and end-to-end pipeline execution.
+* **docs/DECISION_ENGINE.md**: Engineering documentation detailing pipeline stages, responsibilities, and flows.
+* **docs/Architecture/ADR-008-Decision-Intelligence-Architecture.md**: Architectural record explaining decoupling, tree-search utility math, and modular consensus.
+
+### Modified
+* **tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj**: Added project reference to `Nexus.DecisionEngine.csproj`.
+* **tests/Nexus.Tests.Unit/Intelligence/MarketIntelligenceTests.cs**: Resolved name collision for `DecisionEngine` type references.
+* **docs/PROGRESS.md**: Marked Phase 08 complete.
+* **docs/ROADMAP.md**: Incremented phase roadmap tracker.
+
+---
+
 ## [Phase 07: Automated Execution Sandbox & Risk-Controlled Runtime] - 2026-04-06
 
 This release delivers the Automated Execution Sandbox & Risk-Controlled Runtime (Phase 07), completing the professional-grade execution pipeline, risk gate controls, safe-mode profiles, position management synchronization, database auditing logs, and multi-dimensional unit test validations.

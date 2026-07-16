@@ -35,7 +35,11 @@ This document maps out the release milestones and evolution roadmap for the **Ne
   [████████████████████████████████████████████████████████████] 100% (Completed)
                              │
                              ▼
-  Phase 08: Institutional Workstations & Live Dashboards (WPF)
+  Phase 08: Autonomous Decision Intelligence Engine
+  [████████████████████████████████████████████████████████████] 100% (Completed)
+                             │
+                             ▼
+  Phase 09: Institutional Workstations & Live Dashboards (WPF)
   [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%   (Pending)
 ```
 
@@ -97,6 +101,14 @@ Deploy strategy hosts, execute sandboxed trades, and render premium workstation 
 * [x] **State Machine Lifecycle**: Transition orders through created, validated, submitted, rejected, and filled states without boolean flags.
 * [x] **Audit Traceability**: Persist orders, positions, and error logs automatically within partitioned relational tables.
 
-### ▢ Phase 08: Institutional Workstations & Live Dashboards (Pending)
+### ■ Phase 08: Autonomous Decision Intelligence Engine (Completed)
+Build the central reasoning quantitative intelligence layer of the Nexus Trading Engine.
+* [x] **Structured Decision Pipeline**: Implemented end-to-end traceably: Market Snapshot -> Feature Evaluation -> Model Evaluation -> Scenario Generation -> Scenario Scoring -> Risk Evaluation -> Decision Ranking -> Final Decision -> Execution Request.
+* [x] **Stockfish-Inspired Tree Search**: Programmed scenario search over extended action spaces (BUY, SELL, WAIT, PARTIAL CLOSE, FULL CLOSE, MOVE SL, MOVE TP, REDUCE POSITION, ADD POSITION).
+* [x] **Market Hypothesis Engine**: Configured Trend Continuation vs Reversal vs Sideways competing hypotheses compared by probability, risk, and expected utility.
+* [x] **Modular Multi-Model Consensus**: Aggregated specialized evaluators (Trend, Volatility, Momentum, Liquidity, Pattern, Order Flow, Macro) weighed by active confidence.
+* [x] **Uncertainty Engine Integration**: Designed system uncertainty gates to intelligently override actions and select `WAIT` on high volatility or model divergence.
+
+### ▢ Phase 09: Institutional Workstations & Live Dashboards (Pending)
 Implement advanced WPF workspaces and indicators for live trade execution and control.
 * [ ] **Institutional Workstation Panels**: Display performance metrics, decision intelligence graphs, and manual desk ticket forms in modern WPF theme configurations.
