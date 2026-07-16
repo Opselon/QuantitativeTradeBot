@@ -15,7 +15,7 @@ namespace Nexus.Application.Ports
         public bool AutoReconnect { get; set; } = true;
 
         // MT5 Bridge Mode Configuration
-        public string Mt5Mode { get; set; } = "Simulated"; // "Simulated" or "Real"
+        public string Mt5Mode { get; set; } = "Real"; // Real MT5 bridge only
         public string Mt5BridgeHost { get; set; } = "127.0.0.1";
         public int Mt5BridgePort { get; set; } = 5000;
         public bool Mt5BridgeUseSsl { get; set; } = false;
