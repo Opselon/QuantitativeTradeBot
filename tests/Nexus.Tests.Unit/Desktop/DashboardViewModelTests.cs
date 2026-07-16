@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Nexus.Application.Ports;
 using Nexus.Desktop.Services;
+using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Desktop.ViewModels.Workspaces;
 using Nexus.Application.Dashboard;
 using Nexus.Infrastructure.Mt5Bridge;
@@ -365,6 +367,7 @@ namespace Nexus.Tests.Unit.Desktop
 
         private class StubDiagnosticService : IDiagnosticService
         {
+            public ObservableCollection<LogEntry> Logs { get; } = new();
             public void Log(string subsystem, string level, string message) { }
         }
 
@@ -456,9 +459,9 @@ namespace Nexus.Tests.Unit.Desktop
 
         private class FakeAccumulatorService : IAccumulatorService
         {
-            public AccumulatorState State => new AccumulatorState();
+            public AccumulatorState GetState(string symbol) => new AccumulatorState();
             public AccumulatorState UpdateState(FeatureDelta delta) => new AccumulatorState();
-            public void Reset() { }
+            public void ResetState(string symbol) { }
         }
 
         private class FakeCurrencyStrengthEngine : ICurrencyStrengthEngine
