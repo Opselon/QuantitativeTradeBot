@@ -281,12 +281,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | feat(native): implement C++20 quantitative evaluation engine foundation |
+| **Commit Message** | feat: implement autonomous learning & experience engine foundation |
 | **Author** | google-labs-jules[bot] |
-| **Branch** | `feat/phase-04-native-engine-foundation-17575775283447720894` |
-| **Run Number** | `76` |
-| **Commit SHA** | `f75e77f9f5b8da7fa964f5ecb25a50fe732f7efe` |
-| **Generated At** | `2026-07-15 23:53:51 UTC` |
+| **Branch** | `feature/autonomous-learning-engine-1556832895063360495` |
+| **Run Number** | `81` |
+| **Commit SHA** | `10306d36497c0cfc2ee683b588b0107a450cf967` |
+| **Generated At** | `2026-07-16 00:16:15 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -329,7 +329,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── Architecture/
 │   │   ├── ADR-002-Domain-Model-Design.md
 │   │   ├── ADR-003-Infrastructure-Data-Architecture.md
-│   │   └── ADR-004-Native-Engine-Architecture.md
+│   │   ├── ADR-004-Native-Engine-Architecture.md
+│   │   └── ADR-006-Learning-System-Architecture.md
 │   ├── 01_ARCHITECTURE.md
 │   ├── 02_AI_ARCHITECTURE.md
 │   ├── 03_DATA_FLOW.md
@@ -351,7 +352,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── NATIVE_ENGINE.md
 │   ├── PATTERN_MEMORY.md
 │   ├── PROGRESS.md
-│   └── ROADMAP.md
+│   ├── ROADMAP.md
+│   └── TRAINING_ENGINE.md
 ├── MQL5/
 │   └── Experts/
 │       └── Nexus/
@@ -724,6 +726,19 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   ├── tests/
 │   │   │   └── native_tests.cpp
 │   │   └── CMakeLists.txt
+│   ├── Nexus.Training/
+│   │   ├── ExperienceEngine.cs
+│   │   ├── ExperienceReplayBuffer.cs
+│   │   ├── FileModelStorage.cs
+│   │   ├── IModelStorage.cs
+│   │   ├── ModelRegistry.cs
+│   │   ├── ModelVersionInfo.cs
+│   │   ├── Nexus.Training.csproj
+│   │   ├── RewardEvaluator.cs
+│   │   ├── TimeframeLearningManager.cs
+│   │   ├── TrainingPipeline.cs
+│   │   ├── ValidationEngine.cs
+│   │   └── ValidationResult.cs
 │   └── Nexus.WpfUi/
 │       ├── App.xaml
 │       ├── App.xaml.cs
@@ -763,6 +778,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │       │   ├── MarketIntelligenceTests.cs
 │       │   ├── NativeBridgeTests.cs
 │       │   └── StockfishTradingEngineTests.cs
+│       ├── Training/
+│       │   └── TrainingEngineTests.cs
 │       ├── ValueObjects/
 │       │   ├── MoneyAndLotSizeTests.cs
 │       │   ├── NewValueObjectTests.cs
@@ -779,12 +796,12 @@ To get started, please review the contribution guidelines outlined above, explor
 
 | File Type | Count |
 | --- | ---: |
-| C# (.cs) | 290 |
+| C# (.cs) | 302 |
 | WPF (.xaml) | 15 |
 | C/C++ Source | 17 |
 | CMake | 1 |
 | MQL5 (.mq5) | 1 |
-| Projects (.sln, .csproj) | 11 |
+| Projects (.sln, .csproj) | 12 |
 
 ### 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)
 - **Job Status:** success
