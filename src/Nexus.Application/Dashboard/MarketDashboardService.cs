@@ -5,18 +5,18 @@ namespace Nexus.Application.Dashboard
 {
     public sealed class MarketDashboardService : IMarketDashboardService
     {
-        public string CurrentSymbol { get; set; } = "EURUSD";
-        public string MarketRegime { get; private set; } = "Trending Bullish";
-        public int MarketQualityScore { get; private set; } = 85;
-        public double Liquidity { get; private set; } = 0.90;
-        public double Volatility { get; private set; } = 0.25;
-        public double Momentum { get; private set; } = 0.75;
-        public string D1Consensus { get; private set; } = "Bullish";
-        public string H4Consensus { get; private set; } = "Bullish";
-        public string M15Consensus { get; private set; } = "Entry Zone";
-        public string ConsensusSummary { get; private set; } = "Strong Bullish continuation across multiple timeframes.";
+        public string CurrentSymbol { get; set; } = "UNKNOWN";
+        public string MarketRegime { get; private set; } = "UNKNOWN";
+        public int MarketQualityScore { get; private set; } = 0;
+        public double Liquidity { get; private set; } = 0.0;
+        public double Volatility { get; private set; } = 0.0;
+        public double Momentum { get; private set; } = 0.0;
+        public string D1Consensus { get; private set; } = "UNKNOWN";
+        public string H4Consensus { get; private set; } = "UNKNOWN";
+        public string M15Consensus { get; private set; } = "UNKNOWN";
+        public string ConsensusSummary { get; private set; } = "No active data streams.";
 
-        private readonly List<double> _recentPrices = new() { 1.08500, 1.08510, 1.08530, 1.08520, 1.08550, 1.08570, 1.08590, 1.08580, 1.08610, 1.08630 };
+        private readonly List<double> _recentPrices = new();
         public IReadOnlyList<double> RecentPrices => _recentPrices;
 
         public event Action<MarketDashboardData>? OnMarketUpdated;
