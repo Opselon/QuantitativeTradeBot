@@ -5,186 +5,872 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="1100">
-    <Grid>
+             Loaded="UserControl_Loaded"
+             d:DesignHeight="1800" d:DesignWidth="1440">
+
+    <Grid Background="{DynamicResource BackgroundBrush}">
         <Grid.RowDefinitions>
+            <!-- Header section -->
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="20"/>
+            <!-- Health Monitor horizontal ribbon -->
+            <RowDefinition Height="Auto"/>
+            <!-- Main Grid content -->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Command Center Header Banner -->
-        <materialDesign:Card Grid.Row="0" Style="{StaticResource NtePremiumCard}" Padding="25,20">
+        <materialDesign:Card Grid.Row="0" Style="{StaticResource NtePremiumCard}" Padding="25,15" Margin="0,0,0,15">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <materialDesign:PackIcon Kind="ChartTimelineVariant" Width="40" Height="40" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,20,0">
-                    <materialDesign:PackIcon.Style>
-                        <Style TargetType="materialDesign:PackIcon">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
-                                    <Setter Property="Foreground" Value="{DynamicResource LightPrimaryBrush}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </materialDesign:PackIcon.Style>
-                </materialDesign:PackIcon>
+
+                <materialDesign:PackIcon Kind="ShieldLock" Width="40" Height="40" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,20,0"/>
+
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="AI TRADING COMMAND CENTER" Style="{StaticResource NteHeadline}" Margin="0,0,0,4"/>
-                    <TextBlock Text="Live real-time mathematical indicators, market data feeds ingestion pipelines, and neural decision model matrices." Style="{StaticResource NteBodyMedium}"/>
+                    <TextBlock Text="INSTITUTIONAL QUANTITATIVE COMMAND WORKSTATION" Style="{StaticResource NteHeadline}" FontSize="20" FontWeight="Bold" Margin="0,0,0,4"/>
+                    <TextBlock Text="Real-time multi-dimensional neural state matrices, scenario utility evaluations, bare-metal C++ indicators performance and execution monitors." Style="{StaticResource NteBodyMedium}"/>
                 </StackPanel>
+
+                <!-- Active symbol tag -->
+                <Border Grid.Column="2" Background="{DynamicResource PrimaryContainerBrush}" CornerRadius="8" BorderThickness="1.5" BorderBrush="{DynamicResource PrimaryBrush}" Padding="15,6" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ChartTimelineVariant" Width="16" Height="16" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding CurrentSymbol}" Foreground="{DynamicResource PrimaryBrush}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
             </Grid>
         </materialDesign:Card>
 
-        <!-- Information Cards Grid -->
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="20"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <!-- =================================================== -->
+        <!-- SYSTEM HEALTH MONITOR HORIZONTAL RIBBON             -->
+        <!-- =================================================== -->
+        <materialDesign:Card Grid.Row="1" Style="{StaticResource NtePremiumCard}" Padding="20,12" Margin="0,0,0,15" Background="{DynamicResource SurfaceContainerBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <!-- Subsystem Lamps -->
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1.5"/>
+                    <!-- Resource Performance Monitors -->
+                    <ColumnDefinition Width="420"/>
+                </Grid.ColumnDefinitions>
 
-            <!-- Column 1: Platform Capabilities & Welcome Information -->
-            <materialDesign:Card Grid.Column="0" Style="{StaticResource NtePremiumCard}">
-                <StackPanel>
-                    <TextBlock Text="Welcome to Nexus Trading Engine" Style="{StaticResource NteTitleLarge}" Margin="0,0,0,15"/>
-                    <TextBlock Text="Nexus is an ultra-low latency algorithmic terminal. Real-time market feed ingestion and automated Native Indicator libraries are active." Style="{StaticResource NteBodyLarge}" Margin="0,0,0,20" TextWrapping="Wrap"/>
+                <!-- Subsystem Status Lamps -->
+                <Grid Grid.Column="0" VerticalAlignment="Center" Margin="0,0,15,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                    <Border BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GlassBorderBrush}" Margin="0,0,0,20">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
-                                        <Setter Property="BorderBrush" Value="{DynamicResource LightGlassBorderBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                    </Border>
+                    <TextBlock Grid.Column="0" Text="HEALTH MONITOR:" Style="{StaticResource NteLabelSmall}" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
 
-                    <StackPanel Margin="5,0">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <materialDesign:PackIcon Kind="ShieldCheck" Foreground="{DynamicResource SuccessBrush}" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0">
-                                <materialDesign:PackIcon.Style>
-                                    <Style TargetType="materialDesign:PackIcon">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
-                                                <Setter Property="Foreground" Value="{DynamicResource LightSuccessBrush}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </materialDesign:PackIcon.Style>
-                            </materialDesign:PackIcon>
-                            <TextBlock Text="Real MT5 Gateway Client Handshake Ready" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <materialDesign:PackIcon Kind="Server" Foreground="{DynamicResource SuccessBrush}" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0">
-                                <materialDesign:PackIcon.Style>
-                                    <Style TargetType="materialDesign:PackIcon">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
-                                                <Setter Property="Foreground" Value="{DynamicResource LightSuccessBrush}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </materialDesign:PackIcon.Style>
-                            </materialDesign:PackIcon>
-                            <TextBlock Text="Native C++ INDICATORS Engine Acceleration Active" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="ChartTimelineVariant" Foreground="{DynamicResource SuccessBrush}" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0">
-                                <materialDesign:PackIcon.Style>
-                                    <Style TargetType="materialDesign:PackIcon">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
-                                                <Setter Property="Foreground" Value="{DynamicResource LightSuccessBrush}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </materialDesign:PackIcon.Style>
-                            </materialDesign:PackIcon>
-                            <TextBlock Text="Multi-Instrument Real-Time Symbol Ingestion Enabled" Style="{StaticResource NteBodyLarge}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
+                    <!-- Native Engine Lamp -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" ToolTip="High performance C++20 Core Indicator library status.">
+                        <Ellipse Width="8" Height="8" Fill="#10B981" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="NATIVE" FontSize="11" FontWeight="Bold" Foreground="#10B981" VerticalAlignment="Center"/>
                     </StackPanel>
+
+                    <!-- Decision Engine Lamp -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center" ToolTip="Autonomous Decision intelligence pipeline state.">
+                        <Ellipse Width="8" Height="8" Fill="#10B981" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="DECISION" FontSize="11" FontWeight="Bold" Foreground="#10B981" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Market Intelligence Lamp -->
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Center" ToolTip="Multi-timeframe consensus data-fusion state.">
+                        <Ellipse Width="8" Height="8" Fill="#10B981" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="INTELLIGENCE" FontSize="11" FontWeight="Bold" Foreground="#10B981" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Training Engine Lamp -->
+                    <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Center" ToolTip="Self-learning and validation engine pipeline status.">
+                        <Ellipse Width="8" Height="8" Fill="#10B981" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="LEARNING" FontSize="11" FontWeight="Bold" Foreground="#10B981" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Execution Engine Lamp -->
+                    <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Center" ToolTip="RiskControlledExecutionEngine safety gates and order dispatcher.">
+                        <Ellipse Width="8" Height="8" Fill="#10B981" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="EXECUTION" FontSize="11" FontWeight="Bold" Foreground="#10B981" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Database Lamp -->
+                    <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Center" ToolTip="Local persistence layers and schema indexing connectivity.">
+                        <Ellipse Width="8" Height="8" Fill="#10B981" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="DATABASE" FontSize="11" FontWeight="Bold" Foreground="#10B981" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- MT5 Bridge Lamp -->
+                    <StackPanel Grid.Column="7" Orientation="Horizontal" HorizontalAlignment="Center" ToolTip="Active TCP localhost bridge with expert advisor script.">
+                        <Ellipse Width="8" Height="8" Fill="#10B981" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="MT5 BRIDGE" FontSize="11" FontWeight="Bold" Foreground="#10B981" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Thin Separator -->
+                <Border Grid.Column="1" Background="{DynamicResource GlassBorderBrush}"/>
+
+                <!-- Real-time performance monitors (Monospace / Monofont latencies) -->
+                <Grid Grid.Column="2" VerticalAlignment="Center" Margin="15,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" HorizontalAlignment="Center" ToolTip="Tick ingestion and indicator pipeline processing latency.">
+                        <TextBlock Text="TICK LATENCY" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding TickProcessingLatencyMs, StringFormat={}{0:F3} ms}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SuccessBrush}" Style="{StaticResource NteTradingDataFont}" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Center" ToolTip="Scenario search tree search and consensus decision pipeline latency.">
+                        <TextBlock Text="DECISION LATENCY" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding DecisionLatencyMs, StringFormat={}{0:F2} ms}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Style="{StaticResource NteTradingDataFont}" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" HorizontalAlignment="Center" ToolTip="Order submission and MT5 execution dispatcher response latency.">
+                        <TextBlock Text="EXECUTION LATENCY" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding ExecutionLatencyMs, StringFormat={}{0:F1} ms}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}" Style="{StaticResource NteTradingDataFont}" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </materialDesign:Card>
+
+        <!-- Main Workstation Layout Split -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <!-- Left: Intelligence, Decisions, Scenarios, Replay, Events -->
+                    <ColumnDefinition Width="*"/>
+                    <!-- Gap -->
+                    <ColumnDefinition Width="15"/>
+                    <!-- Right: Execution, Training, Timeline -->
+                    <ColumnDefinition Width="500"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ========================================== -->
+                <!-- LEFT PANELS                                -->
+                <!-- ========================================== -->
+                <StackPanel Grid.Column="0">
+
+                    <!-- 1. Market Intelligence Panel -->
+                    <materialDesign:Card Style="{StaticResource NtePremiumCard}" Margin="0,0,0,15">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Grid.Column="0">
+                                    <materialDesign:PackIcon Kind="GoogleAnalytics" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="MARKET INTELLIGENCE MATRIX" Style="{StaticResource NteTitleLarge}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <Border Grid.Column="1" Background="#1D4ED8" CornerRadius="4" Padding="8,3">
+                                    <TextBlock Text="{Binding MarketRegime}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                </Border>
+                            </Grid>
+
+                            <Grid Margin="5,0,5,15">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Score -->
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                    <TextBlock Text="QUALITY SCORE" Style="{StaticResource NteLabelSmall}" Margin="0,0,0,4" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding MarketQualityScore, StringFormat={}{0}/100}" Foreground="{DynamicResource SuccessBrush}" FontSize="24" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                <!-- Liquidity -->
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                    <TextBlock Text="LIQUIDITY" Style="{StaticResource NteLabelSmall}" Margin="0,0,0,4" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Liquidity, StringFormat={}{0:P1}}" Foreground="{DynamicResource PrimaryBrush}" FontSize="24" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                <!-- Volatility -->
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                    <TextBlock Text="VOLATILITY" Style="{StaticResource NteLabelSmall}" Margin="0,0,0,4" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Volatility, StringFormat={}{0:P1}}" Foreground="{DynamicResource WarningBrush}" FontSize="24" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                <!-- Momentum -->
+                                <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                    <TextBlock Text="MOMENTUM" Style="{StaticResource NteLabelSmall}" Margin="0,0,0,4" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Momentum, StringFormat={}{0:P1}}" Foreground="{DynamicResource SecondaryBrush}" FontSize="24" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Border BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GlassBorderBrush}" Margin="0,0,0,12"/>
+
+                            <!-- Multi-Timeframe Alignment Consensus -->
+                            <TextBlock Text="MULTI-TIMEFRAME ALIGNMENT BIAS" Style="{StaticResource NteLabelLarge}" FontWeight="Bold" Margin="5,0,0,10"/>
+                            <Grid Margin="5,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="6" Padding="12,8" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="D1 TREND" Style="{StaticResource NteLabelSmall}" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding D1Consensus}" Foreground="{DynamicResource SuccessBrush}" FontSize="15" FontWeight="Bold" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="2" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="6" Padding="12,8" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="H4 MOMENTUM" Style="{StaticResource NteLabelSmall}" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding H4Consensus}" Foreground="{DynamicResource SuccessBrush}" FontSize="15" FontWeight="Bold" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="4" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="6" Padding="12,8" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="M15 ENTRY TIMING" Style="{StaticResource NteLabelSmall}" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding M15Consensus}" Foreground="{DynamicResource PrimaryBrush}" FontSize="15" FontWeight="Bold" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <TextBlock Text="{Binding ConsensusSummary}" Style="{StaticResource NteBodyMedium}" Margin="5,12,0,0" FontStyle="Italic" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- 2. AI Decision Panel -->
+                    <materialDesign:Card Style="{StaticResource NtePremiumCard}" Margin="0,0,0,15">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Grid.Column="0">
+                                    <materialDesign:PackIcon Kind="Brain" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="AI NEURAL DECISION MATRIX" Style="{StaticResource NteTitleLarge}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <Border Grid.Column="1" Background="#047857" CornerRadius="4" Padding="8,3">
+                                    <TextBlock Text="{Binding CurrentDecision}" Foreground="White" FontSize="12" FontWeight="Bold"/>
+                                </Border>
+                            </Grid>
+
+                            <Grid Margin="5,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="20"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="CONFIDENCE" Style="{StaticResource NteLabelSmall}"/>
+                                    <TextBlock Text="{Binding Confidence, StringFormat={}{0:P1}}" Foreground="{DynamicResource SuccessBrush}" FontSize="32" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" Margin="0,4,0,0"/>
+                                    <TextBlock Text="{Binding ExpectedValue}" Style="{StaticResource NteBodyMedium}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                                </StackPanel>
+
+                                <Border Grid.Column="1" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource GlassBorderBrush}" Margin="10,0"/>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="SUPPORTING QUANT EVIDENCE" Style="{StaticResource NteLabelSmall}" Margin="0,0,0,6"/>
+                                    <ItemsControl ItemsSource="{Binding SupportingEvidence}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <materialDesign:PackIcon Kind="ChevronRight" Width="14" Height="14" Foreground="{DynamicResource SuccessBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="{Binding}" Style="{StaticResource NteBodyMedium}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <TextBlock Text="REJECTED ALTERNATIVES" Style="{StaticResource NteLabelSmall}" Margin="0,12,0,6"/>
+                                    <ItemsControl ItemsSource="{Binding RejectedAlternatives}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <materialDesign:PackIcon Kind="Close" Width="14" Height="14" Foreground="{DynamicResource ErrorBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="{Binding}" Style="{StaticResource NteBodyMedium}" TextDecorations="Strikethrough" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- 3. Scenario Search Visualization -->
+                    <materialDesign:Card Style="{StaticResource NtePremiumCard}" Margin="0,0,0,15">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <materialDesign:PackIcon Kind="GraphOutline" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="STOCKFISH SCENARIO TREE PROBABILITY SEARCH" Style="{StaticResource NteTitleLarge}" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <TextBlock Text="EXPECTED UTILITY SCALE OF CANDIDATE ACTIONS (EV)" Style="{StaticResource NteLabelSmall}" Margin="5,0,0,10"/>
+
+                            <StackPanel Margin="5,0">
+                                <!-- BUY expected utility -->
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="80"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="BUY" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <!-- Expected utility progress bar -->
+                                    <ProgressBar Grid.Column="1" Value="{Binding BuyExpectedUtility}" Minimum="-10" Maximum="10" Height="10" Foreground="#10B981" Background="{DynamicResource SurfaceVariantBrush}"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding BuyExpectedUtility, StringFormat={}{0:F2} EV}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource NteTradingDataFont}" Foreground="#10B981"/>
+                                </Grid>
+
+                                <!-- SELL expected utility -->
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="80"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="SELL" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <ProgressBar Grid.Column="1" Value="{Binding SellExpectedUtility}" Minimum="-10" Maximum="10" Height="10" Foreground="#EF4444" Background="{DynamicResource SurfaceVariantBrush}"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding SellExpectedUtility, StringFormat={}{0:F2} EV}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource NteTradingDataFont}" Foreground="#EF4444"/>
+                                </Grid>
+
+                                <!-- WAIT expected utility -->
+                                <Grid Margin="0,0,0,15">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="80"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="WAIT" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <ProgressBar Grid.Column="1" Value="{Binding WaitExpectedUtility}" Minimum="-10" Maximum="10" Height="10" Foreground="#3B82F6" Background="{DynamicResource SurfaceVariantBrush}"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding WaitExpectedUtility, StringFormat={}{0:F2} EV}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource NteTradingDataFont}" Foreground="#3B82F6"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <Border BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GlassBorderBrush}" Margin="0,0,0,10"/>
+
+                            <TextBlock Text="ENGINE SELECTION REASONING" Style="{StaticResource NteLabelSmall}" Margin="5,0,0,6"/>
+                            <TextBlock Text="{Binding SelectionReason}" Style="{StaticResource NteBodyMedium}" Foreground="{DynamicResource TextSecondaryBrush}" FontStyle="Italic" TextWrapping="Wrap" Margin="5,0"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- =================================================== -->
+                    <!-- DECISION REPLAY MASTER-DETAIL PANEL                 -->
+                    <!-- =================================================== -->
+                    <materialDesign:Card Style="{StaticResource NtePremiumCard}" Margin="0,0,0,15">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <materialDesign:PackIcon Kind="History" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="DETERMINISTIC DECISION REPLAY MONITOR" Style="{StaticResource NteTitleLarge}" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <!-- Left: Master Decision List (Scrollable list of historical events) -->
+                                    <ColumnDefinition Width="220"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <!-- Right: Detail view (reconstructed reasoning metrics) -->
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Master list -->
+                                <Border Grid.Column="0" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}" CornerRadius="6" Background="#0C0F17" Padding="4" Height="280">
+                                    <ListBox ItemsSource="{Binding HistoricalDecisions}" SelectedItem="{Binding SelectedReplayDecision}" Background="Transparent" BorderThickness="0">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="5,6">
+                                                    <TextBlock Text="{Binding DecisionName}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
+                                                    <TextBlock Text="{Binding Timestamp, StringFormat={}{0:HH:mm:ss}}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Border>
+
+                                <!-- Detail pane -->
+                                <Border Grid.Column="2" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}" CornerRadius="6" Background="{DynamicResource SurfaceContainerBrush}" Padding="15,12" Height="280">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Visibility="{Binding IsReplayDetailVisible, Converter={StaticResource BoolToVisConverter}}">
+                                            <TextBlock Text="RECONSTRUCTED DECISION REASONING STATE" Style="{StaticResource NteLabelSmall}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                            <!-- Snapshot and Regime -->
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Market Snapshot:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding ReplayMarketSnapshot}" Style="{StaticResource NteBodyMedium}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Market Regime:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding ReplayMarketRegime}" Foreground="{DynamicResource WarningBrush}" Style="{StaticResource NteBodyMedium}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Feature Vector summary:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding ReplayFeatureVectorSummary}" FontFamily="Consolas" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="MTF Alignment:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding ReplayMultiTimeframeConsensus}" Style="{StaticResource NteBodyMedium}" VerticalAlignment="Center"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Active Hypotheses:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding ReplayGeneratedHypotheses}" Style="{StaticResource NteBodyMedium}" VerticalAlignment="Center"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Scenario Trees EV:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding ReplayScenarioSearchResults}" Foreground="{DynamicResource SuccessBrush}" Style="{StaticResource NteTradingDataFont}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Consensus Weights:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding ReplayModelConsensus}" Style="{StaticResource NteBodyMedium}" VerticalAlignment="Center"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Uncertainty Index:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding ReplayUncertaintyEvaluation}" Style="{StaticResource NteBodyMedium}" VerticalAlignment="Center"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Final Decision:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding ReplayFinalDecision}" Foreground="{DynamicResource PrimaryBrush}" Style="{StaticResource NteBodyMedium}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            </Grid>
+
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Execution Outcome:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding ReplayExecutionOutcome}" Foreground="{DynamicResource SuccessBrush}" Style="{StaticResource NteBodyMedium}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- 7. Real-Time Event Pipeline Viewer -->
+                    <materialDesign:Card Style="{StaticResource NtePremiumCard}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
+                                <materialDesign:PackIcon Kind="Console" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="REAL-TIME PLATFORM EVENT PIPELINE VIEWER" Style="{StaticResource NteTitleLarge}" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Border BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}" CornerRadius="6" Background="#0C0F17" Padding="10" Height="200">
+                                <ListBox ItemsSource="{Binding LiveEvents}" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Foreground="#E2E8F0" FontSize="11" FontFamily="Consolas" TextWrapping="Wrap"/>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+                        </DockPanel>
+                    </materialDesign:Card>
+
                 </StackPanel>
-            </materialDesign:Card>
 
-            <!-- Column 2: Core Telemetry Stats -->
-            <materialDesign:Card Grid.Column="2" Style="{StaticResource NtePremiumCard}">
-                <StackPanel>
-                    <TextBlock Text="LIVE TELEMETRY SUMMARY" Style="{StaticResource NteTitleLarge}" Margin="0,0,0,20"/>
+                <!-- ========================================== -->
+                <!-- RIGHT PANELS                               -->
+                <!-- ========================================== -->
+                <StackPanel Grid.Column="2">
 
-                    <Grid Margin="0,5,0,15">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal" Grid.Column="0">
-                            <materialDesign:PackIcon Kind="Bridge" Width="18" Height="18" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="Bridge Connection:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                    <!-- 4. Execution Control Panel -->
+                    <materialDesign:Card Style="{StaticResource NtePremiumCard}" Margin="0,0,0,15">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <materialDesign:PackIcon Kind="LockPattern" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="EXECUTION CONTROL PLATFORM" Style="{StaticResource NteTitleLarge}" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Mode selection tags -->
+                            <Grid Margin="5,0,5,15">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Button Grid.Column="0" Content="SIMULATION" Command="{Binding EnableSimulationCommand}" Height="36">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CurrentProfile}" Value="Simulation">
+                                                    <Setter Property="Background" Value="{DynamicResource PrimaryContainerBrush}"/>
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <Button Grid.Column="2" Content="PAPER" Command="{Binding EnablePaperCommand}" Height="36">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CurrentProfile}" Value="Paper">
+                                                    <Setter Property="Background" Value="{DynamicResource PrimaryContainerBrush}"/>
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <ToggleButton Grid.Column="4" Content="LIVE MODE" Height="36" Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"
+                                              IsChecked="{Binding CurrentProfile, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=Live, Mode=OneWay}"
+                                              Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.SelectManualDeskCommand}"/>
+                            </Grid>
+
+                            <!-- Live permission toggle with strict warning color-coding -->
+                            <Border BorderThickness="1.5" CornerRadius="8" Padding="15,10" Margin="5,0,5,15">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1C1917"/>
+                                        <Setter Property="BorderBrush" Value="#44403C"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsLivePermissionGranted}" Value="True">
+                                                <Setter Property="Background" Value="#450A0A"/>
+                                                <Setter Property="BorderBrush" Value="#DC2626"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="LIVE TRADING PERMISSION" Style="{StaticResource NteLabelLarge}" FontWeight="Bold"/>
+                                        <TextBlock Text="Routing trades directly to live market" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <ToggleButton Grid.Column="1" Command="{Binding ToggleLivePermissionCommand}" IsChecked="{Binding IsLivePermissionGranted, Mode=OneWay}" Style="{StaticResource MaterialDesignSwitchToggleButton}"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Account metrics grid -->
+                            <Grid Margin="5,0,5,15">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="10"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="10"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Balance -->
+                                <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="6" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="BALANCE" Style="{StaticResource NteLabelSmall}"/>
+                                        <TextBlock Text="{Binding AccountBalance, StringFormat={}{0:C2}}" Foreground="{DynamicResource SuccessBrush}" FontSize="16" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Equity -->
+                                <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="6" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="EQUITY" Style="{StaticResource NteLabelSmall}"/>
+                                        <TextBlock Text="{Binding AccountEquity, StringFormat={}{0:C2}}" Foreground="{DynamicResource SuccessBrush}" FontSize="16" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Margin -->
+                                <Border Grid.Row="2" Grid.Column="0" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="6" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="MARGIN" Style="{StaticResource NteLabelSmall}"/>
+                                        <TextBlock Text="{Binding MarginUsed, StringFormat={}{0:C2}}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="15" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Exposure -->
+                                <Border Grid.Row="2" Grid.Column="2" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="6" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="EXPOSURE" Style="{StaticResource NteLabelSmall}"/>
+                                        <TextBlock Text="{Binding CumulativeExposure, StringFormat={}{0:C2}}" Foreground="{DynamicResource WarningBrush}" FontSize="15" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Max Drawdown -->
+                                <Border Grid.Row="4" Grid.Column="0" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="6" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="MAX DRAWDOWN" Style="{StaticResource NteLabelSmall}"/>
+                                        <TextBlock Text="{Binding MaxDrawdown, StringFormat={}{0:P1}}" Foreground="{DynamicResource ErrorBrush}" FontSize="15" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Positions count -->
+                                <Border Grid.Row="4" Grid.Column="2" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="6" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="OPEN POSITIONS" Style="{StaticResource NteLabelSmall}"/>
+                                        <TextBlock Text="{Binding OpenPositionsCount}" Foreground="{DynamicResource PrimaryBrush}" FontSize="16" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <Border BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GlassBorderBrush}" Margin="0,0,0,10"/>
+
+                            <!-- Security Permission Audit Log -->
+                            <TextBlock Text="SECURITY AUDIT LOG TRAIL" Style="{StaticResource NteLabelSmall}" Margin="5,0,0,6"/>
+                            <Border BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}" CornerRadius="6" Background="#0C0F17" Padding="8" Height="100">
+                                <ListBox ItemsSource="{Binding PermissionAuditLog}" Background="Transparent" BorderThickness="0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Foreground="#F87171" FontSize="10" FontFamily="Consolas" TextWrapping="Wrap"/>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
                         </StackPanel>
-                        <TextBlock Grid.Column="1" Text="{Binding ConnectionStatusText}" Foreground="{DynamicResource PrimaryBrush}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
-                                            <Setter Property="Foreground" Value="{DynamicResource LightPrimaryBrush}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
+                    </materialDesign:Card>
 
-                    <Grid Margin="0,0,0,15">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal" Grid.Column="0">
-                            <materialDesign:PackIcon Kind="HelpCircle" Width="18" Height="18" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="Ping Latency:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock Grid.Column="1" Text="{Binding PingLatencyMs, StringFormat={}{0:F2} ms}" Foreground="{DynamicResource WarningBrush}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource NteTradingDataFont}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
-                                            <Setter Property="Foreground" Value="{DynamicResource LightWarningBrush}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
+                    <!-- =================================================== -->
+                    <!-- EXPLAINABILITY TIMELINE PANEL                       -->
+                    <!-- =================================================== -->
+                    <materialDesign:Card Style="{StaticResource NtePremiumCard}" Margin="0,0,0,15">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <materialDesign:PackIcon Kind="Timeline" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="AI DECISION EXPLAINABILITY TIMELINE" Style="{StaticResource NteTitleLarge}" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
 
-                    <Grid Margin="0,0,0,15">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal" Grid.Column="0">
-                            <materialDesign:PackIcon Kind="ChartTimelineVariant" Width="18" Height="18" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="Total Ingested Ticks:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                            <Border BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}" CornerRadius="6" Background="#0C0F17" Padding="8" Height="240">
+                                <ListBox ItemsSource="{Binding ExplainabilityTimeline}" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderThickness="0,0,0,1" BorderBrush="#1F2937" Padding="5,6">
+                                                <StackPanel>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <!-- Transition state with specific badge colors -->
+                                                        <Border Grid.Column="0" CornerRadius="4" Padding="6,2">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Background" Value="#3B82F6"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding TransitionType}" Value="BUY">
+                                                                            <Setter Property="Background" Value="#10B981"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding TransitionType}" Value="SELL">
+                                                                            <Setter Property="Background" Value="#EF4444"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding TransitionType}" Value="CLOSE">
+                                                                            <Setter Property="Background" Value="#6B7280"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding TransitionType}" Value="WAIT">
+                                                                            <Setter Property="Background" Value="#F59E0B"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <TextBlock Text="{Binding TransitionType}" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                                        </Border>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Timestamp, StringFormat={}{0:HH:mm:ss}}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding Confidence, StringFormat={}{0:P0} Conf}" FontSize="11" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" Foreground="{DynamicResource SuccessBrush}" VerticalAlignment="Center"/>
+                                                    </Grid>
+
+                                                    <TextBlock Text="{Binding Reason}" FontSize="11" Foreground="#E2E8F0" Margin="0,4,0,0" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding SupportingEvidence, StringFormat='Evidence: {0}'}" FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding TriggeringModels, StringFormat='Models: {0}'}" FontSize="10" Foreground="{DynamicResource PrimaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding RiskChanges, StringFormat='Risk Shifts: {0}'}" FontSize="10" Foreground="#F87171" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
                         </StackPanel>
-                        <TextBlock Grid.Column="1" Text="{Binding ProcessedTickCount}" Foreground="{DynamicResource SuccessBrush}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource NteTradingDataFont}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag}" Value="True">
-                                            <Setter Property="Foreground" Value="{DynamicResource LightSuccessBrush}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
+                    </materialDesign:Card>
+
+                    <!-- 5. Training Intelligence Panel -->
+                    <materialDesign:Card Style="{StaticResource NtePremiumCard}" Margin="0,0,0,15">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <materialDesign:PackIcon Kind="School" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="OFFLINE SELF-LEARNING ENGINE" Style="{StaticResource NteTitleLarge}" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Grid Margin="5,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="12"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Active Model -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Model Artifact:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CurrentModelName}" FontSize="13" FontWeight="Bold" Style="{StaticResource NteBodyMedium}" VerticalAlignment="Center"/>
+
+                                <!-- Version -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Model Version:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ModelVersion}" FontSize="13" Style="{StaticResource NteTradingDataFont}" VerticalAlignment="Center"/>
+
+                                <!-- Status -->
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Model Status:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ModelStatus}" Foreground="{DynamicResource SuccessBrush}" FontSize="13" FontWeight="Bold" Style="{StaticResource NteBodyMedium}" VerticalAlignment="Center"/>
+
+                                <!-- Replay buffer count -->
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Replay Buffer:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding ExperienceCount, StringFormat={}{0} samples}" FontSize="13" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <Border BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GlassBorderBrush}" Margin="0,0,0,10"/>
+
+                            <!-- Backtest core indicators -->
+                            <TextBlock Text="BACKTEST PERFORMANCE GATES" Style="{StaticResource NteLabelSmall}" Margin="5,0,0,10"/>
+                            <Grid Margin="5,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="10"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="4" Padding="8,5">
+                                    <StackPanel>
+                                        <TextBlock Text="WIN RATE" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding WinRate, StringFormat={}{0:F1}%}" Foreground="{DynamicResource SuccessBrush}" FontSize="13" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="4" Padding="8,5">
+                                    <StackPanel>
+                                        <TextBlock Text="AVG REWARD" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding AvgReward, StringFormat={}{0:F1} pips}" Foreground="{DynamicResource PrimaryBrush}" FontSize="13" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="0" Grid.Column="4" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="4" Padding="8,5">
+                                    <StackPanel>
+                                        <TextBlock Text="PF FACTOR" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding ProfitFactor, StringFormat={}{0:F2}}" Foreground="{DynamicResource SuccessBrush}" FontSize="13" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="2" Grid.Column="0" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="4" Padding="8,5">
+                                    <StackPanel>
+                                        <TextBlock Text="MAX DD" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding TrainingMaxDrawdown, StringFormat={}{0:F1}%}" Foreground="{DynamicResource ErrorBrush}" FontSize="13" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="2" Grid.Column="2" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="4" Padding="8,5">
+                                    <StackPanel>
+                                        <TextBlock Text="LOSS CONV" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding LossConvergence, StringFormat={}{0:F4}}" Foreground="{DynamicResource WarningBrush}" FontSize="13" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="2" Grid.Column="4" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="4" Padding="8,5">
+                                    <StackPanel>
+                                        <TextBlock Text="VALID GATES" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="4/4 PASSED" Foreground="{DynamicResource SuccessBrush}" FontSize="11" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- 6. Native Engine Monitor -->
+                    <materialDesign:Card Style="{StaticResource NtePremiumCard}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <materialDesign:PackIcon Kind="Cpu" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="BARE-METAL NATIVE C++ PERFORMANCE" Style="{StaticResource NteTitleLarge}" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Grid Margin="5,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- CPU -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Native CPU Usage:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CpuUsage, StringFormat={}{0:F1}%}" Foreground="{DynamicResource PrimaryBrush}" FontSize="14" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" VerticalAlignment="Center"/>
+
+                                <!-- Speed -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Evaluation Speed:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding EvaluationSpeed, StringFormat={}{0:N0} evals/sec}" Foreground="{DynamicResource SuccessBrush}" FontSize="14" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" VerticalAlignment="Center"/>
+
+                                <!-- Features -->
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Features Recalcs:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding FeaturesPerSec, StringFormat={}{0:N0} features/sec}" Style="{StaticResource NteTradingDataFont}" VerticalAlignment="Center"/>
+
+                                <!-- Latency -->
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Ingress Latency:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LatencyMs, StringFormat={}{0:F5} ms}" Foreground="{DynamicResource WarningBrush}" FontSize="14" FontWeight="Bold" Style="{StaticResource NteTradingDataFont}" VerticalAlignment="Center"/>
+
+                                <!-- Thread Status -->
+                                <TextBlock Grid.Row="8" Grid.Column="0" Text="Threading Status:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding ThreadStatus}" Style="{StaticResource NteBodyMedium}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+                    </materialDesign:Card>
+
                 </StackPanel>
-            </materialDesign:Card>
-        </Grid>
+            </Grid>
+        </ScrollViewer>
     </Grid>
 </UserControl>
