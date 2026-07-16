@@ -14,6 +14,7 @@ using Nexus.Application.Dashboard;
 using Nexus.Desktop.Services;
 using Nexus.Core.Interfaces;
 using Nexus.Core.Entities;
+using Nexus.Core.ValueObjects;
 using Nexus.Application.Mt5;
 using Nexus.Application.Intelligence;
 using Nexus.Infrastructure.Persistence;
