@@ -47,6 +47,7 @@ void HandleUnsubscribeSymbol(const string requestId, const string json);
 void HandlePlaceOrder(const string requestId, const string json);
 void HandleClosePosition(const string requestId, const string json);
 void HandleGetOpenPositions(const string requestId);
+void HandleGetAvailableSymbols(const string requestId);
 void HandleUnknownCommand(const string requestId, const string command);
 string BuildEnvelopeJson(const string messageType, const string requestId, const string command, const string payloadJson, const string errorJson);
 void SendResponse(const string responseJson);
@@ -246,10 +247,14 @@ void ProcessIncomingJson(const string json)
    {
       HandleGetOpenPositions(requestId);
    }
+   else if(command == "GetAvailableSymbols")
+   {
+      HandleGetAvailableSymbols(requestId);
+   }
    else if(command == "ModifyPosition")
-{
-   HandleModifyPosition(requestId, json);
-}
+   {
+      HandleModifyPosition(requestId, json);
+   }
    else
    {
       HandleUnknownCommand(requestId, command);
@@ -1124,4 +1129,32 @@ void HandleModifyPosition(const string requestId, const string json)
    }
 
    SendResponse(BuildEnvelopeJson("Response", requestId, "ModifyPosition", payload, errorJson));
+}
+
+//+------------------------------------------------------------------+
+//| Command: GetAvailableSymbols - retrieves all Market Watch symbols|
+//+------------------------------------------------------------------+
+void HandleGetAvailableSymbols(const string requestId)
+{
+   ResetLastError();
+
+   string symbolsJson = "";
+   int total = SymbolsTotal(true); // true = only symbols selected in Market Watch
+
+   Print("NexusBridge: GetAvailableSymbols - Request ID: ", requestId, ", Total symbols in Market Watch: ", total);
+
+   for(int i = 0; i < total; i++)
+   {
+      string name = SymbolName(i, true);
+      if(name != "")
+      {
+         string item = "\"" + EscapeJsonString(name) + "\"";
+         if(symbolsJson != "") symbolsJson += ",";
+         symbolsJson += item;
+      }
+   }
+
+   string payload = "{\"symbols\":[" + symbolsJson + "]}";
+   string responseJson = BuildEnvelopeJson("Response", requestId, "GetAvailableSymbols", payload, "null");
+   SendResponse(responseJson);
 }

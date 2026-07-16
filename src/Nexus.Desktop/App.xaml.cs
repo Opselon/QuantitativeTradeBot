@@ -84,7 +84,11 @@ namespace Nexus.Desktop
                     services.AddSingleton<IMt5BridgeOperatorService, Mt5BridgeOperatorService>();
                     services.AddSingleton<INativeAnalyticsEngine, NativeAnalyticsEngine>();
 
+                    // Register Repositories
+                    services.AddScoped<IExperienceRepository, Nexus.Infrastructure.Persistence.Repositories.ExperienceRepository>();
+
                     // Register Dashboard Application Services
+                    services.AddSingleton<IDecisionEventStream, DecisionEventStream>();
                     services.AddSingleton<IMarketDashboardService, MarketDashboardService>();
                     services.AddSingleton<IDecisionDashboardService, DecisionDashboardService>();
                     services.AddSingleton<IExecutionDashboardService, ExecutionDashboardService>();
