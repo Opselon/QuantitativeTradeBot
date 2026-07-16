@@ -1,16 +1,28 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Nexus.Application.Ports;
 using Nexus.Desktop.Services;
+using Nexus.Application.Mt5Bridge.Contracts;
+using Nexus.Desktop.ViewModels;
 using Nexus.Desktop.ViewModels.Workspaces;
 using Nexus.Application.Dashboard;
 using Nexus.Infrastructure.Mt5Bridge;
 using Nexus.Core.Interfaces;
 using Nexus.Core.Entities;
 using Nexus.Application.Workflows.DTOs;
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Nexus.Core.Enums;
+using Nexus.Core.Interfaces;
+using Nexus.Core.Entities;
+using Nexus.Application.Intelligence;
+using Nexus.Application.Mt5;
+using Nexus.Infrastructure.Persistence;
 
 namespace Nexus.Tests.Unit.Desktop
 {
@@ -29,7 +41,43 @@ namespace Nexus.Tests.Unit.Desktop
             var pipeline = new MarketDataPipeline(fakeBridge, fakeNative, nullLogger);
             var diagnostic = new StubDiagnosticService();
 
-            return new DashboardViewModel(fakeBridge, pipeline, diagnostic, market, decision, execution, training, health);
+            var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            var dbContext = new NexusDbContext(dbOptions);
+            var scopeFactory = new FakeServiceScopeFactory(dbContext);
+
+            var fakeNeural = new FakeNeuralModelService();
+            var fakeTrading = new FakeMt5TradingService();
+            var fakeAccumulator = new FakeAccumulatorService();
+            var fakeCurrency = new FakeCurrencyStrengthEngine();
+            var fakeDecisionEngine = new FakeDecisionEngine();
+
+            var intelligenceService = new NativeMarketIntelligenceService(
+                fakeNative,
+                fakeAccumulator,
+                fakeCurrency,
+                fakeNeural,
+                fakeDecisionEngine
+            );
+
+            return new DashboardViewModel(
+                fakeBridge,
+                pipeline,
+                diagnostic,
+                market,
+                decision,
+                execution,
+                training,
+                health,
+                scopeFactory,
+                fakeNeural,
+                fakeTrading,
+                intelligenceService,
+                fakeNative,
+                fakeAccumulator,
+                fakeCurrency
+            );
         }
 
         [Fact]
@@ -200,7 +248,7 @@ namespace Nexus.Tests.Unit.Desktop
             };
 
             // Act - Push an update into the market service
-            market.PushMarketUpdate("XAUUSD", "Breakout", 92, 0.95, 0.40, 0.88, "Bullish", "Bullish", "Entry", "Updates processed.");
+            market.PushMarketUpdate("XAUUSD", "Breakout", 92, 0.95, 0.40, 0.88, "Bullish", "Bullish", "Entry", "Updates processed.", 2000.0);
 
             // Assert - Properties are updated and raised PropertyChanged events
             Assert.Contains("MarketRegime", updatedProperties);
@@ -320,6 +368,7 @@ namespace Nexus.Tests.Unit.Desktop
 
         private class StubDiagnosticService : IDiagnosticService
         {
+            public ObservableCollection<LogEntry> Logs { get; } = new();
             public void Log(string subsystem, string level, string message) { }
         }
 
@@ -362,6 +411,71 @@ namespace Nexus.Tests.Unit.Desktop
             public void UpdateTick(Tick tick) { }
             public MarketVector GetMarketVector() => new MarketVector(0.5, 0.5, 0.5, 0.2, 0.5, 0.9, 80.0, 1.0, 1.0, 0.1);
             public MarketState GetMarketState() => new MarketState("EURUSD", DateTime.UtcNow, 0.2, 0.5, 0.8, 0.7, 0.5, 0.1, 50.0, "Trend Bullish");
+        }
+
+        private class FakeServiceScopeFactory : IServiceScopeFactory, IServiceScope, IServiceProvider
+        {
+            private readonly NexusDbContext _dbContext;
+
+            public FakeServiceScopeFactory(NexusDbContext dbContext)
+            {
+                _dbContext = dbContext;
+            }
+
+            public IServiceScope CreateScope() => this;
+            public IServiceProvider ServiceProvider => this;
+            public void Dispose() { }
+            public object? GetService(Type serviceType)
+            {
+                if (serviceType == typeof(NexusDbContext)) return _dbContext;
+                return null;
+            }
+        }
+
+        private class FakeNeuralModelService : INeuralModelService
+        {
+            public string CurrentModelName => "Nexus AI v1.x";
+            public string ModelVersion => "1.0.4";
+            public bool IsLoaded => true;
+            public double InferenceLatencyMs => 1.5;
+            public DateTime LastExecutionTime => DateTime.UtcNow;
+            public ModelMode CurrentMode => ModelMode.ONNX_MODEL;
+
+            public Task<bool> LoadModelAsync(string modelPath, CancellationToken cancellationToken = default) => Task.FromResult(true);
+            public Task<EvaluationResult> EvaluateAsync(MarketVector vector, CancellationToken cancellationToken = default) =>
+                Task.FromResult(new EvaluationResult(0.6, 0.2, 0.2, 0.001, 0.1, 0.6, "Trending Bullish"));
+        }
+
+        private class FakeMt5TradingService : IMt5TradingService
+        {
+            public Task<PlaceOrderResult> PlaceMarketOrderAsync(string symbol, BridgeOrderSide side, decimal volume, decimal? stopLoss, decimal? takeProfit, string? comment, string? clientCorrelationId, CancellationToken cancellationToken) =>
+                Task.FromResult(new PlaceOrderResult(true, 12345, "Filled", null));
+            public Task<PlaceOrderResult> ModifyPositionAsync(long positionTicket, string symbol, decimal sl, decimal tp, CancellationToken cancellationToken) =>
+                Task.FromResult(new PlaceOrderResult(true, positionTicket, "Modified", null));
+            public Task<ClosePositionResult> ClosePositionAsync(long positionTicket, string symbol, decimal? volume, CancellationToken cancellationToken) =>
+                Task.FromResult(new ClosePositionResult(true, positionTicket, null));
+            public Task<IReadOnlyList<OpenPositionDto>> GetOpenPositionsAsync(CancellationToken cancellationToken) =>
+                Task.FromResult<IReadOnlyList<OpenPositionDto>>(new List<OpenPositionDto>());
+        }
+
+        private class FakeAccumulatorService : IAccumulatorService
+        {
+            public AccumulatorState GetState(string symbol) => new AccumulatorState(symbol);
+            public AccumulatorState UpdateState(FeatureDelta delta) => new AccumulatorState(delta.Symbol);
+            public void ResetState(string symbol) { }
+        }
+
+        private class FakeCurrencyStrengthEngine : ICurrencyStrengthEngine
+        {
+            public double GetStrengthScore(string currency) => 80.0;
+            public IReadOnlyDictionary<string, double> GetAllStrengthScores() => new Dictionary<string, double>();
+            public void UpdateFromTick(Tick tick) { }
+        }
+
+        private class FakeDecisionEngine : IDecisionEngine
+        {
+            public TradeDecision Evaluate(EvaluationResult evaluation, MarketState state, RiskState risk) =>
+                new TradeDecision(DecisionAction.BUY, 0.1, "Test", DateTime.UtcNow);
         }
     }
 }
