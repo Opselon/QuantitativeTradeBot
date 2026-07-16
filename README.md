@@ -281,12 +281,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Merge pull request #26 from Opselon/feature/autonomous-learning-engine-1556832895063360495 |
+| **Commit Message** | Merge pull request #27 from Opselon/phase-07-execution-sandbox-16405636165101047111 |
 | **Author** | Capsizer |
 | **Branch** | `main` |
-| **Run Number** | `83` |
-| **Commit SHA** | `060308bbbaffb26aa961f8ca4c29f6b393a25172` |
-| **Generated At** | `2026-07-16 00:16:44 UTC` |
+| **Run Number** | `85` |
+| **Commit SHA** | `646a5bdb5000a180edbec3f055896437488c27b9` |
+| **Generated At** | `2026-07-16 01:12:26 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -330,7 +330,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   ├── ADR-002-Domain-Model-Design.md
 │   │   ├── ADR-003-Infrastructure-Data-Architecture.md
 │   │   ├── ADR-004-Native-Engine-Architecture.md
-│   │   └── ADR-006-Learning-System-Architecture.md
+│   │   ├── ADR-006-Learning-System-Architecture.md
+│   │   └── ADR-007-Execution-Architecture.md
 │   ├── 01_ARCHITECTURE.md
 │   ├── 02_AI_ARCHITECTURE.md
 │   ├── 03_DATA_FLOW.md
@@ -349,6 +350,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── CODING_STANDARDS.md
 │   ├── DATABASE.md
 │   ├── DEPENDENCY_GRAPH.md
+│   ├── EXECUTION_ENGINE.md
 │   ├── NATIVE_ENGINE.md
 │   ├── PATTERN_MEMORY.md
 │   ├── PROGRESS.md
@@ -625,6 +627,32 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   ├── MainWindow.xaml
 │   │   ├── MainWindow.xaml.cs
 │   │   ├── Nexus.Desktop.csproj
+│   ├── Nexus.Execution/
+│   │   ├── Auditing/
+│   │   │   └── IExecutionAuditService.cs
+│   │   ├── Domain/
+│   │   │   ├── ExecutionResult.cs
+│   │   │   ├── OrderRequest.cs
+│   │   │   └── PositionSnapshot.cs
+│   │   ├── Enums/
+│   │   │   ├── ExecutionProfile.cs
+│   │   │   └── ExecutionState.cs
+│   │   ├── Events/
+│   │   │   ├── OrderFilledEvent.cs
+│   │   │   ├── OrderRejectedEvent.cs
+│   │   │   ├── OrderSubmittedEvent.cs
+│   │   │   └── PositionClosedEvent.cs
+│   │   ├── Gateways/
+│   │   │   ├── IExecutionGateway.cs
+│   │   │   ├── MT5ExecutionGateway.cs
+│   │   │   └── SimulationExecutionGateway.cs
+│   │   ├── Management/
+│   │   │   └── PositionManager.cs
+│   │   ├── Risk/
+│   │   │   ├── IRiskExecutionGuard.cs
+│   │   │   └── RiskExecutionGuard.cs
+│   │   ├── Nexus.Execution.csproj
+│   │   └── RiskControlledExecutionEngine.cs
 │   ├── Nexus.Infrastructure/
 │   │   ├── Adapters/
 │   │   │   └── Mt5/
@@ -662,6 +690,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   ├── Persistence/
 │   │   │   ├── Configurations/
 │   │   │   │   ├── AccountConfiguration.cs
+│   │   │   │   ├── ExecutionErrorConfiguration.cs
 │   │   │   │   ├── OrderConfiguration.cs
 │   │   │   │   ├── PositionConfiguration.cs
 │   │   │   │   └── TradeConfiguration.cs
@@ -669,12 +698,14 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   │   └── 20260101000000_InitialTradingState.cs
 │   │   │   ├── Models/
 │   │   │   │   ├── AccountDbModel.cs
+│   │   │   │   ├── ExecutionErrorDbModel.cs
 │   │   │   │   ├── ExperienceDbModel.cs
 │   │   │   │   ├── OrderDbModel.cs
 │   │   │   │   ├── PositionDbModel.cs
 │   │   │   │   └── TradeDbModel.cs
 │   │   │   ├── Repositories/
 │   │   │   │   ├── AccountRepository.cs
+│   │   │   │   ├── DbExecutionAuditService.cs
 │   │   │   │   ├── EfRepository.cs
 │   │   │   │   ├── MarketDataRepository.cs
 │   │   │   │   ├── OrderRepository.cs
@@ -772,6 +803,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │       │   ├── CandleAndEventTests.cs
 │       │   ├── OrderAndPositionTests.cs
 │       │   └── TickAndBarTests.cs
+│       ├── Execution/
+│       │   └── ExecutionEngineTests.cs
 │       ├── Infrastructure/
 │       │   └── InfrastructureTest.cs
 │       ├── Intelligence/
@@ -796,12 +829,12 @@ To get started, please review the contribution guidelines outlined above, explor
 
 | File Type | Count |
 | --- | ---: |
-| C# (.cs) | 302 |
+| C# (.cs) | 323 |
 | WPF (.xaml) | 15 |
 | C/C++ Source | 17 |
 | CMake | 1 |
 | MQL5 (.mq5) | 1 |
-| Projects (.sln, .csproj) | 12 |
+| Projects (.sln, .csproj) | 13 |
 
 ### 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)
 - **Job Status:** success
@@ -823,8 +856,8 @@ No C# errors.
 ```
 #### 🟡 Warnings
 ```text
-6>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-6>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 ```
