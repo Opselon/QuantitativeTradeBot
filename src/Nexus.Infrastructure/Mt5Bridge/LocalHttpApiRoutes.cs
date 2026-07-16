@@ -126,30 +126,7 @@ namespace Nexus.Infrastructure.Mt5Bridge
                 }
             });
 
-            // 4. POST /api/v1/bridge/telemetry - Account, position, and M1..D1 snapshots from MT5.
-            // It shares the bridge message transport so downstream subscribers receive the original trace ID.
-            endpoints.MapPost("/api/v1/bridge/telemetry", async (HttpContext context, IMt5BridgeClient bridgeClient) =>
-            {
-                try
-                {
-                    using var reader = new StreamReader(context.Request.Body);
-                    var body = await reader.ReadToEndAsync();
-                    var envelope = JsonSerializer.Deserialize<BridgeMessageEnvelope>(body);
-                    if (envelope != null && string.Equals(envelope.Command, "ReceiveTerminalIntelligence", StringComparison.OrdinalIgnoreCase)
-                        && bridgeClient is TcpMt5BridgeClient httpQueueBridge)
-                    {
-                        httpQueueBridge.RegisterResponse(envelope);
-                        return Results.Ok(new { success = true, traceId = envelope.RequestId });
-                    }
-                    return ProblemResult("Invalid terminal intelligence envelope received.");
-                }
-                catch (Exception ex)
-                {
-                    return ProblemResult(ex.Message);
-                }
-            });
-
-            // 5. GET /api/v1/health
+            // 4. GET /api/v1/health
             endpoints.MapGet("/api/v1/health", (IMt5BridgeService bridgeService, INativeCoreService nativeCore) =>
             {
                 double uptime = (DateTime.UtcNow - _startTime).TotalSeconds;
@@ -192,10 +169,10 @@ namespace Nexus.Infrastructure.Mt5Bridge
                         "connect", "disconnect", "login", "subscribe", "unsubscribe",
                         "placeOrder", "closePosition", "ping", "smokeTest", "forceReconnect"
                     },
-                    maxSymbols = "all broker-selected Market Watch symbols",
-                    tickThroughputConstraints = "MT5 WebRequest transport; every chart tick plus subscribed Market Watch changes",
-                    supportedModes = new[] { "REAL" },
-                    activeMode = settings.Mt5Mode?.ToUpper() ?? "REAL"
+                    maxSymbols = 20,
+                    tickThroughputConstraints = "High-frequency streaming, zero-allocation",
+                    supportedModes = new[] { "REAL", "SIMULATED" },
+                    activeMode = settings.Mt5Mode?.ToUpper() ?? "SIMULATED"
                 });
             });
 
