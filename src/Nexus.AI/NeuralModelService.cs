@@ -33,12 +33,11 @@ namespace Nexus.AI
         {
             if (string.IsNullOrWhiteSpace(modelPath) || !File.Exists(modelPath))
             {
-                // Graceful fallback when ONNX file is not present locally
-                _modelName = "SimulatedNeuralModel";
-                _modelVersion = "1.0.0-Simulated";
-                _isLoaded = true;
+                _modelName = "None";
+                _modelVersion = "0.0.0";
+                _isLoaded = false;
                 _currentMode = ModelMode.FALLBACK_MODE;
-                return Task.FromResult(true);
+                return Task.FromResult(false);
             }
 
             try
@@ -69,10 +68,9 @@ namespace Nexus.AI
             }
             catch (Exception)
             {
-                // Fallback on load failure
-                _modelName = "SimulatedNeuralModel (Error Fallback)";
-                _modelVersion = "1.0.0-Fallback";
-                _isLoaded = true;
+                _modelName = "None";
+                _modelVersion = "0.0.0";
+                _isLoaded = false;
                 _currentMode = ModelMode.FALLBACK_MODE;
                 return Task.FromResult(false);
             }
@@ -85,11 +83,7 @@ namespace Nexus.AI
 
             if (!_isLoaded || _session == null || _currentMode == ModelMode.FALLBACK_MODE)
             {
-                // High-fidelity deterministic mathematical fallback
-                var result = RunFallbackInference(vector);
-                sw.Stop();
-                _inferenceLatencyMs = sw.Elapsed.TotalMilliseconds;
-                return Task.FromResult(result);
+                throw new InvalidOperationException("No deployed ONNX model is loaded; synthetic inference is prohibited.");
             }
 
             try
@@ -145,13 +139,11 @@ namespace Nexus.AI
                 _inferenceLatencyMs = sw.Elapsed.TotalMilliseconds;
                 return Task.FromResult(evaluation);
             }
-            catch (Exception)
+            catch
             {
-                // Fallback if ONNX execution fails
-                var result = RunFallbackInference(vector);
-                sw.Stop();
-                _inferenceLatencyMs = sw.Elapsed.TotalMilliseconds;
-                return Task.FromResult(result);
+                _isLoaded = false;
+                _currentMode = ModelMode.FALLBACK_MODE;
+                throw;
             }
         }
 
@@ -160,42 +152,6 @@ namespace Nexus.AI
             if (values == null || values.Length < 3) return 0.33;
             double sum = values.Take(3).Sum(v => Math.Exp(v));
             return Math.Exp(values[index]) / sum;
-        }
-
-        private static EvaluationResult RunFallbackInference(MarketVector vector)
-        {
-            // Mathematical prediction based on momentum and trend states
-            double momentum = vector.Momentum;
-            double trend = vector.TrendState;
-            double volatility = vector.Volatility;
-
-            // Compute mock confidence
-            double buyBase = 0.33 + (trend * 0.25) + (momentum * 0.15) - (volatility * 0.05);
-            double sellBase = 0.33 - (trend * 0.25) - (momentum * 0.15) - (volatility * 0.05);
-
-            // Normalize
-            buyBase = Math.Clamp(buyBase, 0.0, 1.0);
-            sellBase = Math.Clamp(sellBase, 0.0, 1.0);
-            double waitBase = Math.Clamp(1.0 - buyBase - sellBase, 0.0, 1.0);
-
-            double total = buyBase + sellBase + waitBase;
-            if (total > 0)
-            {
-                buyBase /= total;
-                sellBase /= total;
-                waitBase /= total;
-            }
-
-            double expectedMovement = (trend * 0.0015) + (momentum * 0.0005);
-            double riskScore = Math.Clamp(0.2 + (volatility * 0.6) + (vector.RiskState * 0.2), 0.0, 1.0);
-            double confidence = Math.Max(buyBase, Math.Max(sellBase, waitBase));
-
-            string regime = "Ranging";
-            if (vector.MarketRegime > 0.3) regime = "Trend Bullish";
-            else if (vector.MarketRegime < -0.3) regime = "Trend Bearish";
-            else if (volatility > 0.6) regime = "High Volatility Range";
-
-            return new EvaluationResult(buyBase, sellBase, waitBase, expectedMovement, riskScore, confidence, regime);
         }
 
         public void Dispose()
