@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Nexus.Application.Dashboard
 {
@@ -15,6 +16,9 @@ namespace Nexus.Application.Dashboard
         public string M15Consensus { get; private set; } = "Entry Zone";
         public string ConsensusSummary { get; private set; } = "Strong Bullish continuation across multiple timeframes.";
 
+        private readonly List<double> _recentPrices = new() { 1.08500, 1.08510, 1.08530, 1.08520, 1.08550, 1.08570, 1.08590, 1.08580, 1.08610, 1.08630 };
+        public IReadOnlyList<double> RecentPrices => _recentPrices;
+
         public event Action<MarketDashboardData>? OnMarketUpdated;
 
         public void PushMarketUpdate(
@@ -27,7 +31,8 @@ namespace Nexus.Application.Dashboard
             string d1,
             string h4,
             string m15,
-            string summary)
+            string summary,
+            double currentPrice)
         {
             CurrentSymbol = symbol;
             MarketRegime = regime;
@@ -40,6 +45,12 @@ namespace Nexus.Application.Dashboard
             M15Consensus = m15;
             ConsensusSummary = summary;
 
+            _recentPrices.Add(currentPrice);
+            if (_recentPrices.Count > 30)
+            {
+                _recentPrices.RemoveAt(0);
+            }
+
             OnMarketUpdated?.Invoke(new MarketDashboardData
             {
                 Symbol = symbol,
@@ -51,7 +62,8 @@ namespace Nexus.Application.Dashboard
                 D1 = d1,
                 H4 = h4,
                 M15 = m15,
-                Summary = summary
+                Summary = summary,
+                RecentPrices = new List<double>(_recentPrices)
             });
         }
     }

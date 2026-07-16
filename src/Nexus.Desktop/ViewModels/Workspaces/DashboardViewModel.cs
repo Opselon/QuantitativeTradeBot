@@ -75,13 +75,35 @@ namespace Nexus.Desktop.ViewModels.Workspaces
         private double _marginUsed = 0.0;
         public double MarginUsed { get => _marginUsed; set => SetProperty(ref _marginUsed, value); }
 
-        private double _cumulativeExposure = 0.0;
-        public double CumulativeExposure { get => _cumulativeExposure; set => SetProperty(ref _cumulativeExposure, value); }
+        private double _cumulativeExposure = 12500.0; // Seed exposure for risk gauges
+        public double CumulativeExposure
+        {
+            get => _cumulativeExposure;
+            set
+            {
+                if (SetProperty(ref _cumulativeExposure, value))
+                {
+                    OnPropertyChanged(nameof(CumulativeExposureUtilization));
+                    OnPropertyChanged(nameof(CumulativeExposureUtilizationColor));
+                }
+            }
+        }
 
-        private double _maxDrawdown = 0.0;
-        public double MaxDrawdown { get => _maxDrawdown; set => SetProperty(ref _maxDrawdown, value); }
+        private double _maxDrawdown = 2.4; // Seed drawdown percentage
+        public double MaxDrawdown
+        {
+            get => _maxDrawdown;
+            set
+            {
+                if (SetProperty(ref _maxDrawdown, value))
+                {
+                    OnPropertyChanged(nameof(DailyLossUtilization));
+                    OnPropertyChanged(nameof(DailyLossUtilizationColor));
+                }
+            }
+        }
 
-        private int _openPositionsCount = 0;
+        private int _openPositionsCount = 1;
         public int OpenPositionsCount { get => _openPositionsCount; set => SetProperty(ref _openPositionsCount, value); }
 
         // --- Panel 5: Training Intelligence Properties ---
@@ -168,6 +190,108 @@ namespace Nexus.Desktop.ViewModels.Workspaces
         public double DecisionLatencyMs => _healthService.DecisionLatencyMs;
         public double ExecutionLatencyMs => _healthService.ExecutionLatencyMs;
 
+        // 4. Advanced Real-Time Sparkline Points Calculation (Canvas Height: 60, Width: 200)
+        public string SparklinePoints
+        {
+            get
+            {
+                var prices = _marketService.RecentPrices;
+                if (prices == null || prices.Count < 2) return "0,30 200,30";
+
+                double min = prices.Min();
+                double max = prices.Max();
+                double range = max - min;
+                if (range == 0) range = 1.0;
+
+                var points = new List<string>();
+                double widthStep = 200.0 / (prices.Count - 1);
+
+                for (int i = 0; i < prices.Count; i++)
+                {
+                    double x = i * widthStep;
+                    // Flip Y because in WPF Y=0 is at the top
+                    double y = 60.0 - ((prices[i] - min) / range * 50.0 + 5.0);
+                    points.Add($"{x:F1},{y:F1}");
+                }
+
+                return string.Join(" ", points);
+            }
+        }
+
+        // 5. Multi-dimensional Risk limit utilization margins (Dynamic color coding)
+        // Daily Drawdown limit set to 5.0%
+        public double DailyLossUtilization => Math.Clamp((MaxDrawdown / 5.0) * 100.0, 0.0, 100.0);
+        public string DailyLossUtilizationColor => GetUtilizationColor(DailyLossUtilization);
+
+        // Single trade risk size limit set to $5,000 (defaults to 1.5% size of $100k, which is $1,500)
+        public double SingleExposureUtilization => 30.0; // Stable mockup of single position size utilization margin
+        public string SingleExposureUtilizationColor => GetUtilizationColor(SingleExposureUtilization);
+
+        // Cumulative Exposure limit set to $50,000 (12.5k seed = 25% utilization)
+        public double CumulativeExposureUtilization => Math.Clamp((CumulativeExposure / 50000.0) * 100.0, 0.0, 100.0);
+        public string CumulativeExposureUtilizationColor => GetUtilizationColor(CumulativeExposureUtilization);
+
+        private string GetUtilizationColor(double utilizationPercentage)
+        {
+            if (utilizationPercentage > 80.0) return "#EF4444"; // Red (Critical Alert)
+            if (utilizationPercentage > 50.0) return "#F59E0B"; // Amber (Warning Limit)
+            return "#10B981"; // Green (Secure Zone)
+        }
+
+        // 6. What-If Scenario Overrides Simulation
+        private double _whatIfVolatility = 0.25;
+        public double WhatIfVolatility
+        {
+            get => _whatIfVolatility;
+            set
+            {
+                if (SetProperty(ref _whatIfVolatility, value))
+                {
+                    OnPropertyChanged(nameof(SimulatedBuyExpectedUtility));
+                    OnPropertyChanged(nameof(SimulatedSellExpectedUtility));
+                    OnPropertyChanged(nameof(SimulatedWaitExpectedUtility));
+                    OnPropertyChanged(nameof(WhatIfReasonText));
+                }
+            }
+        }
+
+        private double _whatIfMomentum = 0.75;
+        public double WhatIfMomentum
+        {
+            get => _whatIfMomentum;
+            set
+            {
+                if (SetProperty(ref _whatIfMomentum, value))
+                {
+                    OnPropertyChanged(nameof(SimulatedBuyExpectedUtility));
+                    OnPropertyChanged(nameof(SimulatedSellExpectedUtility));
+                    OnPropertyChanged(nameof(SimulatedWaitExpectedUtility));
+                    OnPropertyChanged(nameof(WhatIfReasonText));
+                }
+            }
+        }
+
+        // Dynamically compute utilities based on Volatility and Momentum overrides
+        public double SimulatedBuyExpectedUtility => Math.Clamp(BuyExpectedUtility + (WhatIfMomentum * 4.0) - (WhatIfVolatility * 6.0), -10.0, 10.0);
+        public double SimulatedSellExpectedUtility => Math.Clamp(SellExpectedUtility - (WhatIfMomentum * 4.0) - (WhatIfVolatility * 6.0), -10.0, 10.0);
+        public double SimulatedWaitExpectedUtility => Math.Clamp(0.0 + (WhatIfVolatility * 5.0), -10.0, 10.0);
+
+        public string WhatIfReasonText
+        {
+            get
+            {
+                if (WhatIfVolatility > 0.60)
+                {
+                    return "WARNING: Spiked Volatility overrides trigger massive uncertainty, depressing BOTH buy/sell EV while highly prioritizing WAIT scenarios.";
+                }
+                if (WhatIfMomentum < 0.0)
+                {
+                    return "BEARISH: Momentum override flipped below zero. Expected utility shifts immediately to SELL scenarios, while BUY options degrade.";
+                }
+                return "BULLISH: Standard bullish continuation parameters verified. BUY expected utility remains the highest optimal expected path.";
+            }
+        }
+
         // --- Commands ---
         public ICommand EnableSimulationCommand { get; }
         public ICommand EnablePaperCommand { get; }
@@ -227,9 +351,35 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             Task.Run(() => RunDashboardUpdatesLoopAsync(_cts.Token));
         }
 
+        private void InvokeOnUIThread(Action action)
+        {
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher != null && !dispatcher.CheckAccess())
+            {
+                dispatcher.Invoke(action);
+            }
+            else
+            {
+                action();
+            }
+        }
+
+        private void BeginInvokeOnUIThread(Action action)
+        {
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher != null)
+            {
+                dispatcher.BeginInvoke(action);
+            }
+            else
+            {
+                action();
+            }
+        }
+
         private void OnMarketUpdated(MarketDashboardData data)
         {
-            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+            InvokeOnUIThread(() =>
             {
                 OnPropertyChanged(nameof(MarketRegime));
                 OnPropertyChanged(nameof(MarketQualityScore));
@@ -240,12 +390,13 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                 OnPropertyChanged(nameof(H4Consensus));
                 OnPropertyChanged(nameof(M15Consensus));
                 OnPropertyChanged(nameof(ConsensusSummary));
+                OnPropertyChanged(nameof(SparklinePoints));
             });
         }
 
         private void OnDecisionUpdated(DecisionDashboardData data)
         {
-            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+            InvokeOnUIThread(() =>
             {
                 OnPropertyChanged(nameof(CurrentDecision));
                 OnPropertyChanged(nameof(Confidence));
@@ -256,12 +407,15 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                 OnPropertyChanged(nameof(SellExpectedUtility));
                 OnPropertyChanged(nameof(WaitExpectedUtility));
                 OnPropertyChanged(nameof(SelectionReason));
+                OnPropertyChanged(nameof(SimulatedBuyExpectedUtility));
+                OnPropertyChanged(nameof(SimulatedSellExpectedUtility));
+                OnPropertyChanged(nameof(SimulatedWaitExpectedUtility));
             });
         }
 
         private void OnExecutionUpdated(ExecutionDashboardData data)
         {
-            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+            InvokeOnUIThread(() =>
             {
                 OnPropertyChanged(nameof(CurrentProfile));
                 OnPropertyChanged(nameof(IsLivePermissionGranted));
@@ -277,7 +431,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
 
         private void OnTrainingUpdated(TrainingDashboardData data)
         {
-            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+            InvokeOnUIThread(() =>
             {
                 OnPropertyChanged(nameof(CurrentModelName));
                 OnPropertyChanged(nameof(ModelVersion));
@@ -296,7 +450,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
 
         private void OnHealthUpdated(SystemHealthData data)
         {
-            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+            InvokeOnUIThread(() =>
             {
                 OnPropertyChanged(nameof(NativeEngineHealth));
                 OnPropertyChanged(nameof(DecisionEngineHealth));
@@ -319,7 +473,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
 
         private void SyncAuditLog()
         {
-            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+            InvokeOnUIThread(() =>
             {
                 PermissionAuditLog.Clear();
                 foreach (var log in _executionService.PermissionAuditLog)
@@ -334,7 +488,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             if (tick == null) return;
 
             // Periodically refresh dashboard from live parameters on tick
-            System.Windows.Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
+            BeginInvokeOnUIThread(() =>
             {
                 CurrentSymbol = tick.SymbolName;
                 OnPropertyChanged(nameof(CurrentSymbol));
@@ -348,6 +502,8 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                     double vol = Math.Clamp(0.20 + _random.NextDouble() * 0.1, 0.0, 1.0);
                     double mom = Math.Clamp(0.60 + _random.NextDouble() * 0.3, -1.0, 1.0);
 
+                    double currentPrice = tick.Bid;
+
                     _marketService.PushMarketUpdate(
                         CurrentSymbol,
                         vol > 0.35 ? "High Volatility Breakout" : "Trending Bullish",
@@ -358,12 +514,13 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                         "Bullish",
                         "Bullish",
                         mom > 0.4 ? "Entry Zone" : "Momentum Neutral",
-                        $"Automatic data-fusion updated for {CurrentSymbol} at {DateTime.Now:HH:mm:ss}."
+                        $"Automatic data-fusion updated for {CurrentSymbol} at {DateTime.Now:HH:mm:ss}.",
+                        currentPrice
                     );
 
-                    LogEvent("INTELLIGENCE", $"Received real-time feed tick for {CurrentSymbol}. Quality: {quality}/100, Regime: {MarketRegime}.");
+                    LogEvent("INTELLIGENCE", $"Received real-time feed tick for {CurrentSymbol} at bid: {currentPrice}. Quality: {quality}/100, Regime: {MarketRegime}.");
                 }
-            }));
+            });
         }
 
         private void SwitchProfile(ExecutionDashboardProfile profile)
@@ -409,7 +566,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
 
         public void LogEvent(string component, string message)
         {
-            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+            InvokeOnUIThread(() =>
             {
                 LiveEvents.Insert(0, $"[{DateTime.Now:HH:mm:ss}] [{component}] {message}");
                 if (LiveEvents.Count > 100) LiveEvents.RemoveAt(100);
@@ -495,7 +652,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                             _decisionService.AddTimelineEntry(entry);
 
                             // Re-notify timeline
-                            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+                            InvokeOnUIThread(() =>
                             {
                                 OnPropertyChanged(nameof(ExplainabilityTimeline));
                             });

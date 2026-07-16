@@ -16,10 +16,22 @@ namespace Nexus.Application.Dashboard
         string H4Consensus { get; }
         string M15Consensus { get; }
         string ConsensusSummary { get; }
+        IReadOnlyList<double> RecentPrices { get; }
 
         event Action<MarketDashboardData>? OnMarketUpdated;
 
-        void PushMarketUpdate(string symbol, string regime, int qualityScore, double liquidity, double volatility, double momentum, string d1, string h4, string m15, string summary);
+        void PushMarketUpdate(
+            string symbol,
+            string regime,
+            int qualityScore,
+            double liquidity,
+            double volatility,
+            double momentum,
+            string d1,
+            string h4,
+            string m15,
+            string summary,
+            double currentPrice);
     }
 
     public class MarketDashboardData
@@ -34,5 +46,6 @@ namespace Nexus.Application.Dashboard
         public string H4 { get; set; } = string.Empty;
         public string M15 { get; set; } = string.Empty;
         public string Summary { get; set; } = string.Empty;
+        public List<double> RecentPrices { get; set; } = new();
     }
 }
