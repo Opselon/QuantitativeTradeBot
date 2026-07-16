@@ -352,7 +352,7 @@
                                             <ColumnDefinition Width="80"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="BUY" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
-                                        <ProgressBar Grid.Column="1" Value="{Binding SimulatedBuyExpectedUtility}" Minimum="-10" Maximum="10" Height="10" Foreground="#10B981" Background="{DynamicResource SurfaceVariantBrush}"/>
+                                        <ProgressBar Grid.Column="1" Value="{Binding SimulatedBuyExpectedUtility, Mode=OneWay}" Minimum="-10" Maximum="10" Height="10" Foreground="#10B981" Background="{DynamicResource SurfaceVariantBrush}"/>
                                         <TextBlock Grid.Column="2" Text="{Binding SimulatedBuyExpectedUtility, StringFormat={}{0:F2} EV}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource NteTradingDataFont}" Foreground="#10B981"/>
                                     </Grid>
 
@@ -364,7 +364,7 @@
                                             <ColumnDefinition Width="80"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="SELL" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
-                                        <ProgressBar Grid.Column="1" Value="{Binding SimulatedSellExpectedUtility}" Minimum="-10" Maximum="10" Height="10" Foreground="#EF4444" Background="{DynamicResource SurfaceVariantBrush}"/>
+                                        <ProgressBar Grid.Column="1" Value="{Binding SimulatedSellExpectedUtility, Mode=OneWay}" Minimum="-10" Maximum="10" Height="10" Foreground="#EF4444" Background="{DynamicResource SurfaceVariantBrush}"/>
                                         <TextBlock Grid.Column="2" Text="{Binding SimulatedSellExpectedUtility, StringFormat={}{0:F2} EV}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource NteTradingDataFont}" Foreground="#EF4444"/>
                                     </Grid>
 
@@ -376,7 +376,7 @@
                                             <ColumnDefinition Width="80"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="WAIT" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
-                                        <ProgressBar Grid.Column="1" Value="{Binding SimulatedWaitExpectedUtility}" Minimum="-10" Maximum="10" Height="10" Foreground="#3B82F6" Background="{DynamicResource SurfaceVariantBrush}"/>
+                                        <ProgressBar Grid.Column="1" Value="{Binding SimulatedWaitExpectedUtility, Mode=OneWay}" Minimum="-10" Maximum="10" Height="10" Foreground="#3B82F6" Background="{DynamicResource SurfaceVariantBrush}"/>
                                         <TextBlock Grid.Column="2" Text="{Binding SimulatedWaitExpectedUtility, StringFormat={}{0:F2} EV}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource NteTradingDataFont}" Foreground="#3B82F6"/>
                                     </Grid>
                                 </StackPanel>
@@ -457,61 +457,91 @@
 
                                             <!-- Snapshot and Regime -->
                                             <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Market Snapshot:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding ReplayMarketSnapshot}" Style="{StaticResource NteBodyMedium}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                             </Grid>
 
                                             <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Market Regime:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding ReplayMarketRegime}" Foreground="#F59E0B" Style="{StaticResource NteBodyMedium}" FontWeight="Bold" VerticalAlignment="Center"/>
                                             </Grid>
 
                                             <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Feature Vector summary:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding ReplayFeatureVectorSummary}" FontFamily="Consolas" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                                             </Grid>
 
                                             <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="MTF Alignment:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding ReplayMultiTimeframeConsensus}" Style="{StaticResource NteBodyMedium}" VerticalAlignment="Center"/>
                                             </Grid>
 
                                             <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Active Hypotheses:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding ReplayGeneratedHypotheses}" Style="{StaticResource NteBodyMedium}" VerticalAlignment="Center"/>
                                             </Grid>
 
                                             <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Scenario Trees EV:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding ReplayScenarioSearchResults}" Foreground="#10B981" Style="{StaticResource NteTradingDataFont}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                             </Grid>
 
                                             <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Consensus Weights:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding ReplayModelConsensus}" Style="{StaticResource NteBodyMedium}" VerticalAlignment="Center"/>
                                             </Grid>
 
                                             <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Uncertainty Index:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding ReplayUncertaintyEvaluation}" Style="{StaticResource NteBodyMedium}" VerticalAlignment="Center"/>
                                             </Grid>
 
                                             <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Final Decision:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding ReplayFinalDecision}" Foreground="{DynamicResource PrimaryBrush}" Style="{StaticResource NteBodyMedium}" FontWeight="Bold" VerticalAlignment="Center"/>
                                             </Grid>
 
                                             <Grid>
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
                                                 <TextBlock Text="Execution Outcome:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding ReplayExecutionOutcome}" Foreground="#10B981" Style="{StaticResource NteBodyMedium}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                             </Grid>
@@ -650,7 +680,7 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                     </Grid>
-                                    <ProgressBar Value="{Binding DailyLossUtilization}" Height="6" Background="{DynamicResource SurfaceVariantBrush}" Margin="0,4,0,0">
+                                    <ProgressBar Value="{Binding DailyLossUtilization, Mode=OneWay}" Height="6" Background="{DynamicResource SurfaceVariantBrush}" Margin="0,4,0,0">
                                         <ProgressBar.Style>
                                             <Style TargetType="ProgressBar">
                                                 <Setter Property="Foreground" Value="#10B981"/>
@@ -687,7 +717,7 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                     </Grid>
-                                    <ProgressBar Value="{Binding SingleExposureUtilization}" Height="6" Background="{DynamicResource SurfaceVariantBrush}" Margin="0,4,0,0">
+                                    <ProgressBar Value="{Binding SingleExposureUtilization, Mode=OneWay}" Height="6" Background="{DynamicResource SurfaceVariantBrush}" Margin="0,4,0,0">
                                         <ProgressBar.Style>
                                             <Style TargetType="ProgressBar">
                                                 <Setter Property="Foreground" Value="#10B981"/>
@@ -724,7 +754,7 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                     </Grid>
-                                    <ProgressBar Value="{Binding CumulativeExposureUtilization}" Height="6" Background="{DynamicResource SurfaceVariantBrush}" Margin="0,4,0,0">
+                                    <ProgressBar Value="{Binding CumulativeExposureUtilization, Mode=OneWay}" Height="6" Background="{DynamicResource SurfaceVariantBrush}" Margin="0,4,0,0">
                                         <ProgressBar.Style>
                                             <Style TargetType="ProgressBar">
                                                 <Setter Property="Foreground" Value="#10B981"/>
@@ -992,7 +1022,7 @@
                     <materialDesign:Card Style="{StaticResource NtePremiumCard}">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <materialDesign:PackIcon Kind="Cpu" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <materialDesign:PackIcon Kind="Cpu64Bit" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                 <TextBlock Text="BARE-METAL NATIVE C++ PERFORMANCE" Style="{StaticResource NteTitleLarge}" FontWeight="Bold" VerticalAlignment="Center"/>
                             </StackPanel>
 
