@@ -449,11 +449,11 @@ namespace Nexus.Tests.Unit.Desktop
         private class FakeMt5TradingService : IMt5TradingService
         {
             public Task<PlaceOrderResult> PlaceMarketOrderAsync(string symbol, BridgeOrderSide side, decimal volume, decimal? stopLoss, decimal? takeProfit, string? comment, string? clientCorrelationId, CancellationToken cancellationToken) =>
-                Task.FromResult(new PlaceOrderResult(12345, true, "Success", 1.0850m, 1.0851m, DateTime.UtcNow));
+                Task.FromResult(new PlaceOrderResult(true, 12345, "Filled", null));
             public Task<PlaceOrderResult> ModifyPositionAsync(long positionTicket, string symbol, decimal sl, decimal tp, CancellationToken cancellationToken) =>
-                Task.FromResult(new PlaceOrderResult(positionTicket, true, "Success", 1.0850m, 1.0851m, DateTime.UtcNow));
+                Task.FromResult(new PlaceOrderResult(true, positionTicket, "Modified", null));
             public Task<ClosePositionResult> ClosePositionAsync(long positionTicket, string symbol, decimal? volume, CancellationToken cancellationToken) =>
-                Task.FromResult(new ClosePositionResult(positionTicket, true, "Success", 1.0860m, DateTime.UtcNow));
+                Task.FromResult(new ClosePositionResult(true, positionTicket, null));
             public Task<IReadOnlyList<OpenPositionDto>> GetOpenPositionsAsync(CancellationToken cancellationToken) =>
                 Task.FromResult<IReadOnlyList<OpenPositionDto>>(new List<OpenPositionDto>());
         }
@@ -461,7 +461,7 @@ namespace Nexus.Tests.Unit.Desktop
         private class FakeAccumulatorService : IAccumulatorService
         {
             public AccumulatorState GetState(string symbol) => new AccumulatorState(symbol);
-            public AccumulatorState UpdateState(FeatureDelta delta) => new AccumulatorState(delta.SymbolName);
+            public AccumulatorState UpdateState(FeatureDelta delta) => new AccumulatorState(delta.Symbol);
             public void ResetState(string symbol) { }
         }
 
