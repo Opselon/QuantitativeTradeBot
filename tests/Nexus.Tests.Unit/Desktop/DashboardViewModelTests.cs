@@ -21,7 +21,6 @@ using Nexus.Core.Enums;
 using Nexus.Application.Intelligence;
 using Nexus.Application.Mt5;
 using Nexus.Infrastructure.Persistence;
-using Nexus.Infrastructure.Persistence.Models;
 
 namespace Nexus.Tests.Unit.Desktop
 {
@@ -32,19 +31,14 @@ namespace Nexus.Tests.Unit.Desktop
             IDecisionDashboardService decision,
             IExecutionDashboardService execution,
             ITrainingDashboardService training,
-            ISystemHealthMonitorService health)
+            ISystemHealthMonitorService health,
+            IServiceScopeFactory scopeFactory)
         {
             var fakeBridge = new FakeBridgeService();
             var fakeNative = new FakeNativeCore();
             var nullLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MarketDataPipeline>.Instance;
             var pipeline = new MarketDataPipeline(fakeBridge, fakeNative, nullLogger);
             var diagnostic = new StubDiagnosticService();
-
-            var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
-            var dbContext = new NexusDbContext(dbOptions);
-            var scopeFactory = new FakeServiceScopeFactory(dbContext);
 
             var fakeNeural = new FakeNeuralModelService();
             var fakeTrading = new FakeMt5TradingService();
@@ -79,29 +73,31 @@ namespace Nexus.Tests.Unit.Desktop
             );
         }
 
-        private (DecisionDashboardService, FakeServiceScopeFactory) CreateDecisionServiceAndScope()
+        private (DecisionDashboardService, FakeServiceScopeFactory, FakeExperienceRepository) CreateDecisionServiceAndScope(NexusDbContext dbContext)
         {
-            var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
-            var dbContext = new NexusDbContext(dbOptions);
-            var scopeFactory = new FakeServiceScopeFactory(dbContext);
+            var fakeRepo = new FakeExperienceRepository();
+            var scopeFactory = new FakeServiceScopeFactory(dbContext, fakeRepo);
             var eventStream = new DecisionEventStream();
             var decisionService = new DecisionDashboardService(eventStream, scopeFactory);
-            return (decisionService, scopeFactory);
+            return (decisionService, scopeFactory, fakeRepo);
         }
 
         [Fact]
         public void InitialState_IsCorrect()
         {
             // Arrange
+            var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            var dbContext = new NexusDbContext(dbOptions);
+
             var market = new MarketDashboardService();
-            var (decision, _) = CreateDecisionServiceAndScope();
+            var (decision, scopeFactory, _) = CreateDecisionServiceAndScope(dbContext);
             var execution = new ExecutionDashboardService();
             var training = new TrainingDashboardService();
             var health = new SystemHealthMonitorService();
 
-            using var vm = CreateViewModel(market, decision, execution, training, health);
+            using var vm = CreateViewModel(market, decision, execution, training, health, scopeFactory);
 
             // Assert
             Assert.Equal("UNKNOWN", vm.CurrentSymbol);
@@ -119,13 +115,18 @@ namespace Nexus.Tests.Unit.Desktop
         public void ToggleLivePermission_Fails_WhenProfileIsNotLive()
         {
             // Arrange
+            var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            var dbContext = new NexusDbContext(dbOptions);
+
             var market = new MarketDashboardService();
-            var (decision, _) = CreateDecisionServiceAndScope();
+            var (decision, scopeFactory, _) = CreateDecisionServiceAndScope(dbContext);
             var execution = new ExecutionDashboardService();
             var training = new TrainingDashboardService();
             var health = new SystemHealthMonitorService();
 
-            using var vm = CreateViewModel(market, decision, execution, training, health);
+            using var vm = CreateViewModel(market, decision, execution, training, health, scopeFactory);
 
             // Assert profile is Simulation (not Live)
             Assert.Equal("Simulation", vm.CurrentProfile);
@@ -142,13 +143,18 @@ namespace Nexus.Tests.Unit.Desktop
         public async Task ToggleLivePermission_Succeeds_WhenProfileIsLive_AndConfirmed()
         {
             // Arrange
+            var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            var dbContext = new NexusDbContext(dbOptions);
+
             var market = new MarketDashboardService();
-            var (decision, _) = CreateDecisionServiceAndScope();
+            var (decision, scopeFactory, _) = CreateDecisionServiceAndScope(dbContext);
             var execution = new ExecutionDashboardService();
             var training = new TrainingDashboardService();
             var health = new SystemHealthMonitorService();
 
-            using var vm = CreateViewModel(market, decision, execution, training, health);
+            using var vm = CreateViewModel(market, decision, execution, training, health, scopeFactory);
 
             // Switch to Live profile
             vm.EnableSimulationCommand.Execute(null); // Just to clear
@@ -180,13 +186,18 @@ namespace Nexus.Tests.Unit.Desktop
         public async Task ToggleLivePermission_Aborts_WhenUserRejectsPrompt()
         {
             // Arrange
+            var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            var dbContext = new NexusDbContext(dbOptions);
+
             var market = new MarketDashboardService();
-            var (decision, _) = CreateDecisionServiceAndScope();
+            var (decision, scopeFactory, _) = CreateDecisionServiceAndScope(dbContext);
             var execution = new ExecutionDashboardService();
             var training = new TrainingDashboardService();
             var health = new SystemHealthMonitorService();
 
-            using var vm = CreateViewModel(market, decision, execution, training, health);
+            using var vm = CreateViewModel(market, decision, execution, training, health, scopeFactory);
 
             // Switch to Live profile
             execution.SetProfile(ExecutionDashboardProfile.Live);
@@ -213,13 +224,18 @@ namespace Nexus.Tests.Unit.Desktop
         public async Task SwitchProfile_AutomaticallyRevokesLivePermission()
         {
             // Arrange
+            var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            var dbContext = new NexusDbContext(dbOptions);
+
             var market = new MarketDashboardService();
-            var (decision, _) = CreateDecisionServiceAndScope();
+            var (decision, scopeFactory, _) = CreateDecisionServiceAndScope(dbContext);
             var execution = new ExecutionDashboardService();
             var training = new TrainingDashboardService();
             var health = new SystemHealthMonitorService();
 
-            using var vm = CreateViewModel(market, decision, execution, training, health);
+            using var vm = CreateViewModel(market, decision, execution, training, health, scopeFactory);
 
             // Switch to Live profile
             execution.SetProfile(ExecutionDashboardProfile.Live);
@@ -241,13 +257,18 @@ namespace Nexus.Tests.Unit.Desktop
         public void LiveUpdates_TriggerPropertyNotifications()
         {
             // Arrange
+            var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            var dbContext = new NexusDbContext(dbOptions);
+
             var market = new MarketDashboardService();
-            var (decision, _) = CreateDecisionServiceAndScope();
+            var (decision, scopeFactory, _) = CreateDecisionServiceAndScope(dbContext);
             var execution = new ExecutionDashboardService();
             var training = new TrainingDashboardService();
             var health = new SystemHealthMonitorService();
 
-            using var vm = CreateViewModel(market, decision, execution, training, health);
+            using var vm = CreateViewModel(market, decision, execution, training, health, scopeFactory);
 
             List<string> updatedProperties = new();
             vm.PropertyChanged += (s, e) =>
@@ -272,40 +293,40 @@ namespace Nexus.Tests.Unit.Desktop
         public async Task ExplainabilityTimeline_IsLoadedAndPopulated()
         {
             // Arrange
-            var market = new MarketDashboardService();
-
             var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
-            using var dbContext = new NexusDbContext(dbOptions);
+            var dbContext = new NexusDbContext(dbOptions);
 
-            // Add a real experience record to the DB so it loads persistent data
-            var record = new ExperienceDbModel
+            var market = new MarketDashboardService();
+            var fakeRepo = new FakeExperienceRepository();
+
+            // Add a real experience record to the fake repository so it loads persistent data
+            var record = new ExperienceRecord(
+                Guid.NewGuid(),
+                "EURUSD",
+                new float[64],
+                "1.0.4",
+                0.85,
+                0.15,
+                0.1,
+                "Trending Bullish",
+                "BUY"
+            )
             {
-                Id = Guid.NewGuid(),
-                Symbol = "EURUSD",
-                TimestampUtc = DateTime.UtcNow,
-                MarketVectorCsv = "0.5,0.5,0.5,0.2,0.5,0.9,80.0,1.0,1.0,0.1",
-                ModelVersion = "1.0.4",
-                BuyConfidence = 0.85,
-                SellConfidence = 0.15,
-                RiskScore = 0.1,
-                MarketRegime = "Trending Bullish",
-                ExecutedAction = "BUY",
                 RealizedPips = 12.4,
                 IsCompleted = true
             };
-            dbContext.ExperienceRecords.Add(record);
-            await dbContext.SaveChangesAsync();
+            fakeRepo.Records.Add(record);
 
-            var scopeFactory = new FakeServiceScopeFactory(dbContext);
+            var scopeFactory = new FakeServiceScopeFactory(dbContext, fakeRepo);
             var eventStream = new DecisionEventStream();
             var decision = new DecisionDashboardService(eventStream, scopeFactory);
 
             // Wait briefly for asynchronous background DB loading task to complete
             await Task.Delay(150);
 
-            using var vm = CreateViewModel(market, decision, new ExecutionDashboardService(), new TrainingDashboardService(), new SystemHealthMonitorService());
+            using var vm = CreateViewModel(market, decision, new ExecutionDashboardService(), new TrainingDashboardService(), new SystemHealthMonitorService(), scopeFactory);
 
             // Assert
             Assert.NotNull(vm.ExplainabilityTimeline);
@@ -317,40 +338,40 @@ namespace Nexus.Tests.Unit.Desktop
         public async Task DecisionReplay_MasterDetailReconstruction_IsDeterministicAndReadOnly()
         {
             // Arrange
-            var market = new MarketDashboardService();
-
             var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
-            using var dbContext = new NexusDbContext(dbOptions);
+            var dbContext = new NexusDbContext(dbOptions);
 
-            // Add a real experience record to the DB so it loads persistent data
-            var record = new ExperienceDbModel
+            var market = new MarketDashboardService();
+            var fakeRepo = new FakeExperienceRepository();
+
+            // Add a real experience record to the fake repository so it loads persistent data
+            var record = new ExperienceRecord(
+                Guid.NewGuid(),
+                "EURUSD",
+                new float[64],
+                "1.0.4",
+                0.85,
+                0.15,
+                0.1,
+                "Trending Bullish",
+                "BUY"
+            )
             {
-                Id = Guid.NewGuid(),
-                Symbol = "EURUSD",
-                TimestampUtc = DateTime.UtcNow,
-                MarketVectorCsv = "0.5,0.5,0.5,0.2,0.5,0.9,80.0,1.0,1.0,0.1",
-                ModelVersion = "1.0.4",
-                BuyConfidence = 0.85,
-                SellConfidence = 0.15,
-                RiskScore = 0.1,
-                MarketRegime = "Trending Bullish",
-                ExecutedAction = "BUY",
                 RealizedPips = 12.4,
                 IsCompleted = true
             };
-            dbContext.ExperienceRecords.Add(record);
-            await dbContext.SaveChangesAsync();
+            fakeRepo.Records.Add(record);
 
-            var scopeFactory = new FakeServiceScopeFactory(dbContext);
+            var scopeFactory = new FakeServiceScopeFactory(dbContext, fakeRepo);
             var eventStream = new DecisionEventStream();
             var decision = new DecisionDashboardService(eventStream, scopeFactory);
 
             // Wait briefly for asynchronous background DB loading task to complete
             await Task.Delay(150);
 
-            using var vm = CreateViewModel(market, decision, new ExecutionDashboardService(), new TrainingDashboardService(), new SystemHealthMonitorService());
+            using var vm = CreateViewModel(market, decision, new ExecutionDashboardService(), new TrainingDashboardService(), new SystemHealthMonitorService(), scopeFactory);
 
             // Assert master list is populated
             Assert.NotNull(vm.HistoricalDecisions);
@@ -370,13 +391,18 @@ namespace Nexus.Tests.Unit.Desktop
         public void SystemHealthMonitor_UpdatesStateAndTriggersNotification()
         {
             // Arrange
+            var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            var dbContext = new NexusDbContext(dbOptions);
+
             var market = new MarketDashboardService();
-            var (decision, _) = CreateDecisionServiceAndScope();
+            var (decision, scopeFactory, _) = CreateDecisionServiceAndScope(dbContext);
             var execution = new ExecutionDashboardService();
             var training = new TrainingDashboardService();
             var health = new SystemHealthMonitorService();
 
-            using var vm = CreateViewModel(market, decision, execution, training, health);
+            using var vm = CreateViewModel(market, decision, execution, training, health, scopeFactory);
 
             List<string> notifiedProperties = new();
             vm.PropertyChanged += (s, e) =>
@@ -473,13 +499,26 @@ namespace Nexus.Tests.Unit.Desktop
             public MarketState GetMarketState() => new MarketState("EURUSD", DateTime.UtcNow, 0.2, 0.5, 0.8, 0.7, 0.5, 0.1, 50.0, "Trend Bullish");
         }
 
+        private class FakeExperienceRepository : IExperienceRepository
+        {
+            public List<ExperienceRecord> Records { get; } = new List<ExperienceRecord>();
+
+            public Task<IReadOnlyList<ExperienceRecord>> GetRecentExperiencesAsync(int limit, CancellationToken ct = default)
+            {
+                IReadOnlyList<ExperienceRecord> result = Records.Take(limit).ToList().AsReadOnly();
+                return Task.FromResult(result);
+            }
+        }
+
         private class FakeServiceScopeFactory : IServiceScopeFactory, IServiceScope, IServiceProvider
         {
             private readonly NexusDbContext _dbContext;
+            private readonly FakeExperienceRepository _experienceRepo;
 
-            public FakeServiceScopeFactory(NexusDbContext dbContext)
+            public FakeServiceScopeFactory(NexusDbContext dbContext, FakeExperienceRepository experienceRepo)
             {
                 _dbContext = dbContext;
+                _experienceRepo = experienceRepo;
             }
 
             public IServiceScope CreateScope() => this;
@@ -488,7 +527,7 @@ namespace Nexus.Tests.Unit.Desktop
             public object? GetService(Type serviceType)
             {
                 if (serviceType == typeof(NexusDbContext)) return _dbContext;
-                if (serviceType == typeof(IExperienceRepository)) return new ExperienceRepository(_dbContext);
+                if (serviceType == typeof(IExperienceRepository)) return _experienceRepo;
                 return null;
             }
         }
