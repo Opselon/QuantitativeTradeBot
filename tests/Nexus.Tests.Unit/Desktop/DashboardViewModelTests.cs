@@ -7,6 +7,7 @@ using Xunit;
 using Nexus.Application.Ports;
 using Nexus.Desktop.Services;
 using Nexus.Application.Mt5Bridge.Contracts;
+using Nexus.Desktop.ViewModels;
 using Nexus.Desktop.ViewModels.Workspaces;
 using Nexus.Application.Dashboard;
 using Nexus.Infrastructure.Mt5Bridge;
@@ -247,7 +248,7 @@ namespace Nexus.Tests.Unit.Desktop
             };
 
             // Act - Push an update into the market service
-            market.PushMarketUpdate("XAUUSD", "Breakout", 92, 0.95, 0.40, 0.88, "Bullish", "Bullish", "Entry", "Updates processed.");
+            market.PushMarketUpdate("XAUUSD", "Breakout", 92, 0.95, 0.40, 0.88, "Bullish", "Bullish", "Entry", "Updates processed.", 2000.0);
 
             // Assert - Properties are updated and raised PropertyChanged events
             Assert.Contains("MarketRegime", updatedProperties);
@@ -459,8 +460,8 @@ namespace Nexus.Tests.Unit.Desktop
 
         private class FakeAccumulatorService : IAccumulatorService
         {
-            public AccumulatorState GetState(string symbol) => new AccumulatorState();
-            public AccumulatorState UpdateState(FeatureDelta delta) => new AccumulatorState();
+            public AccumulatorState GetState(string symbol) => new AccumulatorState(symbol);
+            public AccumulatorState UpdateState(FeatureDelta delta) => new AccumulatorState(delta.SymbolName);
             public void ResetState(string symbol) { }
         }
 
