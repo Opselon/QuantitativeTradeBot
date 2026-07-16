@@ -467,6 +467,7 @@ namespace Nexus.Tests.Unit.Desktop
         private class FakeCurrencyStrengthEngine : ICurrencyStrengthEngine
         {
             public double GetStrengthScore(string currency) => 80.0;
+            public IReadOnlyDictionary<string, double> GetAllStrengthScores() => new Dictionary<string, double>();
             public void UpdateFromTick(Tick tick) { }
         }
 
