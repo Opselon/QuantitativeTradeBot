@@ -13,6 +13,7 @@ namespace Nexus.Infrastructure.Persistence
         public DbSet<PositionDbModel> Positions => Set<PositionDbModel>();
         public DbSet<TradeDbModel> Trades => Set<TradeDbModel>();
         public DbSet<ExperienceDbModel> ExperienceRecords => Set<ExperienceDbModel>(); // Added Experience Dataset Set
+        public DbSet<ExecutionErrorDbModel> ExecutionErrors => Set<ExecutionErrorDbModel>();
 
         public NexusDbContext(DbContextOptions<NexusDbContext> options) : base(options)
         {

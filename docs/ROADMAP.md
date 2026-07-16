@@ -31,7 +31,11 @@ This document maps out the release milestones and evolution roadmap for the **Ne
   [████████████████████████████████████████████████████████████] 100% (Completed)
                              │
                              ▼
-  Phase 07: Automated Execution Sandbox & Workstation UI Panel
+  Phase 07: Automated Execution Sandbox & Risk-Controlled Runtime
+  [████████████████████████████████████████████████████████████] 100% (Completed)
+                             │
+                             ▼
+  Phase 08: Institutional Workstations & Live Dashboards (WPF)
   [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%   (Pending)
 ```
 
@@ -85,7 +89,14 @@ Build the foundation of a self-improving trading intelligence system.
 * [x] **Timeframe Learning Separation**: Isolated pathways for Scalping, Intraday, and Swing trading models.
 * [x] **Offline-First Training Pipeline**: Fully automated C# learning pipeline executing and archiving self-learning cycles.
 
-### ▢ Phase 07: Automated Execution Sandbox & Workstation UI Panel (Pending)
+### ■ Phase 07: Automated Execution Sandbox & Risk-Controlled Runtime (Completed)
 Deploy strategy hosts, execute sandboxed trades, and render premium workstation analytics.
-* [ ] **Automated Order Sandboxes**: Connect real-time MQL5 terminal endpoints to safe routing strategies.
+* [x] **Automated Order Sandboxes**: Connect real-time MQL5 terminal endpoints to safe routing strategies.
+* [x] **Airtight Risk Controls**: Embed mandatory Stop Loss limits, single position sizes, cumulative exposures, daily losses, and regime limits in pre-trade gates.
+* [x] **Simulation & MT5 Adapters**: Deliver Simulation and MT5 Execution gateways under unified interface contracts.
+* [x] **State Machine Lifecycle**: Transition orders through created, validated, submitted, rejected, and filled states without boolean flags.
+* [x] **Audit Traceability**: Persist orders, positions, and error logs automatically within partitioned relational tables.
+
+### ▢ Phase 08: Institutional Workstations & Live Dashboards (Pending)
+Implement advanced WPF workspaces and indicators for live trade execution and control.
 * [ ] **Institutional Workstation Panels**: Display performance metrics, decision intelligence graphs, and manual desk ticket forms in modern WPF theme configurations.

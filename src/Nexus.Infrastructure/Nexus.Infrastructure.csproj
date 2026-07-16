@@ -11,6 +11,7 @@
     <ProjectReference Include="..\Nexus.Application\Nexus.Application.csproj" />
     <ProjectReference Include="..\Nexus.AI\Nexus.AI.csproj" />
     <ProjectReference Include="..\Nexus.Infrastructure.Native\Nexus.Infrastructure.Native.csproj" />
+    <ProjectReference Include="..\Nexus.Execution\Nexus.Execution.csproj" />
   </ItemGroup>
 
   <ItemGroup>
