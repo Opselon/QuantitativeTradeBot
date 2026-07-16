@@ -12,6 +12,15 @@ using Nexus.Core.Interfaces;
 using Nexus.Core.Entities;
 using Nexus.Application.Workflows.DTOs;
 
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Nexus.Core.Enums;
+using Nexus.Core.Interfaces;
+using Nexus.Core.Entities;
+using Nexus.Application.Intelligence;
+using Nexus.Application.Mt5;
+using Nexus.Infrastructure.Persistence;
+
 namespace Nexus.Tests.Unit.Desktop
 {
     public class DashboardViewModelTests
@@ -29,7 +38,43 @@ namespace Nexus.Tests.Unit.Desktop
             var pipeline = new MarketDataPipeline(fakeBridge, fakeNative, nullLogger);
             var diagnostic = new StubDiagnosticService();
 
-            return new DashboardViewModel(fakeBridge, pipeline, diagnostic, market, decision, execution, training, health);
+            var dbOptions = new DbContextOptionsBuilder<NexusDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            var dbContext = new NexusDbContext(dbOptions);
+            var scopeFactory = new FakeServiceScopeFactory(dbContext);
+
+            var fakeNeural = new FakeNeuralModelService();
+            var fakeTrading = new FakeMt5TradingService();
+            var fakeAccumulator = new FakeAccumulatorService();
+            var fakeCurrency = new FakeCurrencyStrengthEngine();
+            var fakeDecisionEngine = new FakeDecisionEngine();
+
+            var intelligenceService = new NativeMarketIntelligenceService(
+                fakeNative,
+                fakeAccumulator,
+                fakeCurrency,
+                fakeNeural,
+                fakeDecisionEngine
+            );
+
+            return new DashboardViewModel(
+                fakeBridge,
+                pipeline,
+                diagnostic,
+                market,
+                decision,
+                execution,
+                training,
+                health,
+                scopeFactory,
+                fakeNeural,
+                fakeTrading,
+                intelligenceService,
+                fakeNative,
+                fakeAccumulator,
+                fakeCurrency
+            );
         }
 
         [Fact]
@@ -362,6 +407,70 @@ namespace Nexus.Tests.Unit.Desktop
             public void UpdateTick(Tick tick) { }
             public MarketVector GetMarketVector() => new MarketVector(0.5, 0.5, 0.5, 0.2, 0.5, 0.9, 80.0, 1.0, 1.0, 0.1);
             public MarketState GetMarketState() => new MarketState("EURUSD", DateTime.UtcNow, 0.2, 0.5, 0.8, 0.7, 0.5, 0.1, 50.0, "Trend Bullish");
+        }
+
+        private class FakeServiceScopeFactory : IServiceScopeFactory, IServiceScope, IServiceProvider
+        {
+            private readonly NexusDbContext _dbContext;
+
+            public FakeServiceScopeFactory(NexusDbContext dbContext)
+            {
+                _dbContext = dbContext;
+            }
+
+            public IServiceScope CreateScope() => this;
+            public IServiceProvider ServiceProvider => this;
+            public void Dispose() { }
+            public object? GetService(Type serviceType)
+            {
+                if (serviceType == typeof(NexusDbContext)) return _dbContext;
+                return null;
+            }
+        }
+
+        private class FakeNeuralModelService : INeuralModelService
+        {
+            public string CurrentModelName => "Nexus AI v1.x";
+            public string ModelVersion => "1.0.4";
+            public bool IsLoaded => true;
+            public double InferenceLatencyMs => 1.5;
+            public DateTime LastExecutionTime => DateTime.UtcNow;
+            public ModelMode CurrentMode => ModelMode.ONNX_MODEL;
+
+            public Task<bool> LoadModelAsync(string modelPath, CancellationToken cancellationToken = default) => Task.FromResult(true);
+            public Task<EvaluationResult> EvaluateAsync(MarketVector vector, CancellationToken cancellationToken = default) =>
+                Task.FromResult(new EvaluationResult(0.6, 0.2, 0.2, 0.001, 0.1, 0.6, "Trending Bullish"));
+        }
+
+        private class FakeMt5TradingService : IMt5TradingService
+        {
+            public Task<PlaceOrderResult> PlaceMarketOrderAsync(string symbol, BridgeOrderSide side, decimal volume, decimal? stopLoss, decimal? takeProfit, string? comment, string? clientCorrelationId, CancellationToken cancellationToken) =>
+                Task.FromResult(new PlaceOrderResult(12345, true, "Success", 1.0850m, 1.0851m, DateTime.UtcNow));
+            public Task<PlaceOrderResult> ModifyPositionAsync(long positionTicket, string symbol, decimal sl, decimal tp, CancellationToken cancellationToken) =>
+                Task.FromResult(new PlaceOrderResult(positionTicket, true, "Success", 1.0850m, 1.0851m, DateTime.UtcNow));
+            public Task<ClosePositionResult> ClosePositionAsync(long positionTicket, string symbol, decimal? volume, CancellationToken cancellationToken) =>
+                Task.FromResult(new ClosePositionResult(positionTicket, true, "Success", 1.0860m, DateTime.UtcNow));
+            public Task<IReadOnlyList<OpenPositionDto>> GetOpenPositionsAsync(CancellationToken cancellationToken) =>
+                Task.FromResult<IReadOnlyList<OpenPositionDto>>(new List<OpenPositionDto>());
+        }
+
+        private class FakeAccumulatorService : IAccumulatorService
+        {
+            public AccumulatorState State => new AccumulatorState();
+            public AccumulatorState UpdateState(FeatureDelta delta) => new AccumulatorState();
+            public void Reset() { }
+        }
+
+        private class FakeCurrencyStrengthEngine : ICurrencyStrengthEngine
+        {
+            public double GetStrengthScore(string currency) => 80.0;
+            public void UpdateFromTick(Tick tick) { }
+        }
+
+        private class FakeDecisionEngine : IDecisionEngine
+        {
+            public TradeDecision Evaluate(EvaluationResult evaluation, MarketState state, RiskState risk) =>
+                new TradeDecision(DecisionAction.BUY, 0.1, "Test", DateTime.UtcNow);
         }
     }
 }
