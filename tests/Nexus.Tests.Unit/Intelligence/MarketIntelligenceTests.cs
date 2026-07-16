@@ -126,7 +126,7 @@ namespace Nexus.Tests.Unit.Intelligence
         public void DecisionEngine_PreTradeRiskBlocked_ReturnsWaitAction()
         {
             // Arrange
-            var engine = new DecisionEngine();
+            var engine = new Nexus.Application.Intelligence.DecisionEngine();
             var evaluation = new EvaluationResult(0.9, 0.1, 0.0, 0.015, 0.2, 0.9, "Bullish");
             var market = new MarketState("EURUSD", DateTime.UtcNow, 0.2, 0.8, 0.9, 0.7, 0.9, 0.1, 80.0, "Trend Bullish");
             var riskBlocked = new RiskState(150.0, 0.1, 0.15, 2, 4.5, isTradingBlocked: true);
@@ -144,7 +144,7 @@ namespace Nexus.Tests.Unit.Intelligence
         public void DecisionEngine_HighConfidenceBuy_ReturnsBuyAction()
         {
             // Arrange
-            var engine = new DecisionEngine();
+            var engine = new Nexus.Application.Intelligence.DecisionEngine();
             var evaluation = new EvaluationResult(0.85, 0.1, 0.05, 0.015, 0.2, 0.85, "Bullish");
             var market = new MarketState("EURUSD", DateTime.UtcNow, 0.2, 0.8, 0.9, 0.7, 0.9, 0.1, 80.0, "Trend Bullish");
             var riskNormal = new RiskState(500.0, 0.1, 0.02, 0, 0.0, isTradingBlocked: false);
