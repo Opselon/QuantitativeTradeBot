@@ -281,12 +281,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Merge pull request #33 from Opselon/codex/transform-nexus-trading-engine-to-autonomy |
+| **Commit Message** | Merge pull request #34 from Opselon/revert-33-codex/transform-nexus-trading-engine-to-autonomy |
 | **Author** | Capsizer |
 | **Branch** | `main` |
-| **Run Number** | `110` |
-| **Commit SHA** | `4501a249fc86ec2f015fba9201367733d07b9d33` |
-| **Generated At** | `2026-07-16 18:20:33 UTC` |
+| **Run Number** | `112` |
+| **Commit SHA** | `afc6a66619cf74f7e512f2d8c445025a1e6dd3a6` |
+| **Generated At** | `2026-07-16 18:44:38 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -349,7 +349,6 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── ACCUMULATOR_DESIGN.md
 │   ├── AI_TRAINING_PIPELINE.md
 │   ├── ARCHITECTURE.md
-│   ├── AUTONOMOUS_TRADING_ARCHITECTURE.md
 │   ├── CHANGELOG.md
 │   ├── CODING_STANDARDS.md
 │   ├── DATABASE.md
@@ -364,7 +363,6 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── PHASE10_REAL_WORKSTATION_STATUS.md
 │   ├── PHASE10_REALITY_MIGRATION.md
 │   ├── PROGRESS.md
-│   ├── REALITY_MIGRATION_PHASE10.md
 │   ├── ROADMAP.md
 │   ├── TRAINING_ENGINE.md
 │   └── WPF_WORKSTATION.md
@@ -910,7 +908,7 @@ To get started, please review the contribution guidelines outlined above, explor
 | Projects (.sln, .csproj) | 15 |
 
 ### 🐞 Pipeline Diagnostics (CI Stage - Ubuntu)
-- **Job Status:** failure
+- **Job Status:** success
 #### 🔴 Errors
 ```text
 No explicit C# errors.
@@ -929,10 +927,10 @@ No C# errors.
 ```
 #### 🟡 Warnings
 ```text
-7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+5>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 ```
 
 <!-- NEXUS_AUTO_DOC_END -->
