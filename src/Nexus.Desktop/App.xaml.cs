@@ -14,6 +14,7 @@ using Nexus.Desktop.ViewModels;
 using Nexus.Core.Interfaces;
 using Nexus.Application.Analytics;
 using Nexus.Infrastructure.Native;
+using Nexus.Application.Dashboard;
 
 namespace Nexus.Desktop
 {
@@ -82,6 +83,14 @@ namespace Nexus.Desktop
 
                     services.AddSingleton<IMt5BridgeOperatorService, Mt5BridgeOperatorService>();
                     services.AddSingleton<INativeAnalyticsEngine, NativeAnalyticsEngine>();
+
+                    // Register Dashboard Application Services
+                    services.AddSingleton<IMarketDashboardService, MarketDashboardService>();
+                    services.AddSingleton<IDecisionDashboardService, DecisionDashboardService>();
+                    services.AddSingleton<IExecutionDashboardService, ExecutionDashboardService>();
+                    services.AddSingleton<ITrainingDashboardService, TrainingDashboardService>();
+                    services.AddSingleton<ISystemHealthMonitorService, SystemHealthMonitorService>();
+
                     // Register Workspace ViewModels
                     services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.DashboardViewModel>();
                     services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.Mt5BridgeViewModel>();

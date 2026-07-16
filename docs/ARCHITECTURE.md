@@ -57,13 +57,14 @@ The platform is strictly organized into six decoupled layers, each with clearly 
   * **Managed Fallback Engine**: A robust fallback model designed to continue evaluation if ONNX model artifacts are missing.
 
 ### C. Application Layer (`Nexus.Application`)
-* **Purpose**: Coordinates application workflows, manages system orchestrations, and implements ports (abstractions) to satisfy user-driven and automated transactions.
+* **Purpose**: Coordinates application workflows, manages system orchestrations, implements ports (abstractions) to satisfy user-driven and automated transactions, and provides decoupled dashboard presentation models.
 * **Dependencies**: Depends strictly on `Nexus.Core`. It contains **no UI logic** and **no database or infrastructure implementation reference**.
 * **Key Components**:
   * **Ports (Interfaces)**: Decoupled abstractions for database repositories (`IAccountRepository`, `IOrderRepository`), external brokers (`IMt5TradingService`), and environment configurations.
   * **Strategy Hosts & Supervisors**: Runtime containers (`StrategyHost`, `StrategySupervisor`) designed to route incoming tick streams to sandboxed strategies.
   * **Execution Pipeline**: Decoupled order evaluation chains (`ExecutionCoordinator`, `SignalRouter`, `PreTradeRiskEvaluator`) executing strict pre-trade risk checks.
   * **Intelligence Engines**: Stockfish-inspired components like `ScenarioSearchEngine` executing Monte Carlo simulations to calculate expected values.
+  * **Dashboard Services**: Decoupled presentation application services (`IMarketDashboardService`, `IDecisionDashboardService`, `IExecutionDashboardService`, `ITrainingDashboardService`, `ISystemHealthMonitorService`) mediating data-fusion updates and safety permissions.
 
 ### D. Native Interop Bridge (`Nexus.Infrastructure.Native`)
 * **Purpose**: Exposes a safe, high-speed C-compatible ABI bridging the high-performance C++ quantitative execution engine with managed .NET code.
@@ -73,13 +74,13 @@ The platform is strictly organized into six decoupled layers, each with clearly 
   * **Pointer Wrapper**: Implements `NativeCoreSafeHandle` (derived from `SafeHandleZeroOrMinusOneIsInvalid`) for robust, leak-proof lifecycle management of C++ memory.
 
 ### E. Infrastructure Layer (`Nexus.Infrastructure`)
-* **Purpose**: Acts as the system adapter layer, implementing all concrete out-of-core services.
-* **Dependencies**: Depends on `Nexus.Application` and `Nexus.Infrastructure.Native`.
+* **Purpose**: Realizes all concrete adapters and external service integrations required by the domain and application layers.
+* **Dependencies**: Depends on `Nexus.Core` and `Nexus.Application` to implement their defined ports.
 * **Key Components**:
-  * **Database Adapters**: Dual-mode persistence adapters implementing `DbContext` for PostgreSQL (enterprise) and SQLite (local-first evaluation).
-  * **IPC & TCP Bridges**: Stateful socket clients (`TcpMt5BridgeClient`) and hosting listeners routing messages to and from MQL5 Expert Advisors (`NexusBridge.mq5`).
-  * **Background Workers**: High-performance hosted services (`ExecutionWorker`, `MarketDataIngestionWorker`) utilizing thread-safe `System.Threading.Channels` for zero-allocation queuing.
-  * **Secure Stores**: Machine-bound encryption and Windows DPAPI implementations (`WindowsSecretStore`) to secure API and broker credentials.
+  * **Persistence Adapters**: Implements EF Core contexts, repositories, SQLite configurations for local quick starts, and high-performance PostgreSQL monthly partitioned table storage.
+  * **MT5 TCP Connection Client**: Houses `TcpMt5BridgeClient` and routing modules facilitating real-time bidirectional messaging with the Expert Advisor (`NexusBridge.mq5`).
+  * **Minimal API Server**: Automatically spins up a secure local HTTP server on `127.0.0.1:5005` providing monitoring endpoints and JSON log stream exports.
+  * **Local File Storage**: Implements absolute path-traversal secure validators and file handlers.
 
 ### F. Presentation Layer (`Nexus.Desktop` / `Nexus.WpfUi`)
 * **Purpose**: Delivers a highly interactive, responsive multi-tab WPF workstation UI for operators.
@@ -88,6 +89,7 @@ The platform is strictly organized into six decoupled layers, each with clearly 
   * **Workspace ViewModels**: Thread-safe viewmodels bound to workspace views.
   * **Theme switching**: Swap active `ResourceDictionary` instances dynamically at runtime (supporting Dark and Light modes) using high-fidelity vector styling (`Zero Bitmap Policy`).
   * **Manual Trading Guardrails**: Strict UI state triggers disabling manual trading ticket execution unless connection health returns `BridgeLifecycleState.Authenticated`.
+  * **Airtight Permission Confirmations**: Security-sensitive switches (such as Live execution) trigger modal confirmation dialog callbacks. Switching profiles automatically revokes live permissions and writes monospace logs to the Security Audit Trail.
 
 ---
 
@@ -124,3 +126,4 @@ The platform guarantees strict framework independence by relying on Hexagonal pa
 1. **High-Performance Streaming Channels**: Communication between background tasks is orchestrated via high-speed, thread-safe, bounded, zero-allocation `System.Threading.Channels`.
 2. **Unified Observability Core**: Structured logging featuring standard `LogEventIds`, workflow scopes, and absolute token/secret scrubbing rules ensures safe cloud and local diagnostics.
 3. **Managed & Native Dualism**: Critical operations support automatic fallback paths; if high-performance C++ native DLLs are missing, the application seamlessly delegates execution to managed high-fidelity C# simulation layers without interrupting processes.
+4. **Clean MVVM Presentation Boundary**: Desktop components utilize decoupled application-layer `IDashboardService` instances to fetch live values, which completely shields ViewModels from referencing MT5, local databases, or direct hardware metrics.

@@ -40,6 +40,7 @@
   <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
     <Compile Remove="Desktop/Mt5TradingViewModelTests.cs" />
     <Compile Remove="Desktop/Mt5BridgeOperatorTests.cs" />
+    <Compile Remove="Desktop/DashboardViewModelTests.cs" />
   </ItemGroup>
 
 </Project>
