@@ -44,6 +44,7 @@ namespace Nexus.Infrastructure.Persistence
             services.AddScoped<IPositionRepository, PositionRepository>();
             services.AddScoped<IMarketDataRepository, MarketDataRepository>();
             services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
+            services.AddScoped<Nexus.Execution.Auditing.IExecutionAuditService, DbExecutionAuditService>();
 
             return services;
         }

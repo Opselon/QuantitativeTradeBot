@@ -85,3 +85,11 @@ CREATE TABLE IF NOT EXISTS market_bars (
     volume DOUBLE PRECISION NOT NULL,
     PRIMARY KEY (symbol, timeframe, time_utc)
 ) PARTITION BY RANGE (time_utc);
+
+CREATE TABLE IF NOT EXISTS execution_errors (
+    id UUID PRIMARY KEY,
+    order_id VARCHAR(64),
+    error_code VARCHAR(64) NOT NULL,
+    error_message TEXT NOT NULL,
+    timestamp_utc TIMESTAMPTZ NOT NULL
+);
