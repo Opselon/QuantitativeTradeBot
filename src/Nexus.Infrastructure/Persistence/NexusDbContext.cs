@@ -14,6 +14,8 @@ namespace Nexus.Infrastructure.Persistence
         public DbSet<TradeDbModel> Trades => Set<TradeDbModel>();
         public DbSet<ExperienceDbModel> ExperienceRecords => Set<ExperienceDbModel>(); // Added Experience Dataset Set
         public DbSet<ExecutionErrorDbModel> ExecutionErrors => Set<ExecutionErrorDbModel>();
+        public DbSet<Models.TickDbModel> Ticks { get; set; } = null!;
+        public DbSet<Models.CandleDbModel> Candles { get; set; } = null!;
 
         public NexusDbContext(DbContextOptions<NexusDbContext> options) : base(options)
         {
@@ -22,9 +24,14 @@ namespace Nexus.Infrastructure.Persistence
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(NexusDbContext).Assembly);
-        }
 
+            // Apply existing configs...
+            modelBuilder.ApplyConfiguration(new Configurations.OrderConfiguration());
+
+            // REASON: Apply new high-performance market data configurations and indexes
+            modelBuilder.ApplyConfiguration(new Models.TickConfiguration());
+            modelBuilder.ApplyConfiguration(new Models.CandleConfiguration());
+        }
         public override int SaveChanges()
         {
             EnsureUtcTimestamps();

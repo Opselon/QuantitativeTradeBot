@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Nexus.Core\Nexus.Core.csproj" />
     <ProjectReference Include="..\Nexus.Application\Nexus.Application.csproj" />
+    <ProjectReference Include="..\Nexus.Training\Nexus.Training.csproj" />
   </ItemGroup>
 
 </Project>

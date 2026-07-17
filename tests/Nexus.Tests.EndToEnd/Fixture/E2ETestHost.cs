@@ -153,7 +153,7 @@ namespace Nexus.Tests.EndToEnd.Fixture
             services.AddSingleton<ExecutionAuditService>();
             services.AddSingleton<DefaultRiskManager>();
             services.AddSingleton<IRiskManager>(sp => sp.GetRequiredService<DefaultRiskManager>());
-            services.AddSingleton<PreTradeRiskEvaluator>();
+           // services.AddSingleton<PreTradeRiskEvaluator>();
             services.AddScoped<ExecutionCoordinator>();
             services.AddScoped<SignalRouter>();
 

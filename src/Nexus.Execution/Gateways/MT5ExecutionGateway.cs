@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using Nexus.Application.Mt5;
 using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Execution.Domain;
+using System.Diagnostics;
 
 namespace Nexus.Execution.Gateways
 {

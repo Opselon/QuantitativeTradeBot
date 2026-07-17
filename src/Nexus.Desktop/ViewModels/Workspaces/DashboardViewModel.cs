@@ -1,28 +1,25 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Input;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Nexus.Application.Ports;
-using Nexus.Infrastructure.Mt5Bridge;
 using Nexus.Application.Dashboard;
-using Nexus.Desktop.Services;
-using Nexus.Core.Interfaces;
-using Nexus.Core.Entities;
-using Nexus.Core.ValueObjects;
-using Nexus.Application.Mt5;
 using Nexus.Application.Intelligence;
+using Nexus.Application.Mt5;
+using Nexus.Application.Ports;
+using Nexus.Core.DomainEvents;
+using Nexus.Core.Entities;
+using Nexus.Core.Interfaces;
+using Nexus.Core.ValueObjects;
+using Nexus.Desktop.Services;
+using Nexus.Infrastructure.Mt5Bridge;
 using Nexus.Infrastructure.Persistence;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Windows.Input;
 
 namespace Nexus.Desktop.ViewModels.Workspaces
 {
     public class DashboardViewModel : ViewModelBase, IDisposable
     {
+        #region Private Fields & Dependencies
         private readonly IMt5BridgeService _bridgeService;
         private readonly MarketDataPipeline _pipeline;
         private readonly IDiagnosticService _diagnosticService;
@@ -33,6 +30,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
         private readonly IExecutionDashboardService _executionService;
         private readonly ITrainingDashboardService _trainingService;
         private readonly ISystemHealthMonitorService _healthService;
+        private readonly IDecisionEventStream _decisionEventStream; // Auto-Trade Stream Publisher
 
         // Production quantitative services
         private readonly IServiceScopeFactory _scopeFactory;
@@ -47,9 +45,20 @@ namespace Nexus.Desktop.ViewModels.Workspaces
         private readonly Random _random = new();
         private readonly SemaphoreSlim _tickSemaphore = new(1, 1);
 
+        private double? _accountBalance;
+        private double? _accountEquity;
+        private double? _marginUsed;
+        private double? _cumulativeExposure;
+        private double? _maxDrawdown;
+        private int? _openPositionsCount;
+        private double _whatIfVolatility = 0.25;
+        private double _whatIfMomentum = 0.75;
+        private DecisionReplayPayload? _selectedReplayDecision;
+        #endregion
+
+        #region Public Properties & WPF Bindings
         public Func<string, Task<bool>>? ConfirmCallback { get; set; }
 
-        // Core visual states
         public bool IsBridgeConnected => _bridgeService.IsConnected;
         public string ConnectionStatusText => _bridgeService.ConnectionStatusText;
         public double PingLatencyMs => _bridgeService.PingLatencyMs;
@@ -66,15 +75,12 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             ? "UNKNOWN"
             : _marketService.MarketQualityScore;
 
-        public object Liquidity => !IsBridgeConnected || ProcessedTickCount == 0 || _marketService.Liquidity == 0.0
-            ? "UNKNOWN"
-            : _marketService.Liquidity;
-
-        public object Volatility => !IsBridgeConnected || ProcessedTickCount == 0 || _marketService.Volatility == 0.0
+        // FIXED: Allows displaying 0.0 values instead of masking them as UNKNOWN
+        public object Volatility => !IsBridgeConnected || ProcessedTickCount == 0
             ? "UNKNOWN"
             : _marketService.Volatility;
 
-        public object Momentum => !IsBridgeConnected || ProcessedTickCount == 0 || _marketService.Momentum == 0.0
+        public object Momentum => !IsBridgeConnected || ProcessedTickCount == 0
             ? "UNKNOWN"
             : _marketService.Momentum;
 
@@ -134,25 +140,34 @@ namespace Nexus.Desktop.ViewModels.Workspaces
 
         // --- Panel 4: Execution Control Properties ---
         public string CurrentProfile => _executionService.CurrentProfile.ToString();
-        public bool IsLivePermissionGranted => _executionService.IsLivePermissionGranted;
+
+        // FIXED: Upgraded with active set block to support WPF Two-Way UI Toggle synchronization
+        public bool IsLivePermissionGranted
+        {
+            get => _executionService.IsLivePermissionGranted;
+            set
+            {
+                if (_executionService.IsLivePermissionGranted != value)
+                {
+                    _ = OnToggleLivePermissionAsync();
+                }
+            }
+        }
+
         public ObservableCollection<string> PermissionAuditLog { get; } = new();
 
-        private double? _accountBalance;
         public object AccountBalance => _accountBalance == null || !IsBridgeConnected
             ? "UNKNOWN (Waiting for upstream data) | Source: <missing provider>"
             : _accountBalance.Value;
 
-        private double? _accountEquity;
         public object AccountEquity => _accountEquity == null || !IsBridgeConnected
             ? "UNKNOWN (Waiting for upstream data) | Source: <missing provider>"
             : _accountEquity.Value;
 
-        private double? _marginUsed;
         public object MarginUsed => _marginUsed == null || !IsBridgeConnected
             ? "UNKNOWN (Waiting for upstream data) | Source: <missing provider>"
             : _marginUsed.Value;
 
-        private double? _cumulativeExposure;
         public object CumulativeExposure
         {
             get => _cumulativeExposure == null || !IsBridgeConnected
@@ -170,7 +185,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             }
         }
 
-        private double? _maxDrawdown;
         public object MaxDrawdown
         {
             get => _maxDrawdown == null || !IsBridgeConnected
@@ -188,7 +202,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             }
         }
 
-        private int? _openPositionsCount;
         public object OpenPositionsCount
         {
             get => _openPositionsCount == null || !IsBridgeConnected
@@ -253,7 +266,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             ? new List<string> { "UNKNOWN" }
             : _trainingService.ModelHistory;
 
-        // --- Panel 6: Native Engine Monitor Properties (CPU, Memory, Speed, Latencies) ---
+        // --- Panel 6: Native Engine Monitor Properties ---
         public double CpuUsage => _healthService.CpuUsage;
         public double EvaluationSpeed { get; set; } = 0.0;
         public double FeaturesPerSec { get; set; } = 0.0;
@@ -263,26 +276,9 @@ namespace Nexus.Desktop.ViewModels.Workspaces
         // --- Panel 7: Logs and Explainability Event Viewer ---
         public ObservableCollection<string> LiveEvents { get; } = new();
 
-        // --- News & Macro Integration ---
-        public string EconomicCalendarEvents => "UNKNOWN (Waiting for upstream data) | Source: <missing provider>";
-        public string NewsSentiment => "UNKNOWN (Waiting for upstream data) | Source: <missing provider>";
-        public string MacroEvents => "UNKNOWN (Waiting for upstream data) | Source: <missing provider>";
-        public string InterestRateDecisions => "UNKNOWN (Waiting for upstream data) | Source: <missing provider>";
-        public string MarketImpact => "UNKNOWN";
-        public string AffectedSymbols => "UNKNOWN";
-        public string AiReaction => "UNKNOWN (Awaiting Decision Engine response)";
-
-        // ===================================================
-        // ADVANCED PRODUCTION WORKSTATION ADDITIONS
-        // ===================================================
-
-        // 1. Explainability Timeline
         public IReadOnlyList<ExplainabilityTimelineEntry> ExplainabilityTimeline => _decisionService.ExplainabilityTimeline;
-
-        // 2. Decision Replay
         public IReadOnlyList<DecisionReplayPayload> HistoricalDecisions => _decisionService.HistoricalDecisions;
 
-        private DecisionReplayPayload? _selectedReplayDecision;
         public DecisionReplayPayload? SelectedReplayDecision
         {
             get => _selectedReplayDecision;
@@ -317,7 +313,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
         public string ReplayFinalDecision => SelectedReplayDecision?.FinalDecision ?? string.Empty;
         public string ReplayExecutionOutcome => SelectedReplayDecision?.ExecutionOutcome ?? string.Empty;
 
-        // 3. System Health Monitor
+        // --- Health States ---
         public string NativeEngineHealth => _healthService.NativeEngineStatus.ToString();
         public string DecisionEngineHealth => _healthService.DecisionEngineStatus.ToString();
         public string MarketIntelligenceHealth => _healthService.MarketIntelligenceStatus.ToString();
@@ -332,7 +328,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
         public double DecisionLatencyMs => _healthService.DecisionLatencyMs;
         public double ExecutionLatencyMs => _healthService.ExecutionLatencyMs;
 
-        // 4. Advanced Real-Time Sparkline Points Calculation
         public string SparklinePoints
         {
             get
@@ -359,7 +354,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             }
         }
 
-        // 5. Multi-dimensional Risk limit utilization margins
         public double DailyLossUtilization => MaxDrawdown is double d ? Math.Clamp((d / 5.0) * 100.0, 0.0, 100.0) : 0.0;
         public string DailyLossUtilizationColor => GetUtilizationColor(DailyLossUtilization);
 
@@ -371,14 +365,13 @@ namespace Nexus.Desktop.ViewModels.Workspaces
 
         private string GetUtilizationColor(double utilizationPercentage)
         {
-            if (utilizationPercentage == 0.0) return "#374151"; // Muted Gray
-            if (utilizationPercentage > 80.0) return "#EF4444"; // Red (Critical Alert)
-            if (utilizationPercentage > 50.0) return "#F59E0B"; // Amber (Warning Limit)
-            return "#10B981"; // Green (Secure Zone)
+            if (utilizationPercentage == 0.0) return "#374151";
+            if (utilizationPercentage > 80.0) return "#EF4444";
+            if (utilizationPercentage > 50.0) return "#F59E0B";
+            return "#10B981";
         }
 
-        // 6. What-If Scenario Overrides Simulation
-        private double _whatIfVolatility = 0.25;
+        // --- What If overrides ---
         public double WhatIfVolatility
         {
             get => _whatIfVolatility;
@@ -394,7 +387,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             }
         }
 
-        private double _whatIfMomentum = 0.75;
         public double WhatIfMomentum
         {
             get => _whatIfMomentum;
@@ -410,7 +402,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             }
         }
 
-        // Dynamically compute utilities based on Volatility and Momentum overrides
         public double SimulatedBuyExpectedUtility => BuyExpectedUtility is double b ? Math.Clamp(b + (WhatIfMomentum * 4.0) - (WhatIfVolatility * 6.0), -10.0, 10.0) : 0.0;
         public double SimulatedSellExpectedUtility => SellExpectedUtility is double s ? Math.Clamp(s - (WhatIfMomentum * 4.0) - (WhatIfVolatility * 6.0), -10.0, 10.0) : 0.0;
         public double SimulatedWaitExpectedUtility => WaitExpectedUtility is double w ? Math.Clamp(w + (WhatIfVolatility * 5.0), -10.0, 10.0) : 0.0;
@@ -430,12 +421,15 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                 return "BULLISH: Standard bullish continuation parameters verified. BUY expected utility remains the highest optimal expected path.";
             }
         }
+        #endregion
 
-        // --- Commands ---
+        #region Commands
         public ICommand EnableSimulationCommand { get; }
         public ICommand EnablePaperCommand { get; }
         public ICommand ToggleLivePermissionCommand { get; }
+        #endregion
 
+        #region Constructor
         public DashboardViewModel(
             IMt5BridgeService bridgeService,
             MarketDataPipeline pipeline,
@@ -451,7 +445,8 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             NativeMarketIntelligenceService intelligenceService,
             INativeCoreService nativeCore,
             IAccumulatorService managedAccumulator,
-            ICurrencyStrengthEngine currencyEngine)
+            ICurrencyStrengthEngine currencyEngine,
+            IDecisionEventStream decisionEventStream)
         {
             _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
             _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
@@ -462,6 +457,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             _executionService = executionService ?? throw new ArgumentNullException(nameof(executionService));
             _trainingService = trainingService ?? throw new ArgumentNullException(nameof(trainingService));
             _healthService = healthService ?? throw new ArgumentNullException(nameof(healthService));
+            _decisionEventStream = decisionEventStream ?? throw new ArgumentNullException(nameof(decisionEventStream));
 
             _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
             _neuralService = neuralService ?? throw new ArgumentNullException(nameof(neuralService));
@@ -495,8 +491,23 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             // Wire live tick updates
             _pipeline.OnPipelineTickProcessed += OnLiveTickProcessed;
 
-            // Traceable startup event logs (Rule 8)
-            LogEvent("SYSTEM", $"Initialized Institutional Trading Workstation | Source: DashboardViewModel | Trace: INIT-{Guid.NewGuid().ToString().Substring(0,8).ToUpper()} | Updated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+            #region PRO AUTOMATION: Real-Time Risk & Execution Live Logging to UI Console
+            // REASON: Decoupled connection to the live decision stream. 
+            // Intercepts automated protective stops adjustments, break-even movements, 
+            // trailing stops, and account level safety closures from the PositionManager
+            // and immediately renders them on the UI Event Viewer box.
+            _decisionEventStream.OnPositionManagement += (evt) => {
+                string levelStr = evt.ActionType.Contains("CRITICAL") || evt.ActionType.Contains("EMERGENCY") ? "ALERT" : "SECURITY";
+                LogEvent(levelStr, $"[Auto-Risk] {evt.Symbol} (Ticket ID: {evt.PositionId.ToString().Substring(0, 5).ToUpper()}): {evt.Reason}");
+            };
+
+            _decisionEventStream.OnRiskAdjusted += (evt) => {
+                LogEvent("SECURITY", $"[Risk Adjusted] {evt.RiskMetric} tuned from {evt.PreviousValue:F2} to {evt.NewValue:F2}. Reason: {evt.Reason}");
+            };
+            #endregion
+
+            // Traceable startup event logs
+            LogEvent("SYSTEM", $"Initialized Institutional Trading Workstation | Source: DashboardViewModel | Trace: INIT-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()} | Updated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
             LogEvent("INTELLIGENCE", $"Consensus Engine active - awaiting live tick stream... | Source: NativeMarketIntelligenceService | Trace: INT-AWAIT | Updated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
             LogEvent("DECISION", $"Decision Pipeline active - awaiting real-time market snapshots... | Source: DecisionEngine | Trace: DEC-AWAIT | Updated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
             LogEvent("SECURITY", $"Risk Execution Gate active - pre-trade risk limits loaded. | Source: RiskControlledExecutionEngine | Trace: RISK-ACTIVE | Updated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
@@ -504,7 +515,9 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             // Passive UI and engine simulation background loop
             Task.Run(() => RunDashboardUpdatesLoopAsync(_cts.Token));
         }
+        #endregion
 
+        #region Event Handlers
         private void InvokeOnUIThread(Action action)
         {
             var dispatcher = System.Windows.Application.Current?.Dispatcher;
@@ -537,7 +550,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             {
                 OnPropertyChanged(nameof(MarketRegime));
                 OnPropertyChanged(nameof(MarketQualityScore));
-                OnPropertyChanged(nameof(Liquidity));
                 OnPropertyChanged(nameof(Volatility));
                 OnPropertyChanged(nameof(Momentum));
                 OnPropertyChanged(nameof(D1Consensus));
@@ -644,20 +656,17 @@ namespace Nexus.Desktop.ViewModels.Workspaces
         {
             if (tick == null) return;
 
-            // Concurrency gate to ensure ticks are processed sequentially without race conditions or out-of-order rendering
             if (!await _tickSemaphore.WaitAsync(0))
-                return; // Dropped if a tick is already being processed to avoid UI lag and backlog queues
+                return;
 
             try
             {
-                // Convert to Domain Tick
                 var symbol = new Symbol(tick.SymbolName);
                 DateTime timestamp = tick.Timestamp.Kind == DateTimeKind.Unspecified
                     ? DateTime.SpecifyKind(tick.Timestamp, DateTimeKind.Utc)
                     : tick.Timestamp.ToUniversalTime();
                 var domainTick = new Tick(symbol, timestamp, tick.Bid, tick.Ask);
 
-                // Build real-time RiskState based on actual system parameters
                 double marginVal = _marginUsed ?? 0.0;
                 double equityVal = _accountEquity ?? 0.0;
                 double marginLevel = marginVal > 0 ? (equityVal / marginVal) * 100.0 : 100.0;
@@ -667,22 +676,18 @@ namespace Nexus.Desktop.ViewModels.Workspaces
 
                 var riskState = new RiskState(
                     marginLevel,
-                    5.0, // standard MaxDrawdownLimit
+                    5.0,
                     currentDd,
                     posCount,
                     exposureVal,
                     !_bridgeService.IsConnected
                 );
 
-                // Execute the entire multi-stage Clean Architecture Decision Pipeline!
-                // This calls Native C++ Engine -> Neural Evaluation (ONNX/Fallback) -> Decision Engine
                 var decision = await _intelligenceService.ProcessTickAndEvaluateAsync(domainTick, riskState, _cts.Token);
 
-                // Fetch real market state computed inside the pipeline
                 MarketState state = _nativeCore.IsAvailable ? _nativeCore.GetMarketState() : null!;
                 if (state == null)
                 {
-                    // Fallback to managed accumulator parameters
                     var delta = new FeatureDelta(tick.SymbolName, timestamp, tick.Ask - tick.Bid, tick.Bid);
                     var managedState = _managedAccumulator.UpdateState(delta);
                     state = new MarketState(
@@ -699,10 +704,8 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                     );
                 }
 
-                // Compute real-time Market Quality Score
                 int qualityScore = (int)Math.Clamp((state.Liquidity * 40.0 + (1.0 - state.Volatility) * 40.0 + (1.0 - state.Risk) * 20.0) * 100.0, 5.0, 95.0);
 
-                // Extract consensus signals
                 string d1 = state.Momentum > 0.2 ? "Bullish" : (state.Momentum < -0.2 ? "Bearish" : "Neutral");
                 string h4 = state.PriceStructure > 0.5 ? "Bullish" : "Neutral";
                 string m15 = state.Probability > 0.6 ? "Entry Zone" : "Momentum Neutral";
@@ -714,7 +717,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                     OnPropertyChanged(nameof(CurrentSymbol));
                     OnPropertyChanged(nameof(ProcessedTickCount));
 
-                    // Push real metrics to IMarketDashboardService
                     _marketService.PushMarketUpdate(
                         tick.SymbolName,
                         state.MarketRegime,
@@ -730,7 +732,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                     );
                 });
 
-                // Extract neural model predictions
                 double buyConfidence = 0.33;
                 double sellConfidence = 0.33;
                 double waitConfidence = 0.33;
@@ -738,7 +739,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                 double riskScore = 0.1;
                 string expectedValueStr = "Neutral";
 
-                // Get vector and execute evaluation for direct neural transparency
                 if (_neuralService.IsLoaded)
                 {
                     var vector = _nativeCore.IsAvailable ? _nativeCore.GetMarketVector() : new MarketVector(0.5, 0.5, 0.5, 0.2, 0.5, 0.9, 80.0, 1.0, 1.0, 0.1);
@@ -775,7 +775,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
 
                 BeginInvokeOnUIThread(() =>
                 {
-                    // Push real metrics to IDecisionDashboardService
                     _decisionService.PushDecisionUpdate(
                         decision.Action.ToString(),
                         confidence,
@@ -788,7 +787,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                         decision.Reason
                     );
 
-                    // Add an explainability timeline entry for the state transition
                     _decisionService.AddTimelineEntry(new ExplainabilityTimelineEntry
                     {
                         TransitionType = decision.Action.ToString(),
@@ -802,10 +800,21 @@ namespace Nexus.Desktop.ViewModels.Workspaces
 
                     OnPropertyChanged(nameof(ExplainabilityTimeline));
 
-                    // Detailed Traced Logs (Rule 8)
                     string traceId = $"DEC-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
                     LogEvent("DECISION", $"Action: {decision.Action} | Confidence: {confidence:P0} | Source: DecisionScenarioSearchEngine | Trace: {traceId} | Updated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
                     LogEvent("INTELLIGENCE", $"Market Regime: {state.MarketRegime} | Quality: {qualityScore}/100 | Source: MarketRegimeDetector | Trace: {traceId} | Updated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+
+                    // PRO ARCHIBILITY: Fire the event for ALL decisions to populate the Explainability Timeline
+                    if (decision != null)
+                    {
+                        _decisionEventStream.PublishDecisionCreated(new DecisionCreatedEvent(
+                            decisionId: Guid.NewGuid(),
+                            symbol: tick.SymbolName,
+                            action: decision.Action.ToString(),
+                            confidence: confidence,
+                            reason: decision.Reason
+                        ));
+                    }
                 });
             }
             catch (Exception ex)
@@ -837,6 +846,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             if (_executionService.CurrentProfile != ExecutionDashboardProfile.Live)
             {
                 LogEvent("SECURITY", "REJECTED: Cannot grant live permission unless active profile is set to LIVE.");
+                OnPropertyChanged(nameof(IsLivePermissionGranted));
                 return;
             }
 
@@ -848,18 +858,26 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                 {
                     return await ConfirmCallback(prompt);
                 }
-                // Fallback inside headless tests/contexts
-                return true;
+
+                var dialogResult = System.Windows.MessageBox.Show(
+                    prompt,
+                    "NEXUS SECURITY HANDSHAKE - LIVE ACTIVATION",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Warning);
+
+                return await Task.FromResult(dialogResult == System.Windows.MessageBoxResult.Yes);
             });
 
             if (success)
             {
-                LogEvent("SECURITY", IsLivePermissionGranted ? "SECURITY ACCESS GRANTED - LIVE TRADING ROUTING ONLINE" : "SECURITY ACCESS REVOKED - LIVE TRADING INACTIVE");
+                LogEvent("SECURITY", _executionService.IsLivePermissionGranted ? "SECURITY ACCESS GRANTED - LIVE TRADING ROUTING ONLINE" : "SECURITY ACCESS REVOKED - LIVE TRADING INACTIVE");
             }
             else
             {
                 LogEvent("SECURITY", "SECURITY ACCESS DENIED - Handshake verification failed or user aborted.");
             }
+
+            OnPropertyChanged(nameof(IsLivePermissionGranted));
         }
 
         public void LogEvent(string component, string message)
@@ -879,7 +897,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                 {
                     await Task.Delay(2000, token);
 
-                    // 1. Process CPU, Heap Memory, and Thread Diagnostics
                     double cpu = 4.2;
                     double memory = 42.5;
                     string threadPoolStr = "12/250 Active Threads (0% Queue)";
@@ -897,9 +914,8 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                             ? (proc.TotalProcessorTime.TotalMilliseconds / (Environment.ProcessorCount * DateTime.UtcNow.Ticks / 100000.0)) * 100.0
                             : 4.5, 0.5, 95.0);
                     }
-                    catch {}
+                    catch { }
 
-                    // 2. Query Database Health Status
                     SystemHealthStatus dbHealth = SystemHealthStatus.Healthy;
                     int expCount = 0;
                     int completedCount = 0;
@@ -913,10 +929,8 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                         using var scope = _scopeFactory.CreateScope();
                         var dbContext = scope.ServiceProvider.GetRequiredService<NexusDbContext>();
 
-                        // Check DB connection health
                         _ = await dbContext.Accounts.AnyAsync(token);
 
-                        // Load real completed experience statistics from DB using database-side aggregations
                         expCount = await dbContext.ExperienceRecords.CountAsync(token);
                         completedCount = await dbContext.ExperienceRecords.CountAsync(r => r.IsCompleted, token);
 
@@ -945,7 +959,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                             trainingMaxDrawdown = minPips < 0 ? Math.Abs(minPips / 100.0) : 0.0;
                         }
 
-                        // Load real historical decisions and feed the Decision Replay Monitor
                         var recentRecords = await dbContext.ExperienceRecords
                             .OrderByDescending(r => r.TimestampUtc)
                             .Take(10)
@@ -979,12 +992,12 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                             }
                         });
                     }
-                    catch
+                    catch (Exception dbEx)
                     {
                         dbHealth = SystemHealthStatus.Warning;
+                        Console.WriteLine($"[DB UPDATES LOOP ERROR] {dbEx.Message}");
                     }
 
-                    // 3. Fetch Real MT5 Account Snapshots & Positions
                     SystemHealthStatus bridgeHealth = IsBridgeConnected ? SystemHealthStatus.Healthy : SystemHealthStatus.Warning;
                     double balance = 0.0;
                     double equity = 0.0;
@@ -996,7 +1009,20 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                     if (IsBridgeConnected)
                     {
                         var snapshot = await _bridgeService.GetAccountSnapshotAsync(token);
-                        var positions = await _tradingService.GetOpenPositionsAsync(token);
+
+                        // REASON: Resolve the scoped PositionManager inside a temporary background scope 
+                        // and execute the 'SynchronizePositionsAsync' loop every 2 seconds.
+                        // This awakens the dynamic risk engine, trail stops, and default SL/TP initialization.
+                        int openCountVal = 0;
+                        using (var scope = _scopeFactory.CreateScope())
+                        {
+                            var posManager = scope.ServiceProvider.GetService<Nexus.Execution.Management.PositionManager>();
+                            if (posManager != null)
+                            {
+                                await posManager.SynchronizePositionsAsync(token);
+                                openCountVal = posManager.OpenPositions.Count;
+                            }
+                        }
 
                         if (snapshot != null)
                         {
@@ -1005,18 +1031,16 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                             margin = (double)snapshot.Margin;
                             exposure = (double)(snapshot.Equity - snapshot.FreeMargin);
                             maxDd = snapshot.Balance > 0 ? ((double)(snapshot.Balance - snapshot.Equity) / (double)snapshot.Balance) * 100.0 : 0.0;
-                            openCount = positions?.Count ?? 0;
+                            openCount = openCountVal; // Synced directly from the risk engine's tracked memory
                         }
                     }
 
-                    // Compute High-Precision Pipeline Latency Metrics
                     double tickLatency = _pipeline.LastProcessingLatencyMs;
                     double decisionLatency = _intelligenceService.InteropLatencyMs + _intelligenceService.TickProcessingLatencyMs + _intelligenceService.MarketStateUpdateTimeMs + _intelligenceService.VectorGenerationTimeMs + _neuralService.InferenceLatencyMs;
                     double execLatency = _bridgeService.PingLatencyMs;
 
                     BeginInvokeOnUIThread(() =>
                     {
-                        // Update health monitor parameters dynamically using real system diagnostics
                         _healthService.PushHealthUpdate(
                             _nativeCore.IsAvailable ? SystemHealthStatus.Healthy : SystemHealthStatus.Warning,
                             SystemHealthStatus.Healthy,
@@ -1035,7 +1059,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
 
                         if (IsBridgeConnected)
                         {
-                            // Update execution metrics with real MT5 balance and positions
                             _executionService.PushExecutionUpdate(
                                 balance,
                                 equity,
@@ -1046,7 +1069,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                             );
                         }
 
-                        // Update offline learning pipeline metrics with real model metadata & experience database statistics
                         _trainingService.PushTrainingUpdate(
                             _neuralService.CurrentModelName,
                             _neuralService.ModelVersion,
@@ -1054,7 +1076,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                             expCount,
                             "Running (Autonomous learning online)",
                             "PASSED (Real-time validated)",
-                            winRate > 0 ? winRate : 64.2, // fallback only if no records in DB
+                            winRate > 0 ? winRate : 64.2,
                             avgReward != 0 ? avgReward : 8.4,
                             trainingMaxDrawdown > 0 ? trainingMaxDrawdown : 4.2,
                             profitFactor,
@@ -1087,5 +1109,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             _cts.Cancel();
             _cts.Dispose();
         }
+        #endregion
     }
 }

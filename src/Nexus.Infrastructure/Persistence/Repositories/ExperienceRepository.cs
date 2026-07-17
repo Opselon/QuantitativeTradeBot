@@ -32,7 +32,7 @@ namespace Nexus.Infrastructure.Persistence.Repositories
             var list = new List<ExperienceRecord>();
             foreach (var m in dbModels)
             {
-                // Parse flat CSV vector back
+                // Parse flat CSV vector back into the high-performance array required by neural models
                 float[] features = Array.Empty<float>();
                 if (!string.IsNullOrWhiteSpace(m.MarketVectorCsv))
                 {
@@ -42,7 +42,7 @@ namespace Nexus.Infrastructure.Persistence.Repositories
                             .Select(float.Parse)
                             .ToArray();
                     }
-                    catch {}
+                    catch { }
                 }
 
                 var record = new ExperienceRecord(
@@ -65,6 +65,29 @@ namespace Nexus.Infrastructure.Persistence.Repositories
             }
 
             return list;
+        }
+
+        /// <summary>
+        /// Locates the active (incomplete) AI prediction for the symbol and updates it with the final outcome.
+        /// This effectively closes the feedback loop for Auto-Train functionality.
+        /// </summary>
+        public async Task CompleteExperienceAsync(string symbol, double realizedPips, CancellationToken cancellationToken = default)
+        {
+            // Find the most recent incomplete experience for the given symbol safely
+            var dbModel = await _dbContext.ExperienceRecords
+                .Where(e => e.Symbol == symbol && !e.IsCompleted)
+                .OrderByDescending(e => e.TimestampUtc)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (dbModel != null)
+            {
+                // Register real-world performance as the target label for neural weights adjustment
+                dbModel.RealizedPips = realizedPips;
+                dbModel.IsCompleted = true;
+
+                _dbContext.ExperienceRecords.Update(dbModel);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
         }
     }
 }

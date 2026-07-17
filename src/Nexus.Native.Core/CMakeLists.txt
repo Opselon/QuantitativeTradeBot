@@ -22,9 +22,11 @@ set(SOURCES
 # Shared library
 add_library(nexus_native_core SHARED ${SOURCES})
 
-# Configure compiler flags
+# Configure compiler flags (Calibrated for MSVC VS 2026 compiler)
 if(MSVC)
-    target_compile_options(nexus_native_core PRIVATE /W4 /WX)
+    # REASON: Added /wd4324 to suppress structure alignment padding warnings.
+    # alignas(32) is required for bare-metal AVX2 vector optimizations, so padding is fully expected.
+    target_compile_options(nexus_native_core PRIVATE /W4 /WX /wd4324)
 else()
     target_compile_options(nexus_native_core PRIVATE -Wall -Wextra -Werror -O3 -fPIC)
 endif()

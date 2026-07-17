@@ -1,92 +1,114 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexus.Application.Ports;
-using Nexus.Application.Observability;
-using Nexus.Core.Entities;
-using Nexus.Core.ValueObjects;
+using Nexus.Infrastructure.Persistence.Models;
+using Nexus.Infrastructure.Persistence;
 
 namespace Nexus.Infrastructure.Workers
 {
-    public class MarketDataIngestionWorker : BackgroundService
+    /// <summary>
+    /// Background Service that buffers streamed live price ticks in a high-speed queue,
+    /// and performs optimized bulk-insertions into the SQL Database every 1 second.
+    /// This protects the UI and network threads from database write latency.
+    /// </summary>
+    public sealed class MarketDataIngestionWorker : BackgroundService
     {
-        private readonly IMarketDataFeed _marketDataFeed;
-        private readonly IMarketDataRepository _marketDataRepository;
-        private readonly ChannelWriter<Tick> _tickChannelWriter;
+        #region Private Fields
+        private readonly IMt5BridgeService _bridgeService;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<MarketDataIngestionWorker> _logger;
 
+        // Lock-free high-speed queue for temporary tick buffering
+        private readonly ConcurrentQueue<PriceTickEnvelope> _tickBuffer = new();
+        private readonly TimeSpan _flushInterval = TimeSpan.FromSeconds(1); // Bulk write interval
+        #endregion
+
+        #region Constructor
         public MarketDataIngestionWorker(
-            IMarketDataFeed marketDataFeed,
-            IMarketDataRepository marketDataRepository,
-            ChannelWriter<Tick> tickChannelWriter,
+            IMt5BridgeService bridgeService,
+            IServiceScopeFactory scopeFactory,
             ILogger<MarketDataIngestionWorker> logger)
         {
-            _marketDataFeed = marketDataFeed ?? throw new ArgumentNullException(nameof(marketDataFeed));
-            _marketDataRepository = marketDataRepository ?? throw new ArgumentNullException(nameof(marketDataRepository));
-            _tickChannelWriter = tickChannelWriter ?? throw new ArgumentNullException(nameof(tickChannelWriter));
+            _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
+            _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+        #endregion
 
+        #region Background Worker Execution
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogStructured(LogLevel.Information, LogEventIds.WorkerStartup, "Market Data Ingestion Worker is starting...");
+            _logger.LogInformation("[MarketDataIngestionWorker] High-speed database bulk-writer started.");
 
-            _marketDataFeed.OnTickReceived += OnTickReceivedAsync;
+            // Subscribe to the live MT5 Bridge Tick Stream
+            _bridgeService.OnTickReceived += EnqueueTick;
 
-            await _marketDataFeed.StartAsync(stoppingToken);
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(_flushInterval, stoppingToken);
+                    await FlushBufferToDatabaseAsync(stoppingToken);
+                }
+                catch (OperationCanceledException) { break; }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[MarketDataIngestionWorker] Error flushing tick buffers.");
+                }
+            }
 
-            try
-            {
-                // Wait until cancellation is requested
-                await Task.Delay(Timeout.Infinite, stoppingToken);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogStructured(LogLevel.Information, LogEventIds.WorkerShutdown, "Market Data Ingestion Worker cancellation requested.");
-            }
-            finally
-            {
-                _marketDataFeed.OnTickReceived -= OnTickReceivedAsync;
-                await _marketDataFeed.StopAsync(CancellationToken.None);
-                _logger.LogStructured(LogLevel.Information, LogEventIds.WorkerShutdown, "Market Data Ingestion Worker stopped.");
-            }
+            _bridgeService.OnTickReceived -= EnqueueTick;
+            _logger.LogInformation("[MarketDataIngestionWorker] Ingestion worker stopped.");
         }
 
-        private async Task OnTickReceivedAsync(PriceTickEnvelope tickEnvelope)
+        private void EnqueueTick(PriceTickEnvelope tick)
         {
-            var context = WorkflowContext.Create("MarketDataIngestion", subsystem: "Ingestion");
-            context.Symbol = tickEnvelope.SymbolName;
+            // Thread-safe O(1) buffer append
+            _tickBuffer.Enqueue(tick);
+        }
+        #endregion
 
-            using var scope = _logger.BeginWorkflowScope(context);
+        #region Bulk SQL Write Engine
+        private async Task FlushBufferToDatabaseAsync(CancellationToken ct)
+        {
+            if (_tickBuffer.IsEmpty) return;
+
+            var ticksToWrite = new List<TickDbModel>();
+            while (_tickBuffer.TryDequeue(out var tick))
+            {
+                ticksToWrite.Add(new TickDbModel
+                {
+                    Symbol = tick.SymbolName,
+                    TimestampUtc = tick.Timestamp.ToUniversalTime(),
+                    Bid = tick.Bid,
+                    Ask = tick.Ask,
+                    Volume = tick.SequenceNumber // Sequence or volume mapping
+                });
+            }
+
+            _logger.LogDebug("[MarketDataIngestionWorker] Flushing {Count} ticks to operational database...", ticksToWrite.Count);
+
+            // Open an isolated, fast database scope for bulk insertion
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<NexusDbContext>();
 
             try
             {
-                _logger.LogStructured(LogLevel.Debug, LogEventIds.MarketDataReceived,
-                    "Market data received: Symbol={Symbol}, Bid={Bid}, Ask={Ask}",
-                    tickEnvelope.SymbolName, tickEnvelope.Bid, tickEnvelope.Ask);
-
-                // Convert envelope to Zero-Allocation Tick
-                var symbol = new Symbol(tickEnvelope.SymbolName);
-                var tick = new Tick(symbol, tickEnvelope.Timestamp, tickEnvelope.Bid, tickEnvelope.Ask);
-
-                // 1. Persist the tick
-                await _marketDataRepository.AppendTickAsync(tick);
-
-                // 2. Queue for Strategy Dispatching
-                if (!_tickChannelWriter.TryWrite(tick))
-                {
-                    // If channel writer is full/blocked, use async write to support backpressure
-                    await _tickChannelWriter.WriteAsync(tick);
-                }
+                // Bulk insert via EF Core (Optimized batching)
+                await dbContext.Ticks.AddRangeAsync(ticksToWrite, ct);
+                await dbContext.SaveChangesAsync(ct);
             }
             catch (Exception ex)
             {
-                _logger.LogStructuredError(ex, LogEventIds.MarketDataReceived,
-                    "Error processing incoming tick for {Symbol}", tickEnvelope.SymbolName);
+                _logger.LogError(ex, "[MarketDataIngestionWorker] Database bulk-insert transaction failed.");
             }
         }
+        #endregion
     }
 }

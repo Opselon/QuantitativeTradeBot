@@ -314,41 +314,69 @@ namespace Nexus.Infrastructure.Mt5Bridge
             }
         }
 
+        #region Dynamic Case-Insensitive Symbol Management
+        /// <summary>
+        /// Registers a case-insensitive symbol subscription and dispatches the command to MT5.
+        /// Normalizes strings to prevent double-subscription and casing mismatches.
+        /// </summary>
         public async Task SubscribeSymbolAsync(string symbol, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(symbol)) throw new ArgumentException("Symbol cannot be empty.", nameof(symbol));
 
+            // REASON: Normalize casing and remove trailing whitespaces to prevent collection mismatch
+            string normalizedSymbol = symbol.Trim().ToUpperInvariant();
+
             lock (_lock)
             {
-                if (_subscribedSymbols.Contains(symbol)) return;
-                _subscribedSymbols.Add(symbol);
+                if (_subscribedSymbols.Any(s => string.Equals(s, normalizedSymbol, StringComparison.OrdinalIgnoreCase))) return;
+                _subscribedSymbols.Add(normalizedSymbol);
             }
 
-            _logger.LogInformation("[Mt5BridgeService] Subscribing to symbol '{Symbol}'", symbol);
+            _logger.LogInformation("[Mt5BridgeService] Subscribing to symbol '{Symbol}'", normalizedSymbol);
 
-            if (IsConnected && IsAuthenticated)
+            if (IsConnected)
             {
-                await SendSubscriptionCommandAsync(symbol, "SubscribeSymbol", ct);
+                await SendSubscriptionCommandAsync(normalizedSymbol, "SubscribeSymbol", ct);
             }
         }
 
+        /// <summary>
+        /// Removes an active symbol subscription with strict case-insensitivity, 
+        /// and dispatches the shutdown stream command to the MT5 EA.
+        /// </summary>
         public async Task UnsubscribeSymbolAsync(string symbol, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(symbol)) throw new ArgumentException("Symbol cannot be empty.", nameof(symbol));
 
+            // REASON: Normalize inputs to guarantee matching existing uppercase collection elements
+            string normalizedSymbol = symbol.Trim().ToUpperInvariant();
+
+            bool removed = false;
             lock (_lock)
             {
-                if (!_subscribedSymbols.Remove(symbol)) return;
+                // Case-insensitive locator and removal
+                var existing = _subscribedSymbols.FirstOrDefault(s => string.Equals(s, normalizedSymbol, StringComparison.OrdinalIgnoreCase));
+                if (existing != null)
+                {
+                    _subscribedSymbols.Remove(existing);
+                    removed = true;
+                }
             }
 
-            _logger.LogInformation("[Mt5BridgeService] Unsubscribing from symbol '{Symbol}'", symbol);
-
-            if (IsConnected && IsAuthenticated)
+            if (!removed)
             {
-                await SendSubscriptionCommandAsync(symbol, "UnsubscribeSymbol", ct);
+                _logger.LogWarning("[Mt5BridgeService] Unsubscribe aborted. Symbol '{Symbol}' was not found in active subscriptions.", normalizedSymbol);
+                return;
+            }
+
+            _logger.LogInformation("[Mt5BridgeService] Unsubscribing from symbol '{Symbol}'", normalizedSymbol);
+
+            if (IsConnected)
+            {
+                await SendSubscriptionCommandAsync(normalizedSymbol, "UnsubscribeSymbol", ct);
             }
         }
-
+        #endregion
         private async Task SendSubscriptionCommandAsync(string symbol, string command, CancellationToken ct)
         {
             string requestId = Guid.NewGuid().ToString();

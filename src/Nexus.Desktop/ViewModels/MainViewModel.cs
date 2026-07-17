@@ -1,19 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Input;
 using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Application.Ports;
 using Nexus.Application.Security;
 using Nexus.Application.Workflows;
 using Nexus.Application.Workflows.DTOs;
 using Nexus.Desktop.Services;
-using Nexus.Infrastructure.Mt5Bridge;
 using Nexus.Desktop.ViewModels.Workspaces;
+using Nexus.Infrastructure.Mt5Bridge;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Reflection;
+using System.Windows.Input;
 
 namespace Nexus.Desktop.ViewModels
 {

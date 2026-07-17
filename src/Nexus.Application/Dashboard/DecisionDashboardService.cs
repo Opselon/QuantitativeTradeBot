@@ -27,10 +27,35 @@ namespace Nexus.Application.Dashboard
 
         // Advanced features: Explainability Timeline & Decision Replay
         private readonly List<ExplainabilityTimelineEntry> _explainabilityTimeline = new();
-        public IReadOnlyList<ExplainabilityTimelineEntry> ExplainabilityTimeline => _explainabilityTimeline;
+
+        // REASON: Returns a thread-safe snapshot copy (.ToList) under a lock block.
+        // This prevents WPF's ItemContainerGenerator from throwing "ItemsControl is inconsistent with its items source"
+        // when background threads append explainability entries concurrently with UI rendering.
+        public IReadOnlyList<ExplainabilityTimelineEntry> ExplainabilityTimeline
+        {
+            get
+            {
+                lock (_explainabilityTimeline)
+                {
+                    return _explainabilityTimeline.ToList();
+                }
+            }
+        }
 
         private readonly List<DecisionReplayPayload> _historicalDecisions = new();
-        public IReadOnlyList<DecisionReplayPayload> HistoricalDecisions => _historicalDecisions;
+
+        // REASON: Returns a thread-safe snapshot copy (.ToList) under a lock block to protect WPF's ListBox binding.
+        public IReadOnlyList<DecisionReplayPayload> HistoricalDecisions
+        {
+            get
+            {
+                lock (_historicalDecisions)
+                {
+                    return _historicalDecisions.ToList();
+                }
+            }
+        }
+
 
         public event Action<DecisionDashboardData>? OnDecisionUpdated;
 

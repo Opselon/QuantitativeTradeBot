@@ -1,38 +1,31 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
-using Nexus.Application.Ports;
-using Nexus.Desktop.Services;
-using Nexus.Application.Mt5Bridge.Contracts;
-using Nexus.Desktop.ViewModels;
-using Nexus.Desktop.ViewModels.Workspaces;
-using Nexus.Application.Dashboard;
-using Nexus.Infrastructure.Mt5Bridge;
-using Nexus.Core.Interfaces;
-using Nexus.Core.Entities;
-using Nexus.Application.Workflows.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Nexus.Core.Enums;
+using Nexus.Application.Dashboard;
 using Nexus.Application.Intelligence;
 using Nexus.Application.Mt5;
+using Nexus.Application.Mt5Bridge.Contracts;
+using Nexus.Application.Ports;
+using Nexus.Application.Workflows.DTOs;
+using Nexus.Core.Entities;
+using Nexus.Core.Interfaces;
+using Nexus.Desktop.Services;
+using Nexus.Desktop.ViewModels;
+using Nexus.Desktop.ViewModels.Workspaces;
+using Nexus.Infrastructure.Mt5Bridge;
 using Nexus.Infrastructure.Persistence;
+using System.Collections.ObjectModel;
 
 namespace Nexus.Tests.Unit.Desktop
 {
     public class DashboardViewModelTests
     {
         private DashboardViewModel CreateViewModel(
-            IMarketDashboardService market,
-            IDecisionDashboardService decision,
-            IExecutionDashboardService execution,
-            ITrainingDashboardService training,
-            ISystemHealthMonitorService health,
-            IServiceScopeFactory scopeFactory)
+              IMarketDashboardService market,
+              IDecisionDashboardService decision,
+              IExecutionDashboardService execution,
+              ITrainingDashboardService training,
+              ISystemHealthMonitorService health,
+              IServiceScopeFactory scopeFactory)
         {
             var fakeBridge = new FakeBridgeService();
             var fakeNative = new FakeNativeCore();
@@ -54,6 +47,7 @@ namespace Nexus.Tests.Unit.Desktop
                 fakeDecisionEngine
             );
 
+            // Added new DecisionEventStream() as the 16th argument to satisfy upgraded DI constructor signature
             return new DashboardViewModel(
                 fakeBridge,
                 pipeline,
@@ -69,7 +63,8 @@ namespace Nexus.Tests.Unit.Desktop
                 intelligenceService,
                 fakeNative,
                 fakeAccumulator,
-                fakeCurrency
+                fakeCurrency,
+                new DecisionEventStream()
             );
         }
 
@@ -502,6 +497,11 @@ namespace Nexus.Tests.Unit.Desktop
         private class FakeExperienceRepository : IExperienceRepository
         {
             public List<ExperienceRecord> Records { get; } = new List<ExperienceRecord>();
+
+            public Task CompleteExperienceAsync(string symbol, double realizedPips, CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
 
             public Task<IReadOnlyList<ExperienceRecord>> GetRecentExperiencesAsync(int limit, CancellationToken ct = default)
             {

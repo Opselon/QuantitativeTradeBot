@@ -34,7 +34,16 @@ namespace Nexus.Infrastructure.Mt5Bridge
         /// </summary>
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            // If an older app instance is running, stop and dispose it first.
+            if (_app != null)
+            {
+                await _app.StopAsync(cancellationToken);
+                await _app.DisposeAsync();
+                _app = null;
+            }
+
             var builder = WebApplication.CreateBuilder();
+
             builder.WebHost.ConfigureKestrel(options =>
             {
                 // Converted port 5005 -> 8080 to support native MT5 WebRequests directly
@@ -59,8 +68,10 @@ namespace Nexus.Infrastructure.Mt5Bridge
 
             _app = app;
             await _app.StartAsync(cancellationToken);
+
             Console.WriteLine("[LocalHttpApiServer] Kestrel REST Server listening on http://localhost:8080");
         }
+
 
         /// <summary>
         /// Shuts down the local WebApplication.
