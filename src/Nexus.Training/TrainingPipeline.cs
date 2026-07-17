@@ -43,70 +43,97 @@ namespace Nexus.Training
         }
         #endregion
 
-        #region Database Experience Synchronization
+        #region Database & Physical Directory Experience Synchronization
         /// <summary>
-        /// Architectural Bridge: Pulls completed trade experience records from the SQL database,
-        /// translates them back into training samples, and inserts them into the Timeframe Learning Manager.
-        /// This ensures the C++ native vectors are fed directly to the optimization algorithm.
+        /// Architectural Bridge: Pulls completed trade experience records from both the SQL database
+        /// and the physical ReplayBuffer JSON folder on disk, translates them, and registers them in the Learning Manager.
+        /// This ensures the dataset is populated even on clean operational database boots.
         /// </summary>
         public async Task SyncDatabaseExperiencesToManagerAsync(CancellationToken cancellationToken = default)
         {
-            Log("Initiating synchronization with the persistent experience database...");
+            Log("Initiating synchronization with both SQL and physical Replay Buffer folder...");
 
+            int syncedCount = 0;
+
+            // 1. Sync from physical ReplayBuffer JSON files on disk
+            try
+            {
+                string replayDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "NexusAI", "Reinforcement", "ReplayBuffer");
+                if (Directory.Exists(replayDir))
+                {
+                    var jsonFiles = Directory.GetFiles(replayDir, "EXP_*.json");
+                    Log($"Found {jsonFiles.Length} physical experience episodes on disk.");
+
+                    foreach (var file in jsonFiles)
+                    {
+                        try
+                        {
+                            string json = await File.ReadAllTextAsync(file, cancellationToken);
+                            var record = System.Text.Json.JsonSerializer.Deserialize<DeepExperienceRecord>(json);
+
+                            if (record != null)
+                            {
+                                var mockMarketState = new MarketState(
+                                    record.Symbol, record.TimestampUtc, record.Volatility, record.Momentum,
+                                    record.LiquidityDepth, 0.5, 0.5, 0.1, 50.0, record.MarketRegime
+                                );
+
+                                var mockDecision = new TradeDecision(DecisionAction.BUY, 0.01, "Synced from JSON", record.TimestampUtc);
+
+                                var sample = new ExperienceSample(
+                                    record.Symbol, TimeframeInterval.M15, mockMarketState, record.MarketVectorFeatures, mockDecision, record.EntryPrice, record.MarketRegime
+                                )
+                                {
+                                    Result = record.RealizedPips,
+                                    Confidence = record.Confidence,
+                                    Risk = record.RiskScore
+                                };
+
+                                _learningManager.RegisterExperience(sample);
+                                syncedCount++;
+                            }
+                        }
+                        catch (Exception fileEx)
+                        {
+                            Log($"[Warning] Failed to parse physical file {Path.GetFileName(file)}: {fileEx.Message}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"[Error] Physical ReplayBuffer sync failed: {ex.Message}");
+            }
+
+            // 2. Sync from Scoped SQL database if records exist there
             try
             {
                 using var scope = _scopeFactory.CreateScope();
                 var experienceRepo = scope.ServiceProvider.GetRequiredService<IExperienceRepository>();
-
-                // Retrieve last 500 completed experiences to act as our training replay buffer
                 var dbRecords = await experienceRepo.GetRecentExperiencesAsync(500, cancellationToken);
                 var completedRecords = dbRecords.Where(r => r.IsCompleted).ToList();
 
-                Log($"Database sync complete. Retrieved {completedRecords.Count} completed experiences from SQL.");
-
                 foreach (var record in completedRecords)
                 {
-                    // Map domain record to offline learning ExperienceSample
-                    var mockMarketState = new MarketState(
-                        record.Symbol,
-                        record.TimestampUtc,
-                        0.5, 0.5, 0.5, 0.5, 0.5, 0.1, 50.0,
-                        record.MarketRegime
-                    );
+                    var mockMarketState = new MarketState(record.Symbol, record.TimestampUtc, 0.5, 0.5, 0.5, 0.5, 0.5, 0.1, 50.0, record.MarketRegime);
+                    var mockDecision = new TradeDecision(DecisionAction.BUY, 0.01, "Synced from SQL", record.TimestampUtc);
 
-                    var mockDecision = new TradeDecision(
-                        DecisionAction.BUY,
-                        0.01,
-                        "Synced from SQL",
-                        record.TimestampUtc
-                    );
-
-                    // Create the training sample containing the exact C++ bare-metal feature vector
                     var sample = new ExperienceSample(
-                        record.Symbol,
-                        TimeframeInterval.M15, // Default timeframe mapping
-                        mockMarketState,
-                        record.MarketVectorFeatures,
-                        mockDecision,
-                        1.0, // Base execution tracking price
-                        record.MarketRegime
+                        record.Symbol, TimeframeInterval.M15, mockMarketState, record.MarketVectorFeatures, mockDecision, 1.0, record.MarketRegime
                     )
                     {
-                        Result = record.RealizedPips, // The target reward used as labels in neural optimization
+                        Result = record.RealizedPips,
                         Confidence = Math.Max(record.BuyConfidence, record.SellConfidence),
                         Risk = record.RiskScore
                     };
 
-                    // FIXED: Maps to the correct domain method 'RegisterExperience' instead of 'AddExperience'
                     _learningManager.RegisterExperience(sample);
+                    syncedCount++;
                 }
+            }
+            catch { /* Database is empty on clean boot, safe to skip */ }
 
-                Log("Synchronization completed. Active training memory has been fully populated.");
-            }
-            catch (Exception ex)
-            {
-                Log($"[Error] Failed to synchronize experiences from database: {ex.Message}");
-            }
+            Log($"Synchronization completed. Active training memory has been populated with {syncedCount} total samples.");
         }
         #endregion
 

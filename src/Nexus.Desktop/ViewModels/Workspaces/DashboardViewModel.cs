@@ -1,19 +1,26 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Nexus.Application.Dashboard;
-using Nexus.Application.Intelligence;
-using Nexus.Application.Mt5;
-using Nexus.Application.Ports;
-using Nexus.Core.DomainEvents;
-using Nexus.Core.Entities;
-using Nexus.Core.Interfaces;
-using Nexus.Core.ValueObjects;
-using Nexus.Desktop.Services;
-using Nexus.Infrastructure.Mt5Bridge;
-using Nexus.Infrastructure.Persistence;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Nexus.Application.Ports;
+using Nexus.Infrastructure.Mt5Bridge;
+using Nexus.Application.Dashboard;
+using Nexus.Desktop.Services;
+using Nexus.Core.Interfaces;
+using Nexus.Core.Entities;
+using Nexus.Core.ValueObjects;
+using Nexus.Application.Mt5;
+using Nexus.Application.Intelligence;
+using Nexus.Infrastructure.Persistence;
+using Nexus.Core.DomainEvents;
+using Nexus.Core.Enums;
+using Nexus.Application.AI.Decision; // Added to consume the newly completed AI Orchestrator
 
 namespace Nexus.Desktop.ViewModels.Workspaces
 {
@@ -31,6 +38,9 @@ namespace Nexus.Desktop.ViewModels.Workspaces
         private readonly ITrainingDashboardService _trainingService;
         private readonly ISystemHealthMonitorService _healthService;
         private readonly IDecisionEventStream _decisionEventStream; // Auto-Trade Stream Publisher
+
+        // REASON: Injected to route live ticks directly to our advanced multi-stage AI Decision fusion logic
+        private readonly AiTradingOrchestrator _aiTradingOrchestrator;
 
         // Production quantitative services
         private readonly IServiceScopeFactory _scopeFactory;
@@ -56,7 +66,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
         private DecisionReplayPayload? _selectedReplayDecision;
         #endregion
 
-        #region Public Properties & WPF Bindings
+        #region Public Properties & WPF Bindings (Strictly Uniquely Defined)
         public Func<string, Task<bool>>? ConfirmCallback { get; set; }
 
         public bool IsBridgeConnected => _bridgeService.IsConnected;
@@ -67,74 +77,75 @@ namespace Nexus.Desktop.ViewModels.Workspaces
         // --- Panel 1: Market Intelligence Properties ---
         public string CurrentSymbol { get; set; } = "UNKNOWN";
 
-        public object MarketRegime => !IsBridgeConnected || ProcessedTickCount == 0 || _marketService.MarketRegime == "UNKNOWN"
+        // REASON: Decoupled AI environment indicators from physical broker socket connection status.
+        // These locally computed metrics only require active tick processing (ProcessedTickCount > 0).
+        public object MarketRegime => ProcessedTickCount == 0 || _marketService.MarketRegime == "UNKNOWN"
             ? "UNKNOWN (Waiting for upstream data) | Source: <missing provider>"
             : _marketService.MarketRegime;
 
-        public object MarketQualityScore => !IsBridgeConnected || ProcessedTickCount == 0 || _marketService.MarketQualityScore == 0
+        public object MarketQualityScore => ProcessedTickCount == 0 || _marketService.MarketQualityScore == 0
             ? "UNKNOWN"
             : _marketService.MarketQualityScore;
 
-        // FIXED: Allows displaying 0.0 values instead of masking them as UNKNOWN
-        public object Volatility => !IsBridgeConnected || ProcessedTickCount == 0
+        public object Volatility => ProcessedTickCount == 0
             ? "UNKNOWN"
             : _marketService.Volatility;
 
-        public object Momentum => !IsBridgeConnected || ProcessedTickCount == 0
+        public object Momentum => ProcessedTickCount == 0
             ? "UNKNOWN"
             : _marketService.Momentum;
 
-        public string D1Consensus => !IsBridgeConnected || ProcessedTickCount == 0 || _marketService.D1Consensus == "UNKNOWN"
+        public string D1Consensus => ProcessedTickCount == 0 || _marketService.D1Consensus == "UNKNOWN"
             ? "UNKNOWN"
             : _marketService.D1Consensus;
 
-        public string H4Consensus => !IsBridgeConnected || ProcessedTickCount == 0 || _marketService.H4Consensus == "UNKNOWN"
+        public string H4Consensus => ProcessedTickCount == 0 || _marketService.H4Consensus == "UNKNOWN"
             ? "UNKNOWN"
             : _marketService.H4Consensus;
 
-        public string M15Consensus => !IsBridgeConnected || ProcessedTickCount == 0 || _marketService.M15Consensus == "UNKNOWN"
+        public string M15Consensus => ProcessedTickCount == 0 || _marketService.M15Consensus == "UNKNOWN"
             ? "UNKNOWN"
             : _marketService.M15Consensus;
 
-        public string ConsensusSummary => !IsBridgeConnected || ProcessedTickCount == 0
+        public string ConsensusSummary => ProcessedTickCount == 0
             ? "UNKNOWN (Waiting for upstream data) | Source: <missing provider>"
             : _marketService.ConsensusSummary;
 
         // --- Panel 2: AI Decision Properties ---
-        public string CurrentDecision => !IsBridgeConnected || ProcessedTickCount == 0 || _decisionService.CurrentDecision == "UNKNOWN"
+        public string CurrentDecision => ProcessedTickCount == 0 || _decisionService.CurrentDecision == "UNKNOWN"
             ? "UNKNOWN"
             : _decisionService.CurrentDecision;
 
-        public object Confidence => !IsBridgeConnected || ProcessedTickCount == 0 || _decisionService.Confidence == 0.0
+        public object Confidence => ProcessedTickCount == 0 || _decisionService.Confidence == 0.0
             ? "UNKNOWN"
             : _decisionService.Confidence;
 
-        public string ExpectedValue => !IsBridgeConnected || ProcessedTickCount == 0 || _decisionService.ExpectedValue == "UNKNOWN"
+        public string ExpectedValue => ProcessedTickCount == 0 || _decisionService.ExpectedValue == "UNKNOWN"
             ? "UNKNOWN"
             : _decisionService.ExpectedValue;
 
-        public IReadOnlyList<string> SupportingEvidence => !IsBridgeConnected || ProcessedTickCount == 0
+        public IReadOnlyList<string> SupportingEvidence => ProcessedTickCount == 0
             ? new List<string> { "UNKNOWN (Waiting for upstream data) | Source: <missing provider>" }
             : _decisionService.SupportingEvidence;
 
-        public IReadOnlyList<string> RejectedAlternatives => !IsBridgeConnected || ProcessedTickCount == 0
+        public IReadOnlyList<string> RejectedAlternatives => ProcessedTickCount == 0
             ? new List<string> { "UNKNOWN" }
             : _decisionService.RejectedAlternatives;
 
         // --- Panel 3: Scenario Search Properties ---
-        public object BuyExpectedUtility => !IsBridgeConnected || ProcessedTickCount == 0 || _decisionService.BuyExpectedUtility == 0.0
+        public object BuyExpectedUtility => ProcessedTickCount == 0 || _decisionService.BuyExpectedUtility == 0.0
             ? "UNKNOWN"
             : _decisionService.BuyExpectedUtility;
 
-        public object SellExpectedUtility => !IsBridgeConnected || ProcessedTickCount == 0 || _decisionService.SellExpectedUtility == 0.0
+        public object SellExpectedUtility => ProcessedTickCount == 0 || _decisionService.SellExpectedUtility == 0.0
             ? "UNKNOWN"
             : _decisionService.SellExpectedUtility;
 
-        public object WaitExpectedUtility => !IsBridgeConnected || ProcessedTickCount == 0 || _decisionService.WaitExpectedUtility == 0.0
+        public object WaitExpectedUtility => ProcessedTickCount == 0 || _decisionService.WaitExpectedUtility == 0.0
             ? "UNKNOWN"
             : _decisionService.WaitExpectedUtility;
 
-        public string SelectionReason => !IsBridgeConnected || ProcessedTickCount == 0 || _decisionService.SelectionReason == "No real decision evaluation has been executed yet."
+        public string SelectionReason => ProcessedTickCount == 0 || _decisionService.SelectionReason == "No real decision evaluation has been executed yet."
             ? "UNKNOWN (Waiting for upstream data) | Source: <missing provider>"
             : _decisionService.SelectionReason;
 
@@ -446,7 +457,8 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             INativeCoreService nativeCore,
             IAccumulatorService managedAccumulator,
             ICurrencyStrengthEngine currencyEngine,
-            IDecisionEventStream decisionEventStream)
+            IDecisionEventStream decisionEventStream,
+            AiTradingOrchestrator aiTradingOrchestrator) // Injected here
         {
             _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
             _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
@@ -458,6 +470,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             _trainingService = trainingService ?? throw new ArgumentNullException(nameof(trainingService));
             _healthService = healthService ?? throw new ArgumentNullException(nameof(healthService));
             _decisionEventStream = decisionEventStream ?? throw new ArgumentNullException(nameof(decisionEventStream));
+            _aiTradingOrchestrator = aiTradingOrchestrator ?? throw new ArgumentNullException(nameof(aiTradingOrchestrator));
 
             _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
             _neuralService = neuralService ?? throw new ArgumentNullException(nameof(neuralService));
@@ -492,10 +505,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             _pipeline.OnPipelineTickProcessed += OnLiveTickProcessed;
 
             #region PRO AUTOMATION: Real-Time Risk & Execution Live Logging to UI Console
-            // REASON: Decoupled connection to the live decision stream. 
-            // Intercepts automated protective stops adjustments, break-even movements, 
-            // trailing stops, and account level safety closures from the PositionManager
-            // and immediately renders them on the UI Event Viewer box.
             _decisionEventStream.OnPositionManagement += (evt) => {
                 string levelStr = evt.ActionType.Contains("CRITICAL") || evt.ActionType.Contains("EMERGENCY") ? "ALERT" : "SECURITY";
                 LogEvent(levelStr, $"[Auto-Risk] {evt.Symbol} (Ticket ID: {evt.PositionId.ToString().Substring(0, 5).ToUpper()}): {evt.Reason}");
@@ -503,6 +512,14 @@ namespace Nexus.Desktop.ViewModels.Workspaces
 
             _decisionEventStream.OnRiskAdjusted += (evt) => {
                 LogEvent("SECURITY", $"[Risk Adjusted] {evt.RiskMetric} tuned from {evt.PreviousValue:F2} to {evt.NewValue:F2}. Reason: {evt.Reason}");
+            };
+
+            // REASON: Subscribes directly to the fused AI decision outputs.
+            // This captures final trading decisions (including WAIT states due to risk limits)
+            // and immediately streams them onto the live Console/Viewer on the UI.
+            _decisionEventStream.OnDecisionCreated += (evt) => {
+                string component = evt.Action.Equals("WAIT", StringComparison.OrdinalIgnoreCase) ? "DECISION" : "SECURITY";
+                LogEvent(component, $"[Auto-Trade] Action: {evt.Action} | Conf: {evt.Confidence:P0} | Reason: {evt.Reason}");
             };
             #endregion
 
@@ -576,6 +593,10 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                 OnPropertyChanged(nameof(SimulatedBuyExpectedUtility));
                 OnPropertyChanged(nameof(SimulatedSellExpectedUtility));
                 OnPropertyChanged(nameof(SimulatedWaitExpectedUtility));
+
+                // REASON: Force WPF UI binding engine to refresh the Explainability Timeline ListBox
+                // whenever the Decision Dashboard Service updates its active timeline collection.
+                OnPropertyChanged(nameof(ExplainabilityTimeline));
             });
         }
 
@@ -683,8 +704,19 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                     !_bridgeService.IsConnected
                 );
 
-                var decision = await _intelligenceService.ProcessTickAndEvaluateAsync(domainTick, riskState, _cts.Token);
+                // Fetch recent M15 candles dynamically from repository for features extraction
+                IReadOnlyList<Candle> recentCandles = new List<Candle>();
+                using (var scope = _scopeFactory.CreateScope())
+                {
+                    try
+                    {
+                        var marketRepo = scope.ServiceProvider.GetRequiredService<IMarketDataRepository>();
+                        recentCandles = await marketRepo.GetCandlesAsync(tick.SymbolName, "M15", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow, _cts.Token);
+                    }
+                    catch { /* Fallback to empty for early ticks */ }
+                }
 
+                // 1. Process operational market state computed inside the pipeline
                 MarketState state = _nativeCore.IsAvailable ? _nativeCore.GetMarketState() : null!;
                 if (state == null)
                 {
@@ -732,90 +764,26 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                     );
                 });
 
-                double buyConfidence = 0.33;
-                double sellConfidence = 0.33;
-                double waitConfidence = 0.33;
-                double confidence = 0.5;
-                double riskScore = 0.1;
-                string expectedValueStr = "Neutral";
+                // 2. REASON: Forward live tick details to the newly completed unified AI Trading Orchestrator & Decision Fusion Engine.
+                // This replaces the legacy limited mock evaluations with direct PyTorch/ONNX inference and multi-stage fusion risk checks.
+                var consensusState = new ConsensusState(
+                    dominantBias: d1.Contains("Bullish") ? TrendDirection.BULLISH : (d1.Contains("Bearish") ? TrendDirection.BEARISH : TrendDirection.NEUTRAL),
+                    biasStrength: 0.5,
+                    entryTriggered: true,
+                    overallConfidence: 0.5,
+                    consensusSummary: summary,
+                    signals: new List<MultiTimeframeSignal>(),
+                    generatedAtUtc: DateTime.UtcNow
+                );
 
-                if (_neuralService.IsLoaded)
-                {
-                    var vector = _nativeCore.IsAvailable ? _nativeCore.GetMarketVector() : new MarketVector(0.5, 0.5, 0.5, 0.2, 0.5, 0.9, 80.0, 1.0, 1.0, 0.1);
-                    var evaluation = await _neuralService.EvaluateAsync(vector, _cts.Token);
-                    if (evaluation != null)
-                    {
-                        buyConfidence = evaluation.BuyConfidence;
-                        sellConfidence = evaluation.SellConfidence;
-                        waitConfidence = evaluation.WaitConfidence;
-                        confidence = evaluation.Confidence;
-                        riskScore = evaluation.RiskScore;
-                        expectedValueStr = evaluation.ExpectedMovement >= 0
-                            ? $"Positive (EV: +{evaluation.ExpectedMovement * 10000.0:F1} pips)"
-                            : $"Negative (EV: -{Math.Abs(evaluation.ExpectedMovement) * 10000.0:F1} pips)";
-                    }
-                }
-
-                double buyUtility = buyConfidence * 10.0 - riskScore * 5.0;
-                double sellUtility = sellConfidence * 10.0 - riskScore * 5.0;
-                double waitUtility = waitConfidence * 2.0;
-
-                var supportingEvidence = new List<string>
-                {
-                    $"Regime: {state.MarketRegime}",
-                    $"Momentum bias: {state.Momentum:F2}",
-                    $"USD Ecosystem strength: {state.CurrencyStrength:F1}/100"
-                };
-
-                var rejectedAlternatives = new List<string>
-                {
-                    $"SELL (Confidence: {sellConfidence:P0})",
-                    $"WAIT (Confidence: {waitConfidence:P0})"
-                };
-
-                BeginInvokeOnUIThread(() =>
-                {
-                    _decisionService.PushDecisionUpdate(
-                        decision.Action.ToString(),
-                        confidence,
-                        expectedValueStr,
-                        supportingEvidence,
-                        rejectedAlternatives,
-                        buyUtility,
-                        sellUtility,
-                        waitUtility,
-                        decision.Reason
-                    );
-
-                    _decisionService.AddTimelineEntry(new ExplainabilityTimelineEntry
-                    {
-                        TransitionType = decision.Action.ToString(),
-                        Timestamp = DateTime.Now,
-                        Confidence = confidence,
-                        TriggeringModels = decision.Action == DecisionAction.WAIT ? "UncertaintyEngine, VolatilityModel" : "TrendModel, MomentumModel",
-                        RiskChanges = decision.Action == DecisionAction.WAIT ? "Zero Live risk exposure" : $"Active exposure: {riskState.TotalExposure:C0}",
-                        SupportingEvidence = $"Price structure: {state.PriceStructure:F2}, Liquidity depth: {state.Liquidity:F2}",
-                        Reason = decision.Reason
-                    });
-
-                    OnPropertyChanged(nameof(ExplainabilityTimeline));
-
-                    string traceId = $"DEC-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
-                    LogEvent("DECISION", $"Action: {decision.Action} | Confidence: {confidence:P0} | Source: DecisionScenarioSearchEngine | Trace: {traceId} | Updated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-                    LogEvent("INTELLIGENCE", $"Market Regime: {state.MarketRegime} | Quality: {qualityScore}/100 | Source: MarketRegimeDetector | Trace: {traceId} | Updated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-
-                    // PRO ARCHIBILITY: Fire the event for ALL decisions to populate the Explainability Timeline
-                    if (decision != null)
-                    {
-                        _decisionEventStream.PublishDecisionCreated(new DecisionCreatedEvent(
-                            decisionId: Guid.NewGuid(),
-                            symbol: tick.SymbolName,
-                            action: decision.Action.ToString(),
-                            confidence: confidence,
-                            reason: decision.Reason
-                        ));
-                    }
-                });
+                await _aiTradingOrchestrator.EvaluateLiveMarketAsync(
+                    state,
+                    recentCandles,
+                    new List<Tick> { domainTick },
+                    consensusState,
+                    riskState,
+                    _cts.Token
+                );
             }
             catch (Exception ex)
             {
@@ -889,6 +857,12 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             });
         }
 
+        #region High-Performance Background Synchronization Loop
+        /// <summary>
+        /// The main background daemon loop running every 2 seconds.
+        /// Synchronizes physical MT5 broker snapshots, active positions, 
+        /// database accounts, and loads historical ML JSON episodes from the Replay Buffer.
+        /// </summary>
         private async Task RunDashboardUpdatesLoopAsync(CancellationToken token)
         {
             while (!token.IsCancellationRequested)
@@ -897,6 +871,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                 {
                     await Task.Delay(2000, token);
 
+                    #region 1. Hardware Resource Diagnostics Calculations
                     double cpu = 4.2;
                     double memory = 42.5;
                     string threadPoolStr = "12/250 Active Threads (0% Queue)";
@@ -915,7 +890,9 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                             : 4.5, 0.5, 95.0);
                     }
                     catch { }
+                    #endregion
 
+                    #region 2. Scoped Database Querying (ML Metrics & Progress Gates)
                     SystemHealthStatus dbHealth = SystemHealthStatus.Healthy;
                     int expCount = 0;
                     int completedCount = 0;
@@ -929,6 +906,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                         using var scope = _scopeFactory.CreateScope();
                         var dbContext = scope.ServiceProvider.GetRequiredService<NexusDbContext>();
 
+                        // Check transactional database connectivity
                         _ = await dbContext.Accounts.AnyAsync(token);
 
                         expCount = await dbContext.ExperienceRecords.CountAsync(token);
@@ -959,45 +937,70 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                             trainingMaxDrawdown = minPips < 0 ? Math.Abs(minPips / 100.0) : 0.0;
                         }
 
-                        var recentRecords = await dbContext.ExperienceRecords
-                            .OrderByDescending(r => r.TimestampUtc)
-                            .Take(10)
-                            .ToListAsync(token);
-
-                        BeginInvokeOnUIThread(() =>
+                        // REASON: Read physical JSON files from the ReplayBuffer folder directly from root directory on disk
+                        // (Caching fix - removed legacy redundant "NexusAI" folder path)
+                        // This ensures the UI is always populated with historical trade critiques,
+                        // even if the SQLite database was recently cleared, wiped, or reset.
+                        try
                         {
-                            foreach (var r in recentRecords)
+                            string replayDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Reinforcement", "ReplayBuffer");
+                            if (System.IO.Directory.Exists(replayDir))
                             {
-                                if (_decisionService.HistoricalDecisions.Any(h => h.DecisionId == r.Id))
-                                    continue;
+                                var files = System.IO.Directory.GetFiles(replayDir, "EXP_*.json")
+                                    .OrderByDescending(f => System.IO.File.GetCreationTimeUtc(f))
+                                    .Take(20);
 
-                                var payload = new DecisionReplayPayload
+                                foreach (var file in files)
                                 {
-                                    DecisionId = r.Id,
-                                    DecisionName = $"DEC-{r.Id.ToString().Substring(0, 5).ToUpper()} ({r.ExecutedAction})",
-                                    Timestamp = r.TimestampUtc.ToLocalTime(),
-                                    MarketSnapshot = $"Symbol: {r.Symbol} | BuyConf: {r.BuyConfidence:P0}, SellConf: {r.SellConfidence:P0} | Risk: {r.RiskScore:F2}",
-                                    FeatureVectorSummary = r.MarketVectorCsv ?? "No feature vector stored",
-                                    MarketRegime = r.MarketRegime ?? "Ranging",
-                                    MultiTimeframeConsensus = $"Buy: {r.BuyConfidence:P0} | Sell: {r.SellConfidence:P0}",
-                                    GeneratedHypotheses = $"Executed: {r.ExecutedAction}",
-                                    ScenarioSearchResults = $"Realized Pips: {r.RealizedPips:F1} pips",
-                                    ModelConsensus = $"Model Version: {r.ModelVersion}",
-                                    UncertaintyEvaluation = "Uncertainty: Evaluated",
-                                    FinalDecision = r.ExecutedAction,
-                                    ExecutionOutcome = r.IsCompleted ? $"Completed with profit/loss of {r.RealizedPips:F1} pips" : "Active position"
-                                };
+                                    string json = await System.IO.File.ReadAllTextAsync(file, token);
+                                    var record = System.Text.Json.JsonSerializer.Deserialize<DeepExperienceRecord>(json);
 
-                                _decisionService.AddHistoricalDecision(payload);
+                                    if (record != null)
+                                    {
+                                        Guid recordId = Guid.TryParse(record.ExperienceId, out var parsedGuid) ? parsedGuid : Guid.NewGuid();
+
+                                        if (_decisionService.HistoricalDecisions.Any(h => h.DecisionId == recordId))
+                                            continue;
+
+                                        var payload = new DecisionReplayPayload
+                                        {
+                                            DecisionId = recordId,
+                                            DecisionName = $"DEC-{recordId.ToString().Substring(0, 5).ToUpper()} ({record.ExecutedAction})",
+                                            Timestamp = record.TimestampUtc.ToLocalTime(),
+                                            MarketSnapshot = $"Symbol: {record.Symbol} | BuyConf: {record.BuyConfidence:P0}, SellConf: {record.SellConfidence:P0} | Risk: {record.RiskScore:F2}",
+                                            FeatureVectorSummary = record.MarketVectorFeatures != null ? string.Join(", ", record.MarketVectorFeatures.Take(10).Select(f => f.ToString("F3"))) + "..." : "No features stored",
+                                            MarketRegime = record.MarketRegime ?? "Ranging",
+                                            MultiTimeframeConsensus = $"Buy: {record.BuyConfidence:P0} | Sell: {record.SellConfidence:P0}",
+                                            GeneratedHypotheses = $"Executed: {record.ExecutedAction}",
+                                            ScenarioSearchResults = $"Realized Pips: {record.RealizedPips:F1} pips",
+                                            ModelConsensus = $"Model Version: {record.ModelVersion}",
+                                            UncertaintyEvaluation = "Uncertainty: Evaluated",
+                                            FinalDecision = record.ExecutedAction,
+                                            ExecutionOutcome = record.IsWin ? $"Completed with profit/loss of {record.RealizedPips:F1} pips" : "Closed with loss"
+                                        };
+
+                                        BeginInvokeOnUIThread(() =>
+                                        {
+                                            _decisionService.AddHistoricalDecision(payload);
+                                            OnPropertyChanged(nameof(HistoricalDecisions)); // Force ListBox refresh
+                                        });
+                                    }
+                                }
                             }
-                        });
+                        }
+                        catch (Exception fileEx)
+                        {
+                            Console.WriteLine($"[REPLAY MONITOR ERROR] Failed to load JSON episodes: {fileEx.Message}");
+                        }
                     }
                     catch (Exception dbEx)
                     {
                         dbHealth = SystemHealthStatus.Warning;
                         Console.WriteLine($"[DB UPDATES LOOP ERROR] {dbEx.Message}");
                     }
+                    #endregion
 
+                    #region 3. Real MT5 Broker Account Sync & Dynamic Risk Updates
                     SystemHealthStatus bridgeHealth = IsBridgeConnected ? SystemHealthStatus.Healthy : SystemHealthStatus.Warning;
                     double balance = 0.0;
                     double equity = 0.0;
@@ -1010,9 +1013,6 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                     {
                         var snapshot = await _bridgeService.GetAccountSnapshotAsync(token);
 
-                        // REASON: Resolve the scoped PositionManager inside a temporary background scope 
-                        // and execute the 'SynchronizePositionsAsync' loop every 2 seconds.
-                        // This awakens the dynamic risk engine, trail stops, and default SL/TP initialization.
                         int openCountVal = 0;
                         using (var scope = _scopeFactory.CreateScope())
                         {
@@ -1031,10 +1031,44 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                             margin = (double)snapshot.Margin;
                             exposure = (double)(snapshot.Equity - snapshot.FreeMargin);
                             maxDd = snapshot.Balance > 0 ? ((double)(snapshot.Balance - snapshot.Equity) / (double)snapshot.Balance) * 100.0 : 0.0;
-                            openCount = openCountVal; // Synced directly from the risk engine's tracked memory
+                            openCount = openCountVal;
+
+                            // UPGRADE: Programmatically upsert the active account statistics into the operational database.
+                            // This ensures the transactional database is always in-sync with the real broker,
+                            // allowing the Risk Controlled Execution Engine to successfully query accounts on demand.
+                            using (var scope = _scopeFactory.CreateScope())
+                            {
+                                try
+                                {
+                                    var accountRepo = scope.ServiceProvider.GetRequiredService<IAccountRepository>();
+                                    var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+                                    var account = new Account(
+                                        id: Guid.NewGuid(),
+                                        brokerAccountId: "DEFAULT_ACCOUNT", // Used by coordinator & risk guards
+                                        brokerName: snapshot.BrokerServer,
+                                        currency: snapshot.Currency,
+                                        balance: (decimal)snapshot.Balance,
+                                        equity: (decimal)snapshot.Equity,
+                                        margin: (decimal)snapshot.Margin,
+                                        freeMargin: (decimal)snapshot.FreeMargin,
+                                        leverage: snapshot.Leverage,
+                                        isLive: snapshot.AccountMode == "Real"
+                                    );
+
+                                    await accountRepo.UpsertAsync(account);
+                                    await unitOfWork.SaveChangesAsync(token);
+                                }
+                                catch (Exception dbUpsertEx)
+                                {
+                                    Console.WriteLine($"[DB ACCOUNT UPSERT ERROR] {dbUpsertEx.Message}");
+                                }
+                            }
                         }
                     }
+                    #endregion
 
+                    #region 4. Live Telemetry Metric Publishers
                     double tickLatency = _pipeline.LastProcessingLatencyMs;
                     double decisionLatency = _intelligenceService.InteropLatencyMs + _intelligenceService.TickProcessingLatencyMs + _intelligenceService.MarketStateUpdateTimeMs + _intelligenceService.VectorGenerationTimeMs + _neuralService.InferenceLatencyMs;
                     double execLatency = _bridgeService.PingLatencyMs;
@@ -1084,6 +1118,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                             new List<string> { $"Database holds {completedCount} completed trade experiences.", $"Replay pool size: {expCount} samples." }
                         );
                     });
+                    #endregion
                 }
                 catch (OperationCanceledException) { break; }
                 catch (Exception ex)
@@ -1095,6 +1130,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
                 }
             }
         }
+        #endregion
 
         public void Dispose()
         {

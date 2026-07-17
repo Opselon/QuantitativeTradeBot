@@ -4,6 +4,7 @@ namespace Nexus.Core.DomainEvents
 {
     /// <summary>
     /// Event raised when a new TradeDecision is created/evaluated by the decision engine.
+    /// Supports multi-dimensional expected utility parameters for dynamic WPF UI rendering.
     /// </summary>
     public sealed class DecisionCreatedEvent
     {
@@ -14,7 +15,20 @@ namespace Nexus.Core.DomainEvents
         public string Reason { get; }
         public DateTime TimestampUtc { get; }
 
-        public DecisionCreatedEvent(Guid decisionId, string symbol, string action, double confidence, string reason)
+        // REASON: Added expected utilities for dynamic progress bars visualization
+        public double BuyUtility { get; }
+        public double SellUtility { get; }
+        public double WaitUtility { get; }
+
+        public DecisionCreatedEvent(
+            Guid decisionId,
+            string symbol,
+            string action,
+            double confidence,
+            string reason,
+            double buyUtility = 0.0,
+            double sellUtility = 0.0,
+            double waitUtility = 0.0)
         {
             DecisionId = decisionId;
             Symbol = symbol ?? "UNKNOWN";
@@ -22,6 +36,10 @@ namespace Nexus.Core.DomainEvents
             Confidence = confidence;
             Reason = reason ?? string.Empty;
             TimestampUtc = DateTime.UtcNow;
+
+            BuyUtility = buyUtility;
+            SellUtility = sellUtility;
+            WaitUtility = waitUtility;
         }
     }
 

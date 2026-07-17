@@ -215,11 +215,23 @@
                                 </StackPanel>
 
                                 <!-- Real-Time Sparkline Vector Plotting -->
+                                <!-- Real-Time Sparkline Vector Plotting -->
                                 <StackPanel Grid.Column="4" Margin="15,0,0,0" ToolTip="Real-time scrolling tick sparkline.">
                                     <TextBlock Text="REAL-TIME SPARKLINE" Style="{StaticResource NteLabelSmall}" HorizontalAlignment="Center" Margin="0,0,0,5"/>
-                                    <Border BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}" Background="#090D14" CornerRadius="4" Height="40">
-                                        <Canvas Width="180" Height="40" ClipToBounds="True">
-                                            <Polyline Points="{Binding SparklinePoints}" Stroke="{DynamicResource PrimaryBrush}" StrokeThickness="1.5"/>
+                                    <Border BorderThickness="1" 
+            BorderBrush="{DynamicResource GlassBorderBrush}" 
+            Background="#090D14" 
+            CornerRadius="4" 
+            Height="40"
+            ClipToBounds="True">
+                                        <!-- ClipToBounds enabled to ensure no visual bleeding outside rounded corners -->
+                                        <!-- Removed hardcoded Width to allow proper bounding within the layout constraints -->
+                                        <Canvas Height="40" 
+                HorizontalAlignment="Stretch" 
+                ClipToBounds="True">
+                                            <Polyline Points="{Binding SparklinePoints}" 
+                      Stroke="{DynamicResource PrimaryBrush}" 
+                      StrokeThickness="1.5"/>
                                         </Canvas>
                                     </Border>
                                 </StackPanel>
@@ -229,13 +241,14 @@
 
                             <!-- Multi-Timeframe Alignment Consensus -->
                             <TextBlock Text="MULTI-TIMEFRAME ALIGNMENT BIAS" Style="{StaticResource NteLabelLarge}" FontWeight="Bold" Margin="5,0,0,10"/>
-                            <Grid Margin="5,0">
+                            <Grid Margin="5,0,5,15">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="15"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="15"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <!-- Adjusted from 180 to 195 to accommodate the 15px left margin of the child panel -->
+                                    <ColumnDefinition Width="195"/>
                                 </Grid.ColumnDefinitions>
 
                                 <Border Grid.Column="0" Background="{DynamicResource SurfaceVariantBrush}" CornerRadius="6" Padding="12,8" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderBrush}">

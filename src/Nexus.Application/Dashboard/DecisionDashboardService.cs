@@ -150,6 +150,11 @@ namespace Nexus.Application.Dashboard
             _supportingEvidence.Add($"Action evaluated at {@event.TimestampUtc:HH:mm:ss}");
             _supportingEvidence.Add($"Reason: {@event.Reason}");
 
+            // REASON: Sync the neural probabilities directly to the Stockfish expected utility progress bars
+            BuyExpectedUtility = @event.BuyUtility;
+            SellExpectedUtility = @event.SellUtility;
+            WaitExpectedUtility = @event.WaitUtility;
+
             SelectionReason = $"Decision Engine evaluated action {@event.Action} with {@event.Confidence:P0} confidence.";
 
             AddTimelineEntry(new ExplainabilityTimelineEntry
@@ -159,7 +164,7 @@ namespace Nexus.Application.Dashboard
                 Confidence = @event.Confidence,
                 TriggeringModels = "TrendModel, MomentumModel, ConsensusEngine",
                 RiskChanges = "Active pre-trade risk evaluation completed.",
-                SupportingEvidence = $"Symbol: {@event.Symbol}, Reason: {@event.Reason}",
+                SupportingEvidence = $"Symbol: {@event.Symbol}, Reason: {SelectionReason}",
                 Reason = @event.Reason
             });
 

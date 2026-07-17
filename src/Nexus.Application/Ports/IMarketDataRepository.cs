@@ -9,6 +9,18 @@ namespace Nexus.Application.Ports
 {
     public interface IMarketDataRepository
     {
+
+        /// <summary>
+        /// Retrieves historical OHLCV candles for a given symbol and timeframe.
+        /// Used by the Dataset Generator for offline ML training.
+        /// </summary>
+        Task<IReadOnlyList<Candle>> GetCandlesAsync(
+            string symbol,
+            string timeframe,
+            DateTime startDate,
+            DateTime endDate,
+            CancellationToken ct = default);
+
         ValueTask AppendTickAsync(Tick tick, CancellationToken cancellationToken = default);
         Task AppendTicksAsync(IReadOnlyCollection<Tick> ticks, CancellationToken cancellationToken = default);
         Task AppendBarsAsync(IReadOnlyCollection<Bar> bars, CancellationToken cancellationToken = default);

@@ -3,6 +3,10 @@ using System.Collections.Generic;
 
 namespace Nexus.Application.Dashboard
 {
+    /// <summary>
+    /// Contract for the decision-making dashboard orchestration.
+    /// Governs the explainability timeline and historical replays.
+    /// </summary>
     public interface IDecisionDashboardService
     {
         string CurrentDecision { get; }

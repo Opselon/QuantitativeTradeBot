@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -12,6 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Nexus.Infrastructure.Storage\Nexus.Infrastructure.Storage.csproj" />
+    <ProjectReference Include="..\..\Nexus.Infrastructure.TorchSharp\Nexus.Infrastructure.TorchSharp.csproj" />
     <ProjectReference Include="..\Nexus.Infrastructure\Nexus.Infrastructure.csproj" />
     <ProjectReference Include="..\Nexus.Application\Nexus.Application.csproj" />
     <ProjectReference Include="..\Nexus.AI\Nexus.AI.csproj" />

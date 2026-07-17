@@ -118,6 +118,57 @@ namespace Nexus.Infrastructure.Persistence.Repositories
             }
         }
 
+
+
+        public async Task<IReadOnlyList<Candle>> GetCandlesAsync(
+            string symbol,
+            string timeframe,
+            DateTime startDate,
+            DateTime endDate,
+            CancellationToken ct = default)
+        {
+            var domainCandles = new List<Candle>();
+
+            try
+            {
+                // 1. Fetch raw Bars using the existing battle-tested Data Access method
+                var bars = await GetBarsAsync(new Symbol(symbol), timeframe, startDate, endDate, ct);
+
+                // 2. Map legacy Bar objects into the newer immutable Candle objects expected by the AI Pipeline
+                foreach (var bar in bars)
+                {
+                    try
+                    {
+                        var candle = new Candle(
+                            symbol: bar.Symbol,
+                            timeframe: new Timeframe(bar.Timeframe),
+                            timestamp: bar.Time,
+                            open: new Price(bar.Open),
+                            high: new Price(bar.High),
+                            low: new Price(bar.Low),
+                            close: new Price(bar.Close),
+                            volume: new Volume(bar.Volume)
+                        );
+
+                        domainCandles.Add(candle);
+                    }
+                    catch
+                    {
+                        // Skip malformed data
+                        continue;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Fallback / log mapping errors
+                Console.WriteLine($"[MarketDataRepository] Error mapping Bars to Candles: {ex.Message}");
+            }
+
+            return domainCandles;
+        }
+
+
         public async Task AppendBarsAsync(IReadOnlyCollection<Bar> bars, CancellationToken cancellationToken = default)
         {
             if (bars == null) throw new ArgumentNullException(nameof(bars));
