@@ -4,29 +4,19 @@
 // FILE:    TrainSkillsViewModel.cs
 // ============================================================================
 
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Input;
-using System.Windows.Media;
-
 using Microsoft.Win32;
-
 using Nexus.Application.Ports;
 using Nexus.Desktop.Services;
 using Nexus.Infrastructure.TorchSharp.Models;
-
+using System.Collections.ObjectModel;
+using System.Globalization;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Windows.Input;
+using System.Windows.Media;
 using TorchSharp;
-
-using Tensor = global::TorchSharp.torch.Tensor;
-
 using static global::TorchSharp.torch;
+using Tensor = global::TorchSharp.torch.Tensor;
 
 namespace Nexus.Desktop.ViewModels.Workspaces
 {
@@ -641,7 +631,7 @@ namespace Nexus.Desktop.ViewModels.Workspaces
         {
             var stopwatch =
                 System.Diagnostics.Stopwatch.StartNew();
-            
+
             double epochLossSum = 0d;
             int completedBatches = 0;
 

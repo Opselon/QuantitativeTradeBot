@@ -1,12 +1,6 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Npgsql;
-using Testcontainers.PostgreSql;
-using Xunit.Abstractions;
 using Nexus.Application.Analytics;
 using Nexus.Application.Pipeline;
 using Nexus.Application.Ports;
@@ -15,6 +9,9 @@ using Nexus.Core.Interfaces;
 using Nexus.Infrastructure.Persistence;
 using Nexus.Infrastructure.Persistence.Repositories;
 using Nexus.Tests.EndToEnd.Mocks;
+using Npgsql;
+using Testcontainers.PostgreSql;
+using Xunit.Abstractions;
 
 namespace Nexus.Tests.EndToEnd.Fixture
 {
@@ -105,7 +102,8 @@ namespace Nexus.Tests.EndToEnd.Fixture
             var services = new ServiceCollection();
 
             // Logging
-            services.AddLogging(cfg => {
+            services.AddLogging(cfg =>
+            {
                 if (_outputHelper != null)
                 {
                     cfg.AddProvider(new TestOutputLoggerProvider(_outputHelper));
@@ -153,7 +151,7 @@ namespace Nexus.Tests.EndToEnd.Fixture
             services.AddSingleton<ExecutionAuditService>();
             services.AddSingleton<DefaultRiskManager>();
             services.AddSingleton<IRiskManager>(sp => sp.GetRequiredService<DefaultRiskManager>());
-           // services.AddSingleton<PreTradeRiskEvaluator>();
+            // services.AddSingleton<PreTradeRiskEvaluator>();
             services.AddScoped<ExecutionCoordinator>();
             services.AddScoped<SignalRouter>();
 

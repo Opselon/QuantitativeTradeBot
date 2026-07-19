@@ -1,16 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using Nexus.Application.Ports;
 using Nexus.Core.Entities;
 using Nexus.Core.ValueObjects;
+using Npgsql;
+using System.Data;
+using System.Runtime.CompilerServices;
 
 namespace Nexus.Infrastructure.Persistence.Repositories
 {

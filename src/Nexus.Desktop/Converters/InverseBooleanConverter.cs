@@ -6,7 +6,6 @@
 //   - src/Nexus.Desktop/Views/Workspaces/TrainSkillsView.xaml (XAML Resource Binding)
 // ============================================================================
 
-using System;
 using System.Globalization;
 using System.Windows.Data;
 

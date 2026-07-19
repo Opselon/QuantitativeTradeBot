@@ -7,12 +7,8 @@
 //   - src/Nexus.Infrastructure/Mt5Bridge/Mt5BridgeService.cs (Log Publisher)
 // ============================================================================
 
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
 using Nexus.Application.Ports;
+using System.Text.Json;
 
 namespace Nexus.Application.Observability
 {

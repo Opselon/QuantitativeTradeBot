@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Desktop.Models
 {
     public class DesktopPositionDto

@@ -4,13 +4,9 @@
 // FILE:    PythonExecutionService.cs
 // ============================================================================
 
-using System;
-using System.Diagnostics;
-using System.IO;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Nexus.Application.Ports;
+using System.Diagnostics;
+using System.Text;
 
 namespace Nexus.Infrastructure.Services
 {

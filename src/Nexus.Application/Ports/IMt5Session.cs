@@ -1,7 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Nexus.Application.Ports
 {
     public interface IMt5Session : IDisposable

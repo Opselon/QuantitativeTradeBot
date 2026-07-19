@@ -1,13 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Nexus.Core.Entities;
-using Nexus.Core.Enums;
 using Nexus.Training;
+using System.IO;
 
 namespace Nexus.Tests.Unit.Training
 {

@@ -5,10 +5,8 @@
 // DESCRIPTION: Generates the Institutional-Grade HTML Interactive Report.
 // ============================================================================
 
-using System;
-using System.IO;
-using System.Text;
 using Nexus.Core.AI.Entities;
+using System.Text;
 
 namespace Nexus.Application.AI.Evaluation
 {

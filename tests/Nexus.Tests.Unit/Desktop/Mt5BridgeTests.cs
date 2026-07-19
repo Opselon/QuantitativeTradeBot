@@ -1,14 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
-using Nexus.Application.Mt5;
 using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Application.Ports;
 using Nexus.Application.Workflows.DTOs;
 using Nexus.Infrastructure.Adapters.Mt5;
+using System.Text.Json;
 
 namespace Nexus.Tests.Unit.Desktop
 {

@@ -1,5 +1,3 @@
-using System.Data;
-
 namespace Nexus.Application.Ports
 {
     /// <summary>

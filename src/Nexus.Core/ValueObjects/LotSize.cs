@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Core.ValueObjects
 {
     public readonly struct LotSize : IEquatable<LotSize>, IComparable<LotSize>

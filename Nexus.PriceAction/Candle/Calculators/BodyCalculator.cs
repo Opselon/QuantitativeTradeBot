@@ -1,5 +1,4 @@
 ﻿// Imports the System namespace for mathematical absolute functions. [Ref: Math-Lib]
-using System;
 // Maps the Domain Candle entity to avoid namespace collisions. [Ref: CS0118-Fix]
 using DomainCandle = Nexus.Core.Entities.Candle;
 

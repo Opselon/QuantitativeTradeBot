@@ -5,12 +5,9 @@
 // DESCRIPTION: Zero-copy high-performance reader for .dat knowledge datasets.
 // ============================================================================
 
-using System;
-using System.IO;
+using Nexus.Infrastructure.TorchSharp.Training;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
-using Nexus.Core.AI.Entities;
-using Nexus.Infrastructure.TorchSharp.Training;
 
 namespace Nexus.Infrastructure.Storage
 {

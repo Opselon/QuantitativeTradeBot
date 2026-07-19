@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Nexus.Core.AI.Interfaces
+﻿namespace Nexus.Core.AI.Interfaces
 {
     public interface IFeatureDriftDetector
     {

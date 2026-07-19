@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Nexus.Core.Entities
+﻿namespace Nexus.Core.Entities
 {
     /// <summary>
     /// Represents a highly contextual, Deep-RL structured memory of a trade.

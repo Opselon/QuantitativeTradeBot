@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Nexus.Core.Entities;
 using Nexus.Core.ValueObjects;
 using Nexus.MarketIntelligence.MultiTimeframe;

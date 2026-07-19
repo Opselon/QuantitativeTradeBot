@@ -1,4 +1,3 @@
-using System;
 using Nexus.Application.Ports;
 
 namespace Nexus.Infrastructure.Adapters.Mt5

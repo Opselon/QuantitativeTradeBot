@@ -1,14 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Application.Ports;
 using Nexus.Application.Workflows.DTOs;
+using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Nexus.Infrastructure.Mt5Bridge
 {

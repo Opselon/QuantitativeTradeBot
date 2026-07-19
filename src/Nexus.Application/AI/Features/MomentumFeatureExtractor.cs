@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Nexus.Core.AI.Enums;
+﻿using Nexus.Core.AI.Enums;
 using Nexus.Core.AI.Interfaces;
 using Nexus.Core.Entities;
 

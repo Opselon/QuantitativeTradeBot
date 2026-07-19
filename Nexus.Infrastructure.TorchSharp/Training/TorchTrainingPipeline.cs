@@ -6,17 +6,12 @@
 //              Reads directly from zero-copy .dat files and trains the TFT model.
 // ============================================================================
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using TorchSharp;
 using Nexus.Core.AI.Entities;
 using Nexus.Core.AI.Interfaces;
 using Nexus.Infrastructure.TorchSharp.Models;
+using System.IO.MemoryMappedFiles;
+using System.Runtime.InteropServices;
+using TorchSharp;
 using static TorchSharp.torch;
 
 namespace Nexus.Infrastructure.TorchSharp.Training

@@ -1,7 +1,6 @@
-using System.Threading.Tasks;
+using Nexus.Desktop.ViewModels.Workspaces;
 using System.Windows;
 using System.Windows.Controls;
-using Nexus.Desktop.ViewModels.Workspaces;
 
 namespace Nexus.Desktop.Views.Workspaces
 {

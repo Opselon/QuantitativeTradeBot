@@ -1,5 +1,4 @@
-﻿using TorchSharp;
-using static TorchSharp.torch;
+﻿using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
 
 namespace Nexus.Infrastructure.TorchSharp.Models

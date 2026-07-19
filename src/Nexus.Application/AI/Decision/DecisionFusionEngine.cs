@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Nexus.Core.AI.Entities;
+﻿using Nexus.Core.AI.Entities;
 using Nexus.Core.Entities;
 using Nexus.Core.Enums;
 

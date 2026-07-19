@@ -1,5 +1,4 @@
 ﻿// Imports the System namespace. [Ref: Core-Sys]
-using System;
 // Maps the Domain Candle entity to avoid namespace collisions. [Ref: CS0118-Fix]
 using DomainCandle = Nexus.Core.Entities.Candle;
 

@@ -10,10 +10,9 @@
 //   - src/Nexus.Application/Ports/BridgeDiagnosticLogEntry.cs (Data Type Reference)
 // ============================================================================
 
-using System;
-using System.Collections.ObjectModel;
 using Nexus.Application.Observability;
 using Nexus.Application.Ports; // Reference to BridgeDiagnosticLogEntry port model
+using System.Collections.ObjectModel;
 
 namespace Nexus.Desktop.Services
 {

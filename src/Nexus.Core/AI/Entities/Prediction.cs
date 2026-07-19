@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Nexus.Core.AI.Entities
+﻿namespace Nexus.Core.AI.Entities
 {
     /// <summary>
     /// Backend-agnostic inference output.

@@ -1,6 +1,3 @@
-using System;
-using System.Threading.Tasks;
-using Xunit;
 using Nexus.Application.Analytics;
 
 namespace Nexus.Tests.Unit

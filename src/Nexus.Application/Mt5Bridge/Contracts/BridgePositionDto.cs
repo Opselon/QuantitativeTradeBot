@@ -1,4 +1,3 @@
-using System;
 using System.Text.Json.Serialization;
 
 namespace Nexus.Application.Mt5Bridge.Contracts

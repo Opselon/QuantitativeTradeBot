@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Nexus.Core.Enums;
 
 namespace Nexus.MarketIntelligence.MultiTimeframe

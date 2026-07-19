@@ -1,10 +1,7 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Nexus.Application.Ports;
 using Nexus.Core.Entities;
 using Nexus.Core.Interfaces;
-using Nexus.Application.Ports;
 
 namespace Nexus.Application.Intelligence
 {

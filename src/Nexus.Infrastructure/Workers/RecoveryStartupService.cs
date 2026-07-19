@@ -1,10 +1,7 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Nexus.Application.Ports;
 using Nexus.Application.Observability;
+using Nexus.Application.Ports;
 
 namespace Nexus.Infrastructure.Workers
 {

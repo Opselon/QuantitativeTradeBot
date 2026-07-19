@@ -1,22 +1,13 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Nexus.Application.Mt5Bridge.Contracts;
-using Nexus.Application.Ports;
-using Nexus.Application.Workflows.DTOs;
 using Nexus.Application.Observability;
+using Nexus.Application.Ports;
 using Nexus.Core.Interfaces;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace Nexus.Infrastructure.Mt5Bridge
 {

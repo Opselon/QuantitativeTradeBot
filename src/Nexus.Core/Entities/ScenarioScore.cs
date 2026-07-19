@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Core.Entities
 {
     /// <summary>

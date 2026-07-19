@@ -1,14 +1,6 @@
-using System;
-using System.Collections.Concurrent;
-using System.IO;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Application.Ports;
+using System.Collections.Concurrent;
 
 namespace Nexus.Infrastructure.Mt5Bridge
 {

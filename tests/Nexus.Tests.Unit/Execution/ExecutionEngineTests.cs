@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Xunit;
 using Nexus.Application.Mt5;
 using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Execution;

@@ -5,7 +5,6 @@
 // DESCRIPTION: Institutional-grade structure for market knowledge representation.
 // ============================================================================
 
-using System;
 using System.Runtime.InteropServices;
 
 namespace Nexus.Core.AI.Entities

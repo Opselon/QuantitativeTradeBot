@@ -1,9 +1,7 @@
-using System;
-using System.Runtime.InteropServices;
-using Xunit;
 using Nexus.Core.Entities;
 using Nexus.Core.ValueObjects;
 using Nexus.Infrastructure.Native;
+using System.Runtime.InteropServices;
 
 namespace Nexus.Tests.Unit.Intelligence
 {

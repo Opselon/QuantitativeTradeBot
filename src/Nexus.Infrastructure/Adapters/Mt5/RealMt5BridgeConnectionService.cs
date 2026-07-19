@@ -1,13 +1,9 @@
-using System;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Reflection;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Nexus.Application.Ports;
 using Nexus.Application.Workflows.DTOs;
 using Nexus.Infrastructure.Mt5Bridge;
+using System.Net.NetworkInformation;
+using System.Reflection;
+using System.Text;
 
 namespace Nexus.Infrastructure.Adapters.Mt5
 {

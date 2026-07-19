@@ -1,4 +1,3 @@
-using Xunit;
 using Nexus.Core.ValueObjects;
 
 namespace Nexus.Tests.Unit.ValueObjects

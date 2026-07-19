@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Application.Ports;
 

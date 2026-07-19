@@ -1,9 +1,6 @@
 ﻿// Imports system types and exceptions. [Ref: Core-Sys]
-using System;
 // Imports threading components for cancellation tokens. [Ref: Core-Threading]
-using System.Threading;
 // Imports task parallelism types for asynchronous operations. [Ref: Core-Tasks]
-using System.Threading.Tasks;
 // Imports abstraction interfaces for the engine. [Ref: Proj-Dependency]
 using Nexus.PriceAction.Abstractions;
 // Imports the calculators required for candle logic. [Ref: Proj-Dependency]
@@ -11,7 +8,6 @@ using Nexus.PriceAction.Candle.Calculators;
 // Imports the models holding the engine results. [Ref: Proj-Dependency]
 using Nexus.PriceAction.Candle.Models;
 // Maps the Domain Candle entity to avoid namespace collisions. [Ref: CS0118-Fix]
-using DomainCandle = Nexus.Core.Entities.Candle;
 
 // Defines the namespace for the main candle analysis engine. [Ref: Arch-Layer]
 namespace Nexus.PriceAction.Candle

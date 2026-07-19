@@ -1,4 +1,3 @@
-using System;
 using Nexus.Application.Ports;
 
 namespace Nexus.Desktop.ViewModels.Workspaces

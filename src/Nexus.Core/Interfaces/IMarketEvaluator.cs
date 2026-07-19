@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Nexus.Core.Entities;
 using Nexus.Core.ValueObjects;
 

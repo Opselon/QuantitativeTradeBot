@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Nexus.Application.Ports;
 
 namespace Nexus.Infrastructure.Adapters.Mt5

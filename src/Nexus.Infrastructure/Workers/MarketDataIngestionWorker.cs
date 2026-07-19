@@ -1,14 +1,10 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nexus.Application.Ports;
-using Nexus.Infrastructure.Persistence.Models;
 using Nexus.Infrastructure.Persistence;
+using Nexus.Infrastructure.Persistence.Models;
+using System.Collections.Concurrent;
 
 namespace Nexus.Infrastructure.Workers
 {

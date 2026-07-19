@@ -1,10 +1,9 @@
-using System;
-using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Nexus.Application.Ports;
 using Nexus.Core.Entities;
 using Nexus.Core.Interfaces;
 using Nexus.Core.ValueObjects;
+using System.Diagnostics;
 
 namespace Nexus.Infrastructure.Mt5Bridge
 {

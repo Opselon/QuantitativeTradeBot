@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Nexus.Infrastructure.Storage.Models
+﻿namespace Nexus.Infrastructure.Storage.Models
 {
     // REASON: EF Core needs mutable classes with parameterless constructors for database mapping.
     // We keep these internal/hidden from the Domain and map them to the Immutable Records.

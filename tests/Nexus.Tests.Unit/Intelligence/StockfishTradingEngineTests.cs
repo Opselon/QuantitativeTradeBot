@@ -1,12 +1,7 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
+using Nexus.Application.Intelligence;
 using Nexus.Core.Entities;
 using Nexus.Core.Interfaces;
-using Nexus.Application.Intelligence;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Nexus.Tests.Unit.Intelligence
 {

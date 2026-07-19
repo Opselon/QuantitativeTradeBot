@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Nexus.Application.Dashboard
 {
     public sealed class MarketDashboardService : IMarketDashboardService

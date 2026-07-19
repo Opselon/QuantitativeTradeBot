@@ -1,7 +1,6 @@
-using System;
+using Nexus.Desktop.ViewModels;
 using System.Windows;
 using System.Windows.Input;
-using Nexus.Desktop.ViewModels;
 
 namespace Nexus.Desktop
 {

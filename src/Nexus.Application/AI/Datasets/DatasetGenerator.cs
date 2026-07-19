@@ -4,14 +4,7 @@ using Nexus.Application.Ports;
 using Nexus.Core.AI.Entities;
 using Nexus.Core.AI.Interfaces;
 using Nexus.Core.Entities;
-using Nexus.Core.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Nexus.Application.AI.Datasets
 {

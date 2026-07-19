@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Nexus.Core.Entities
+﻿namespace Nexus.Core.Entities
 {
     /// <summary>
     /// Represents a unified snapshot of the C++ quantitative state, the AI's neural prediction, 

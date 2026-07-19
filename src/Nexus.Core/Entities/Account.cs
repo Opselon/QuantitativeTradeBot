@@ -1,6 +1,3 @@
-using System;
-using Nexus.Core.ValueObjects;
-
 namespace Nexus.Core.Entities
 {
     public sealed class Account

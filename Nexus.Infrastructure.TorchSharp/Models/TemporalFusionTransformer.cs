@@ -4,14 +4,11 @@
 // FILE:    TemporalFusionTransformer.cs
 // ============================================================================
 
-using System;
-
-using Tensor = global::TorchSharp.torch.Tensor;
-using MultiheadAttentionModule =
-    global::TorchSharp.Modules.MultiheadAttention;
-
 using static global::TorchSharp.torch;
 using static global::TorchSharp.torch.nn;
+using MultiheadAttentionModule =
+    global::TorchSharp.Modules.MultiheadAttention;
+using Tensor = global::TorchSharp.torch.Tensor;
 
 namespace Nexus.Infrastructure.TorchSharp.Models
 {

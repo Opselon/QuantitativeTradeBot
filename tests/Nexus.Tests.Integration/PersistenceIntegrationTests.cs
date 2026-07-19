@@ -1,18 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using Testcontainers.PostgreSql;
-using Xunit;
 using Nexus.Core.Entities;
 using Nexus.Core.ValueObjects;
 using Nexus.Infrastructure.Persistence;
 using Nexus.Infrastructure.Persistence.Models;
 using Nexus.Infrastructure.Persistence.Repositories;
+using Npgsql;
+using System.Diagnostics;
+using Testcontainers.PostgreSql;
 
 namespace Nexus.Tests.Integration
 {

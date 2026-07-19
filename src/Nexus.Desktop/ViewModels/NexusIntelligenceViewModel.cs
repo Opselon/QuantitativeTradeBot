@@ -1,15 +1,12 @@
-using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Input;
+using Nexus.Application.Analytics;
+using Nexus.Application.Intelligence;
 using Nexus.Core.Entities;
 using Nexus.Core.Interfaces;
 using Nexus.Core.ValueObjects;
-using Nexus.Application.Analytics;
-using Nexus.Application.Intelligence;
 using Nexus.Desktop.Services;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Windows.Input;
 
 namespace Nexus.Desktop.ViewModels
 {

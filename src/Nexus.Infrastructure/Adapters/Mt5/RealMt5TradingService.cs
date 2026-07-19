@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Nexus.Application.Mt5;
 using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Application.Ports;
+using System.Text.Json;
 
 namespace Nexus.Infrastructure.Adapters.Mt5
 {
@@ -165,12 +161,12 @@ namespace Nexus.Infrastructure.Adapters.Mt5
                     errorMessage: ex.Message);
             }
         }
-    public async Task<PlaceOrderResult> ModifyPositionAsync(
-    long positionTicket,
-    string symbol,
-    decimal sl,
-    decimal tp,
-    CancellationToken cancellationToken)
+        public async Task<PlaceOrderResult> ModifyPositionAsync(
+        long positionTicket,
+        string symbol,
+        decimal sl,
+        decimal tp,
+        CancellationToken cancellationToken)
         {
             string requestId = Guid.NewGuid().ToString();
 

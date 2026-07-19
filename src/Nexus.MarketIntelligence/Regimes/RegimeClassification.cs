@@ -1,4 +1,3 @@
-using System;
 using Nexus.Core.Enums;
 
 namespace Nexus.MarketIntelligence.Regimes

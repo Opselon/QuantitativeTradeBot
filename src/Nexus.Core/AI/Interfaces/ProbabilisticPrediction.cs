@@ -6,8 +6,6 @@
 //   - src/Nexus.Core/AI/Interfaces/IInferenceEngine.cs
 // ============================================================================
 
-using System;
-
 namespace Nexus.Core.AI.Entities
 {
     /// <summary>

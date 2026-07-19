@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Nexus.Core.Entities;
+﻿using Nexus.Core.Entities;
 
 namespace Nexus.Training
 {

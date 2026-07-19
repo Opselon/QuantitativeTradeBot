@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexus.Core.Entities;
+using System.Collections.Concurrent;
 
 namespace Nexus.Application.Strategies
 {

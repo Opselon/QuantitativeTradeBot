@@ -1,12 +1,8 @@
-using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Input;
 using Nexus.Application.Ports;
 using Nexus.Desktop.Services;
 using Nexus.Infrastructure.Mt5Bridge;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace Nexus.Desktop.ViewModels.Workspaces
 {

@@ -1,4 +1,3 @@
-using System;
 using Nexus.Desktop.Models;
 
 namespace Nexus.Desktop.ViewModels

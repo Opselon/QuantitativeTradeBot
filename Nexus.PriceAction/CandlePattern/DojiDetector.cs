@@ -1,19 +1,16 @@
 ﻿// Imports essential system utilities and types. [Ref: Core-Sys]
-using System;
 // Imports thread-safe collections for storing pattern states. [Ref: Core-Concurrency]
-using System.Collections.Concurrent;
-// Imports runtime services to dynamically attach properties to instances. [Ref: Advanced-DotNet]
-using System.Runtime.CompilerServices;
 // Imports thread cancellation features. [Ref: Core-Threading]
-using System.Threading;
 // Imports task parallelism types. [Ref: Core-Tasks]
-using System.Threading.Tasks;
 // Imports core context abstractions. [Ref: Proj-Dependency]
 using Nexus.PriceAction.Abstractions;
 // Imports computed candle result models from Phase 1. [Ref: Proj-Dependency]
 using Nexus.PriceAction.Candle.Enums;
 // Imports computed candle result models from Phase 1. [Ref: Proj-Dependency]
 using Nexus.PriceAction.Candle.Models;
+using System.Collections.Concurrent;
+// Imports runtime services to dynamically attach properties to instances. [Ref: Advanced-DotNet]
+using System.Runtime.CompilerServices;
 
 // Defines the namespace dedicated to candle pattern engines. [Ref: Arch-Layer]
 namespace Nexus.PriceAction.CandlePattern

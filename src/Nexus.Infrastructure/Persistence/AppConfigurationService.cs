@@ -1,7 +1,5 @@
-using System;
-using System.IO;
-using System.Text.Json;
 using Nexus.Application.Ports;
+using System.Text.Json;
 
 namespace Nexus.Infrastructure.Persistence
 {

@@ -436,10 +436,10 @@ namespace Nexus.Tests.Unit.Desktop
 
         private class FakeBridgeService : IMt5BridgeService
         {
-            #pragma warning disable CS0067 // Unused events warning fix
+#pragma warning disable CS0067 // Unused events warning fix
             public event Action<PriceTickEnvelope>? OnTickReceived;
             public event Action<string>? OnStatusChanged;
-            #pragma warning restore CS0067
+#pragma warning restore CS0067
 
             public string ConnectionStatusText => "Disconnected";
             public double PingLatencyMs => 0;

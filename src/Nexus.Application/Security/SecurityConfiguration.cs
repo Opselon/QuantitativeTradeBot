@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Application.Security
 {
     public enum EnvironmentProfile

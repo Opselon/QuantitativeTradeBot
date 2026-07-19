@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Application.Ports;
+using System.Collections.Concurrent;
 
 namespace Nexus.Infrastructure.Adapters.Mt5
 {

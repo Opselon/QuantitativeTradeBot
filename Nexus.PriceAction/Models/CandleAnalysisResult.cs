@@ -1,7 +1,7 @@
 ﻿// Maps the Domain Candle entity to avoid namespace collisions. [Ref: CS0118-Fix]
-using DomainCandle = Nexus.Core.Entities.Candle;
 // Imports the CandleType enum for classification. [Ref: Enum-Import]
 using Nexus.PriceAction.Candle.Enums;
+using DomainCandle = Nexus.Core.Entities.Candle;
 
 // Defines the namespace for the models used specifically in the Candle Engine. [Ref: Arch-Layer]
 namespace Nexus.PriceAction.Candle.Models

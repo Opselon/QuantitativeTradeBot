@@ -1,6 +1,3 @@
-using System;
-using System.Threading.Tasks;
-
 namespace Nexus.Application.Analytics
 {
     public class ManagedIndicatorEngine : IIndicatorEngine

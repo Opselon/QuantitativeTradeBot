@@ -1,8 +1,6 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using Nexus.Core.Entities;
 using Nexus.Core.ValueObjects;
+using System.Collections.Concurrent;
 
 namespace Nexus.MarketIntelligence.Aggregation
 {

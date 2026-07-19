@@ -7,10 +7,6 @@
 //   - src/Nexus.Infrastructure/Services/PythonExecutionService.cs
 // ============================================================================
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Nexus.Application.Ports
 {
     /// <summary>

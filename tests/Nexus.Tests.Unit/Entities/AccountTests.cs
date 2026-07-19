@@ -1,5 +1,3 @@
-using System;
-using Xunit;
 using Nexus.Core.Entities;
 
 namespace Nexus.Tests.Unit.Entities

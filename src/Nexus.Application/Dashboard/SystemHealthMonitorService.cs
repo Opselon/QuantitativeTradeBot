@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Application.Dashboard
 {
     public sealed class SystemHealthMonitorService : ISystemHealthMonitorService

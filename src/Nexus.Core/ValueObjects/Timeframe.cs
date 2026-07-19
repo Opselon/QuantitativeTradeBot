@@ -1,4 +1,3 @@
-using System;
 using Nexus.Core.Enums;
 using Nexus.Core.Exceptions;
 

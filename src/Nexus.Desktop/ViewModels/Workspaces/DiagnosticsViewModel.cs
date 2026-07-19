@@ -9,12 +9,11 @@
 //   - src/Nexus.Desktop/Services/IDiagnosticService.cs (Internal Application Logger)
 // ============================================================================
 
-using System;
-using System.Collections.ObjectModel;
-using System.Windows.Input;
 using Nexus.Application.Observability;
 using Nexus.Application.Ports;
 using Nexus.Desktop.Services;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace Nexus.Desktop.ViewModels.Workspaces
 {

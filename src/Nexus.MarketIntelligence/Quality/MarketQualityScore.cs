@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.MarketIntelligence.Quality
 {
     /// <summary>

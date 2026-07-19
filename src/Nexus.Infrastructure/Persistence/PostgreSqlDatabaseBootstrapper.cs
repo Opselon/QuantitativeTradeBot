@@ -1,10 +1,6 @@
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using Nexus.Application.Ports;
+using Npgsql;
 
 namespace Nexus.Infrastructure.Persistence
 {

@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.MarketIntelligence.DataSources
 {
     /// <summary>

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Diagnostics;
-using System.Reflection;
-using System.Threading;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Nexus.Core.AI.Entities;
+using System.Diagnostics;
 
 namespace Nexus.Infrastructure.Logging
 {

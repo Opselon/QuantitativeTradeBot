@@ -1,6 +1,3 @@
-using System;
-using Nexus.Desktop.ViewModels;
-
 namespace Nexus.Desktop.ViewModels.Workspaces
 {
     public class ManualDeskViewModel : ViewModelBase

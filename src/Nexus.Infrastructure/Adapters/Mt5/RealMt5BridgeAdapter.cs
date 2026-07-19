@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Nexus.Application.Mt5Bridge.Contracts;
 using Nexus.Application.Ports;
 using Nexus.Application.Workflows.DTOs;
+using System.Text.Json;
 
 namespace Nexus.Infrastructure.Adapters.Mt5
 {

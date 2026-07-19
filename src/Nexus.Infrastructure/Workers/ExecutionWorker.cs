@@ -1,11 +1,8 @@
-using System;
-using System.Threading;
-using System.Threading.Channels;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Nexus.Application.Pipeline;
 using Nexus.Application.Observability;
+using Nexus.Application.Pipeline;
+using System.Threading.Channels;
 
 namespace Nexus.Infrastructure.Workers
 {

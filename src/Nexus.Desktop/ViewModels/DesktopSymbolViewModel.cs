@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Desktop.ViewModels
 {
     public class DesktopSymbolViewModel : ViewModelBase

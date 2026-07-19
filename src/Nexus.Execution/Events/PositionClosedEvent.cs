@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Execution.Events
 {
     public class PositionClosedEvent

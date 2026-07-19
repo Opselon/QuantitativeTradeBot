@@ -1,27 +1,18 @@
 ﻿// Imports fundamental system operations for mathematically intensive computations. [Ref: Core-Systems]
-using Nexus.Core.Entities;
 // Imports the unified price action abstractions from the same assembly. [Ref: Assembly-Abstractions]
 using Nexus.PriceAction.Abstractions;
 // Imports the concrete price action engine implementations. [Ref: Assembly-Engines]
-using Nexus.PriceAction.Candle;
 using Nexus.PriceAction.Structural;
-using System;
 // Imports thread-safe concurrent dictionaries to handle highly parallel streaming tick buffers. [Ref: Concurrency-Control]
-using System.Collections.Concurrent;
 // Imports generalized generic collections for structuring historical vector lists. [Ref: Collections-Generic]
-using System.Collections.Generic;
 // Imports diagnostic stopwatch components to measure micro-latency telemetry metrics. [Ref: System-Diagnostics]
-using System.Diagnostics;
 // Imports file system operations to guarantee physical storage persistence. [Ref: File-System-IO]
-using System.IO;
 // Imports LINQ query operations to execute high-performance mathematical queries. [Ref: Linq-Queries]
-using System.Linq;
 // Imports string building performance pipelines to render massive interactive HTML reports. [Ref: Text-StringBuilder]
 using System.Text;
 // Imports precise JSON serialization parameters to persist experience structures to disk. [Ref: Serialization-Json]
 using System.Text.Json;
 // Imports task async structures to offload disk writes to parallel background threads. [Ref: Async-Programming]
-using System.Threading.Tasks;
 // Maps the core domain Candle entity to avoid local folder type collisions. [Ref: Domain-Mapping]
 using DomainCandle = Nexus.Core.Entities.Candle;
 

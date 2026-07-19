@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Nexus.Application.Ports;
 using Nexus.Application.Workflows.DTOs;
 using Nexus.Infrastructure.Mt5Bridge;
+using System.Collections.Concurrent;
 
 namespace Nexus.Desktop.Services
 {

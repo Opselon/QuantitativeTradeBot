@@ -6,12 +6,8 @@
 //   - src/Nexus.Training/TrainingPipeline.cs
 // ============================================================================
 
-using System;
-using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Nexus.Application.AI.Datasets
 {

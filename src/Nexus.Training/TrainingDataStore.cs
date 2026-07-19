@@ -1,10 +1,6 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Nexus.Core.Interfaces;
+using System.Text;
 
 namespace Nexus.Training
 {

@@ -1,14 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
+using Nexus.AI;
+using Nexus.Application.Intelligence;
 using Nexus.Core.Entities;
 using Nexus.Core.Interfaces;
 using Nexus.Core.ValueObjects;
-using Nexus.AI;
-using Nexus.Application.Intelligence;
 
 namespace Nexus.Tests.Unit.Intelligence
 {

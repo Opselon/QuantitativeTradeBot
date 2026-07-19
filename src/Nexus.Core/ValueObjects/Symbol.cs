@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Core.ValueObjects
 {
     public sealed class Symbol : IEquatable<Symbol>

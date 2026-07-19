@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Nexus.Application.Strategies
 {
     public record StrategyDescriptor(

@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 using Nexus.Core.Entities;
 using Nexus.Core.Enums;
 using Nexus.Core.ValueObjects;
@@ -305,7 +299,8 @@ namespace Nexus.Tests.Unit.Intelligence
             var baseTime = new DateTime(2026, 4, 1, 10, 0, 0, DateTimeKind.Utc);
 
             int eventCount = 0;
-            aggregator.CandleCompleted += (sender, candle) => {
+            aggregator.CandleCompleted += (sender, candle) =>
+            {
                 eventCount++;
                 Assert.Equal("EURUSD", candle.Symbol.Name);
             };

@@ -1,10 +1,8 @@
-using System;
-using Xunit;
+using Nexus.Core.DomainEvents;
 using Nexus.Core.Entities;
-using Nexus.Core.ValueObjects;
 using Nexus.Core.Enums;
 using Nexus.Core.Exceptions;
-using Nexus.Core.DomainEvents;
+using Nexus.Core.ValueObjects;
 
 namespace Nexus.Tests.Unit.Entities
 {

@@ -1,4 +1,3 @@
-using System;
 using Nexus.Core.Entities;
 using Nexus.Core.ValueObjects;
 

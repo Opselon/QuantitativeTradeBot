@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Application.Ports
 {
     public interface IConnectionHealthMonitor : IDisposable

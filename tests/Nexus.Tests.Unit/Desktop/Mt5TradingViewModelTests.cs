@@ -1,17 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 using Nexus.Application.Ports;
+using Nexus.Application.Workflows.DTOs;
+using Nexus.Core.Entities;
+using Nexus.Core.Interfaces;
 using Nexus.Desktop.Models;
 using Nexus.Desktop.Services;
 using Nexus.Desktop.ViewModels;
 using Nexus.Infrastructure.Mt5Bridge;
-using Nexus.Core.Interfaces;
-using Nexus.Core.Entities;
-using Nexus.Application.Workflows.DTOs;
+using System.Collections.ObjectModel;
 
 namespace Nexus.Tests.Unit.Desktop
 {

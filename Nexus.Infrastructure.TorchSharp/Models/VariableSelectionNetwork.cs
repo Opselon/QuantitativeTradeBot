@@ -4,9 +4,6 @@
 // FILE:    VariableSelectionNetwork.cs
 // ============================================================================
 
-using System;
-using System.Collections.Generic;
-using TorchSharp;
 using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
 

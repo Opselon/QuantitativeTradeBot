@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Nexus.Core.AI.Entities
+﻿namespace Nexus.Core.AI.Entities
 {
     /// <summary>
     /// Configuration options for the high-performance diagnostic HTML logging system.

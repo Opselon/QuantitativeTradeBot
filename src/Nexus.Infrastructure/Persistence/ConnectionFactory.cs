@@ -1,10 +1,9 @@
-using System;
-using System.Data.Common;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
-using Npgsql;
 using Nexus.Application.Ports;
 using Nexus.Infrastructure.Configuration;
+using Npgsql;
+using System.Data.Common;
 
 namespace Nexus.Infrastructure.Persistence
 {

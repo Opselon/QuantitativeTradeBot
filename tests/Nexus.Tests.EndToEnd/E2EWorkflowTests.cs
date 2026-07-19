@@ -1,24 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
-using Xunit.Abstractions;
-using Nexus.Core.Entities;
-using Nexus.Core.ValueObjects;
-using Nexus.Core.Interfaces;
 using Nexus.Application.Analytics;
 using Nexus.Application.Pipeline;
 using Nexus.Application.Ports;
-using Nexus.Application.Strategies;
 using Nexus.Application.Security;
+using Nexus.Application.Strategies;
+using Nexus.Core.Entities;
+using Nexus.Core.ValueObjects;
 using Nexus.Infrastructure.Persistence;
 using Nexus.Infrastructure.Persistence.Models;
 using Nexus.Tests.EndToEnd.Fixture;
 using Nexus.Tests.EndToEnd.Mocks;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Nexus.Tests.EndToEnd
 {
@@ -654,7 +648,7 @@ namespace Nexus.Tests.EndToEnd
 
                 Assert.Equal(3, result.Length);
                 Assert.Equal(10.0, result[0], 5);
-                Assert.Equal(11.0 * (2.0/3.0) + 10.0 * (1.0/3.0), result[1], 5);
+                Assert.Equal(11.0 * (2.0 / 3.0) + 10.0 * (1.0 / 3.0), result[1], 5);
             }
             catch (Exception ex)
             {

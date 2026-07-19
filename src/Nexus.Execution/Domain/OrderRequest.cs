@@ -1,4 +1,3 @@
-using System;
 using Nexus.Execution.Enums;
 
 namespace Nexus.Execution.Domain

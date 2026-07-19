@@ -1,13 +1,11 @@
 ﻿// Imports the System namespace for fundamental base types and exceptions. [Ref: Core-Sys]
-using System;
 // Imports the Concurrent collections for thread-safe dictionary operations. [Ref: Core-ThreadSafe]
-using System.Collections.Concurrent;
-// Imports generic collections for defining IReadOnlyList. [Ref: Core-Collections]
-using System.Collections.Generic;
-// Maps the Domain Candle entity to avoid namespace collisions with the Candle folder. [Ref: CS0118-Fix]
-using DomainCandle = Nexus.Core.Entities.Candle;
 // Imports the candle analysis result model. [Ref: Domain-Models]
 using Nexus.PriceAction.Candle.Models;
+using System.Collections.Concurrent;
+// Imports generic collections for defining IReadOnlyList. [Ref: Core-Collections]
+// Maps the Domain Candle entity to avoid namespace collisions with the Candle folder. [Ref: CS0118-Fix]
+using DomainCandle = Nexus.Core.Entities.Candle;
 
 // Defines the namespace for abstractions used across all price action engines. [Ref: Arch-Layer]
 namespace Nexus.PriceAction.Abstractions

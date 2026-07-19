@@ -1,4 +1,3 @@
-using System;
 using Nexus.Core.DomainEvents;
 using Nexus.Core.Interfaces;
 

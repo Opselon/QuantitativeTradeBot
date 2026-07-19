@@ -1,5 +1,4 @@
-﻿using System;
-using Nexus.Core.AI.Enums;
+﻿using Nexus.Core.AI.Enums;
 
 namespace Nexus.Core.AI.Entities
 {

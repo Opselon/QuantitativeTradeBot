@@ -1,9 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using Nexus.Core.Entities;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-using Nexus.Core.Entities;
 
 namespace Nexus.Training
 {

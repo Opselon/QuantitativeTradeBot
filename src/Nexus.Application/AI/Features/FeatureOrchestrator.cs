@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Nexus.Core.AI.Interfaces;
+﻿using Nexus.Core.AI.Interfaces;
 using Nexus.Core.Entities;
 
 namespace Nexus.Application.AI.Features

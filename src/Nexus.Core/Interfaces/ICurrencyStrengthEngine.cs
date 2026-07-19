@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Nexus.Core.Entities;
 
 namespace Nexus.Core.Interfaces

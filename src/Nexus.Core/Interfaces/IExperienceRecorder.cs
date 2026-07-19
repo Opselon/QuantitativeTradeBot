@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Nexus.Core.Entities;
 
 namespace Nexus.Core.Interfaces

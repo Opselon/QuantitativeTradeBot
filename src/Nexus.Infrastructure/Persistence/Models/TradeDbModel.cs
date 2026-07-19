@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Infrastructure.Persistence.Models
 {
     public class TradeDbModel

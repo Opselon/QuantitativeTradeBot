@@ -1,7 +1,6 @@
-using System;
-using System.Collections.Concurrent;
 using Nexus.Core.Entities;
 using Nexus.Core.Interfaces;
+using System.Collections.Concurrent;
 
 namespace Nexus.Application.Intelligence
 {

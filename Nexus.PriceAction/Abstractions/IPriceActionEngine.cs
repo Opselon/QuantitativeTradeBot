@@ -1,7 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
-namespace Nexus.PriceAction.Abstractions
+﻿namespace Nexus.PriceAction.Abstractions
 {
     public interface IPriceActionEngine
     {

@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Application.Mt5
 {
     public class OpenPositionDto

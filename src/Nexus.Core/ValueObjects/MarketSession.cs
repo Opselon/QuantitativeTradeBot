@@ -1,4 +1,3 @@
-using System;
 using Nexus.Core.Exceptions;
 
 namespace Nexus.Core.ValueObjects

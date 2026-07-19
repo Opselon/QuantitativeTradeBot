@@ -1,14 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
-using Nexus.Core.Entities;
-using Nexus.Core.ValueObjects;
-using Nexus.Application.Ports;
 using Nexus.Application.Mt5Bridge.Contracts;
-using Nexus.Infrastructure.Mt5Bridge;
+using Nexus.Application.Ports;
+using Nexus.Core.Entities;
 using Nexus.Desktop.Services;
+using Nexus.Infrastructure.Mt5Bridge;
 
 namespace Nexus.Tests.Unit.Desktop
 {

@@ -1,7 +1,3 @@
-using System;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexus.Execution.Auditing;
 using Nexus.Execution.Domain;
@@ -9,6 +5,7 @@ using Nexus.Execution.Enums;
 using Nexus.Execution.Gateways;
 using Nexus.Execution.Management;
 using Nexus.Execution.Risk;
+using System.Diagnostics;
 
 namespace Nexus.Execution
 {

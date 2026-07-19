@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Application.Ports
 {
     public class BridgeDiagnosticLogEntry

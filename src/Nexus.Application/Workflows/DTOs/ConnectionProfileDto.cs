@@ -1,5 +1,3 @@
-using System;
-
 namespace Nexus.Application.Workflows.DTOs
 {
     public class ConnectionProfileDto

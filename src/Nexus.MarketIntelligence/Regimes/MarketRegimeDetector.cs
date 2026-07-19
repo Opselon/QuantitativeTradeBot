@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Nexus.Core.Entities;
 
 namespace Nexus.MarketIntelligence.Regimes

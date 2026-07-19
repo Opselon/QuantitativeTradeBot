@@ -1,13 +1,9 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using Xunit;
-using Nexus.Application.Ports;
 using Nexus.Application.Workflows;
 using Nexus.Application.Workflows.DTOs;
+using Nexus.Infrastructure.Adapters.Mt5;
 using Nexus.Infrastructure.Persistence;
 using Nexus.Infrastructure.Security;
-using Nexus.Infrastructure.Adapters.Mt5;
+using System.IO;
 
 namespace Nexus.Tests.Unit.Desktop
 {

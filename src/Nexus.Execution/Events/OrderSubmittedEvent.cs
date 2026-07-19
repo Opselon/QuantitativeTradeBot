@@ -1,4 +1,3 @@
-using System;
 using Nexus.Execution.Domain;
 
 namespace Nexus.Execution.Events

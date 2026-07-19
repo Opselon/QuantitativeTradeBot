@@ -1,26 +1,19 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Input;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Nexus.Application.Ports;
-using Nexus.Infrastructure.Mt5Bridge;
-using Nexus.Application.Dashboard;
-using Nexus.Desktop.Services;
-using Nexus.Core.Interfaces;
-using Nexus.Core.Entities;
-using Nexus.Core.ValueObjects;
-using Nexus.Application.Mt5;
-using Nexus.Application.Intelligence;
-using Nexus.Infrastructure.Persistence;
-using Nexus.Core.DomainEvents;
-using Nexus.Core.Enums;
 using Nexus.Application.AI.Decision; // Added to consume the newly completed AI Orchestrator
+using Nexus.Application.Dashboard;
+using Nexus.Application.Intelligence;
+using Nexus.Application.Mt5;
+using Nexus.Application.Ports;
+using Nexus.Core.Entities;
+using Nexus.Core.Interfaces;
+using Nexus.Core.ValueObjects;
+using Nexus.Desktop.Services;
+using Nexus.Infrastructure.Mt5Bridge;
+using Nexus.Infrastructure.Persistence;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Windows.Input;
 
 namespace Nexus.Desktop.ViewModels.Workspaces
 {
@@ -505,19 +498,22 @@ namespace Nexus.Desktop.ViewModels.Workspaces
             _pipeline.OnPipelineTickProcessed += OnLiveTickProcessed;
 
             #region PRO AUTOMATION: Real-Time Risk & Execution Live Logging to UI Console
-            _decisionEventStream.OnPositionManagement += (evt) => {
+            _decisionEventStream.OnPositionManagement += (evt) =>
+            {
                 string levelStr = evt.ActionType.Contains("CRITICAL") || evt.ActionType.Contains("EMERGENCY") ? "ALERT" : "SECURITY";
                 LogEvent(levelStr, $"[Auto-Risk] {evt.Symbol} (Ticket ID: {evt.PositionId.ToString().Substring(0, 5).ToUpper()}): {evt.Reason}");
             };
 
-            _decisionEventStream.OnRiskAdjusted += (evt) => {
+            _decisionEventStream.OnRiskAdjusted += (evt) =>
+            {
                 LogEvent("SECURITY", $"[Risk Adjusted] {evt.RiskMetric} tuned from {evt.PreviousValue:F2} to {evt.NewValue:F2}. Reason: {evt.Reason}");
             };
 
             // REASON: Subscribes directly to the fused AI decision outputs.
             // This captures final trading decisions (including WAIT states due to risk limits)
             // and immediately streams them onto the live Console/Viewer on the UI.
-            _decisionEventStream.OnDecisionCreated += (evt) => {
+            _decisionEventStream.OnDecisionCreated += (evt) =>
+            {
                 string component = evt.Action.Equals("WAIT", StringComparison.OrdinalIgnoreCase) ? "DECISION" : "SECURITY";
                 LogEvent(component, $"[Auto-Trade] Action: {evt.Action} | Conf: {evt.Confidence:P0} | Reason: {evt.Reason}");
             };

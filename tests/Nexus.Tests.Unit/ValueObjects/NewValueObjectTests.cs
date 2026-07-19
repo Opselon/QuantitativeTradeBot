@@ -1,8 +1,6 @@
-using System;
-using Xunit;
-using Nexus.Core.ValueObjects;
 using Nexus.Core.Enums;
 using Nexus.Core.Exceptions;
+using Nexus.Core.ValueObjects;
 
 namespace Nexus.Tests.Unit.ValueObjects
 {

@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace Nexus.Training
 {
     /// <summary>

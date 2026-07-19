@@ -7,8 +7,6 @@
 //   - src/Nexus.Infrastructure.TorchSharp/Models/TemporalFusionTransformer.cs
 // ============================================================================
 
-using System;
-
 namespace Nexus.Core.AI.Entities
 {
     /// <summary>

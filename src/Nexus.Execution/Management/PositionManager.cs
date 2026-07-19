@@ -5,15 +5,8 @@ using Nexus.Core.DomainEvents;
 using Nexus.Core.Entities;
 using Nexus.Core.Interfaces;
 using Nexus.Execution.Domain;
-using Nexus.Execution.Enums;
-using Nexus.Execution.Gateways;
 using Nexus.Training;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Nexus.Execution.Management
 {
