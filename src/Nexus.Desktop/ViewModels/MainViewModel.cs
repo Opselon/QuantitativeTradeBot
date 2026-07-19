@@ -20,6 +20,7 @@ namespace Nexus.Desktop.ViewModels
         public Mt5BridgeViewModel Mt5Bridge { get; }
         public MarketWatchViewModel MarketWatch { get; }
         public ManualDeskViewModel ManualDesk { get; }
+        public TrainSkillsViewModel TrainSkills { get; }
         public DiagnosticsViewModel Diagnostics { get; }
         public TestConsoleViewModel TestConsole { get; }
         public SettingsViewModel Settings { get; }
@@ -190,7 +191,9 @@ namespace Nexus.Desktop.ViewModels
         public ICommand SelectNativeEngineCommand { get; }
         public ICommand SelectDiagnosticsCommand { get; }
         public ICommand SelectSettingsCommand { get; }
+        public ICommand SelectTrainSkillsCommand { get; }
         public ICommand SelectTestConsoleCommand { get; }
+
 
         // Trade Commands
         public ICommand PlaceOrderUICommand { get; }
@@ -221,6 +224,7 @@ namespace Nexus.Desktop.ViewModels
             MarketWatchViewModel marketWatch,
             ManualDeskViewModel manualDesk,
             DiagnosticsViewModel diagnostics,
+            TrainSkillsViewModel trainSkills,
             TestConsoleViewModel testConsole,
             SettingsViewModel settings)
         {
@@ -233,7 +237,7 @@ namespace Nexus.Desktop.ViewModels
             Intelligence = intelligence ?? throw new ArgumentNullException(nameof(intelligence));
             _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
             _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
-
+            TrainSkills = trainSkills ?? throw new ArgumentNullException(nameof(trainSkills));
             Dashboard = dashboard ?? throw new ArgumentNullException(nameof(dashboard));
             Mt5Bridge = mt5Bridge ?? throw new ArgumentNullException(nameof(mt5Bridge));
             MarketWatch = marketWatch ?? throw new ArgumentNullException(nameof(marketWatch));
@@ -303,7 +307,7 @@ namespace Nexus.Desktop.ViewModels
             SelectDiagnosticsCommand = new RelayCommand(() => SelectedTabIndex = 6);
             SelectSettingsCommand = new RelayCommand(() => SelectedTabIndex = 7);
             SelectTestConsoleCommand = new RelayCommand(() => SelectedTabIndex = 8);
-
+            SelectTrainSkillsCommand = new RelayCommand(() => SelectedTabIndex = 9);
             RunSmokeTestCommand = new AsyncRelayCommand(OnRunSmokeTestAsync);
 
             // Wire Trade Commands

@@ -1,33 +1,44 @@
-﻿using System;
+﻿// ============================================================================
+// PROJECT: NEXUS QUANTITATIVE TRADING PLATFORM
+// LAYER:   INFRASTRUCTURE LAYER (Deep Learning Backend)
+// FILE:    TorchTrainingPipeline.cs
+// DESCRIPTION: Institutional-grade TorchSharp implementation of ITrainingPipeline.
+//              Reads directly from zero-copy .dat files and trains the TFT model.
+// ============================================================================
+
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
+using System.IO.MemoryMappedFiles;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using TorchSharp;
 using Nexus.Core.AI.Entities;
-using Nexus.Core.AI.Enums;
 using Nexus.Core.AI.Interfaces;
 using Nexus.Infrastructure.TorchSharp.Models;
-using TorchSharp;
 using static TorchSharp.torch;
-using static TorchSharp.torch.nn;
 
 namespace Nexus.Infrastructure.TorchSharp.Training
 {
     /// <summary>
-    /// Production-grade training loop using TorchSharp.
-    /// Handles batching, forward/backward passes, and combined loss calculation (Policy + Value).
+    /// Binary memory-aligned structure representing a single timeframe market row.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct MarketKnowledgeRow
+    {
+        public long TimestampUnixNano;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 33)]
+        public float[] Features;
+        public float TargetReturn;
+        public float TargetRisk;
+        public float TargetDrawdown;
+    }
+
     public class TorchTrainingPipeline : ITrainingPipeline
     {
-        private readonly string _checkpointsDirectory;
-
-        public TorchTrainingPipeline()
-        {
-            _checkpointsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "NexusAI", "Checkpoints");
-            if (!Directory.Exists(_checkpointsDirectory))
-                Directory.CreateDirectory(_checkpointsDirectory);
-        }
+        private const int SequenceLength = 30;
+        private const int FeatureCount = 33;
 
         public async Task<ModelMetadata> ExecuteTrainingAsync(
             string experimentId,
@@ -35,131 +46,135 @@ namespace Nexus.Infrastructure.TorchSharp.Training
             IExperimentTracker tracker,
             CancellationToken ct = default)
         {
-            var stopwatch = Stopwatch.StartNew();
-            var device = torch.cuda.is_available() ? torch.CUDA : torch.CPU;
-
-            // Hyperparameters (In future, these should be injected or read from a configuration)
-            int epochs = 100;
-            double learningRate = 1e-3;
-            int batchSize = 32;
-
-            // 1. Initialize Model & Optimizer
-            using var model = new MlpTradingModel(inputFeatures: 64, hiddenSize: 128).to(device);
-            using var optimizer = torch.optim.Adam(model.parameters(), lr: learningRate);
-
-            // Loss Functions
-            using var policyLossFunc = CrossEntropyLoss(); // For Wait/Buy/Sell classification
-            using var valueLossFunc = MSELoss();           // For Expected Pip Movement regression
-
-            double finalLoss = 0.0;
-
-            // 2. Load Dataset (Mocking the data loader logic for architecture structure)
-            // In a real scenario, this calls a DataLoader reading from Parquet/JSONL.
-            var (trainFeatures, trainPolicyLabels, trainValueLabels) = LoadMockDataset(dataset.NumberOfSamples, batchSize, device);
-
-            // 3. Main Training Epoch Loop
-            for (int epoch = 0; epoch < epochs; epoch++)
+            return await Task.Run(() =>
             {
-                if (ct.IsCancellationRequested) break;
+                ct.ThrowIfCancellationRequested();
 
-                model.train();
-                double epochLoss = 0.0;
+                string datFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "NexusAI", "Data", "Knowledge", $"{dataset.DatasetId}.dat");
 
-                for (int b = 0; b < trainFeatures.Count; b++)
+                if (!File.Exists(datFilePath))
                 {
-                    using var inputs = trainFeatures[b];
-                    using var targetPolicy = trainPolicyLabels[b];
-                    using var targetValue = trainValueLabels[b];
-
-                    optimizer.zero_grad();
-
-                    // Forward Pass
-                    var (policyLogits, expectedValues) = model.forward(inputs);
-
-                    // Calculate Combined Loss (Policy Loss + Value Loss)
-                    using var pLoss = policyLossFunc.forward(policyLogits, targetPolicy);
-                    using var vLoss = valueLossFunc.forward(expectedValues.squeeze(), targetValue);
-                    using var totalLoss = pLoss + vLoss;
-
-                    // Backward Pass & Optimizer Step
-                    totalLoss.backward();
-                    optimizer.step();
-
-                    epochLoss += totalLoss.item<float>();
+                    throw new FileNotFoundException($"Knowledge dataset .dat file not found at {datFilePath}");
                 }
 
-                finalLoss = epochLoss / trainFeatures.Count;
+                // 1. ZERO-COPY MEMORY MAPPED READER
+                var fileInfo = new FileInfo(datFilePath);
+                int rowSize = Marshal.SizeOf<MarketKnowledgeRow>();
+                long totalRows = fileInfo.Length / rowSize;
+                int samplesCount = (int)totalRows - SequenceLength;
 
-                // Future: Validation Step would happen here
-            }
+                if (samplesCount <= 0)
+                {
+                    throw new InvalidOperationException("Dataset .dat file contains insufficient rows for temporal sequences.");
+                }
 
-            // 4. Save Checkpoint
-            string modelId = $"MODEL_{Guid.NewGuid():N}";
-            string checkpointPath = Path.Combine(_checkpointsDirectory, $"{modelId}.dat");
-            model.save(checkpointPath);
+                using (var scope = NewDisposeScope())
+                {
+                    // Pre-allocate flat arrays for tensor mapping
+                    float[] flatFeatures = new float[samplesCount * SequenceLength * FeatureCount];
+                    float[] flatTargets = new float[samplesCount * 7];
+                    float[] flatOffsets = new float[samplesCount];
 
-            stopwatch.Stop();
+                    // Read binary data via MemoryMappedFile
+                    using (var mmf = MemoryMappedFile.CreateFromFile(datFilePath, FileMode.Open, null, 0, MemoryMappedFileAccess.Read))
+                    using (var accessor = mmf.CreateViewAccessor(0, fileInfo.Length, MemoryMappedFileAccess.Read))
+                    {
+                        MarketKnowledgeRow[] rows = new MarketKnowledgeRow[totalRows];
+                        for (long i = 0; i < totalRows; i++)
+                        {
+                            accessor.Read(i * rowSize, out rows[i]);
+                        }
 
-            // 5. Create Experiment Record
-            var metrics = new Dictionary<string, double>
-            {
-                { "TrainingLoss", finalLoss },
-                { "ValidationLoss", finalLoss * 1.1 }, // Mocked Validation
-                { "WinRate", 0.58 }, // Mocked metric
-                { "ProfitFactor", 1.2 }
-            };
+                        // Map into chronological sequences
+                        for (int i = 0; i < samplesCount; i++)
+                        {
+                            for (int seq = 0; seq < SequenceLength; seq++)
+                            {
+                                int targetIdx = i + seq;
+                                for (int f = 0; f < FeatureCount; f++)
+                                {
+                                    flatFeatures[i * (SequenceLength * FeatureCount) + seq * FeatureCount + f] = rows[targetIdx].Features[f];
+                                }
+                            }
 
-            var hyperParams = new Dictionary<string, string>
-            {
-                { "LearningRate", learningRate.ToString() },
-                { "BatchSize", batchSize.ToString() },
-                { "Epochs", epochs.ToString() }
-            };
+                            double closeReturn = rows[i + SequenceLength].TargetReturn;
+                            flatTargets[i * 7 + 0] = closeReturn > 0.0005 ? 1.0f : 0.0f; // BUY
+                            flatTargets[i * 7 + 1] = closeReturn < -0.0005 ? 1.0f : 0.0f; // SELL
+                            flatTargets[i * 7 + 2] = Math.Abs(closeReturn) <= 0.0005 ? 1.0f : 0.0f; // NO_TRADE
+                            flatTargets[i * 7 + 3] = (float)closeReturn; // Expected Return
+                            flatTargets[i * 7 + 4] = rows[i + SequenceLength].TargetRisk; // Risk
+                            flatTargets[i * 7 + 5] = rows[i + SequenceLength].TargetDrawdown; // MAE
+                            flatTargets[i * 7 + 6] = 0.5f; // Confidence
 
-            var experiment = new ExperimentRecord(
-                experimentId, "MLP", dataset.DatasetId, epochs, learningRate, batchSize, "Adam", "42",
-                metrics, hyperParams, device.ToString(), stopwatch.Elapsed, DateTime.UtcNow);
+                            flatOffsets[i] = (float)(samplesCount - i) / samplesCount; // Time decay
+                        }
+                    }
 
-            await tracker.LogExperimentAsync(experiment, ct);
+                    // 2. TENSOR INITIALIZATION
+                    var inputTensor = tensor(flatFeatures, new long[] { samplesCount, SequenceLength, FeatureCount });
+                    var targetTensor = tensor(flatTargets, new long[] { samplesCount, 7 });
+                    var offsetsTensor = tensor(flatOffsets, new long[] { samplesCount });
 
-            // 6. Return Immutable Model Metadata
-            return new ModelMetadata(
-                ModelId: modelId,
-                ArchitectureType: "MLP",
-                Backend: ExecutionBackend.TorchSharp,
-                DatasetId: dataset.DatasetId,
-                ExperimentId: experimentId,
-                FeatureVersion: dataset.FeatureVersion,
-                LabelVersion: dataset.LabelVersion,
-                Status: ModelStatus.Experimental, // Starts as experimental, requires ChampionChallengerEvaluator to promote
-                CheckpointPath: checkpointPath,
-                CreatedAtUtc: DateTime.UtcNow,
-                GitCommit: dataset.GitCommit
-            );
-        }
+                    var model = new TemporalFusionTransformer(FeatureCount, 1, 64, 0.1);
+                    model.train();
+                    var optimizer = torch.optim.Adam(model.parameters(), lr: 0.001);
 
-        /// <summary>
-        /// Placeholder for data loading. Converts your physical JSON/CSV datasets into Torch Tensors.
-        /// </summary>
-        private (List<Tensor>, List<Tensor>, List<Tensor>) LoadMockDataset(long totalSamples, int batchSize, torch.Device device)
-        {
-            var features = new List<Tensor>();
-            var policyLabels = new List<Tensor>();
-            var valueLabels = new List<Tensor>();
+                    int batchSize = 128;
+                    int totalBatches = (int)Math.Ceiling((double)samplesCount / batchSize);
+                    float finalLoss = 1.0f;
 
-            int batches = (int)(totalSamples / batchSize);
-            if (batches == 0) batches = 1;
+                    // 3. BACKPROPAGATION LOOP
+                    for (int epoch = 1; epoch <= 5; epoch++)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        float epochLossSum = 0;
 
-            for (int i = 0; i < batches; i++)
-            {
-                features.Add(torch.randn(new long[] { batchSize, 64 }, dtype: torch.float32, device: device));
-                // Target labels: Random integer between 0 and 2 (Wait, Buy, Sell)
-                policyLabels.Add(torch.randint(0, 3, new long[] { batchSize }, dtype: torch.int64, device: device));
-                // Target Value: Random float for Pips
-                valueLabels.Add(torch.randn(new long[] { batchSize }, dtype: torch.float32, device: device));
-            }
+                        for (int batchIdx = 0; batchIdx < totalBatches; batchIdx++)
+                        {
+                            int startIdx = batchIdx * batchSize;
+                            int currentBatchSize = Math.Min(batchSize, samplesCount - startIdx);
 
-            return (features, policyLabels, valueLabels);
+                            using (var batchScope = NewDisposeScope())
+                            {
+                                optimizer.zero_grad();
+
+                                var batchInput = inputTensor.narrow(0, startIdx, currentBatchSize);
+                                var batchTarget = targetTensor.narrow(0, startIdx, currentBatchSize);
+                                var batchOffsets = offsetsTensor.narrow(0, startIdx, currentBatchSize);
+
+                                var prediction = model.forward(batchInput);
+                                var loss = model.CalculateExponentialDecayLoss(prediction, batchTarget, batchOffsets, 0.5);
+
+                                loss.backward();
+                                optimizer.step();
+
+                                epochLossSum += loss.data<float>()[0];
+                            }
+                        }
+                        finalLoss = epochLossSum / totalBatches;
+                    }
+
+                    // 4. CHECKPOINT SERIALIZATION
+                    string checkpointsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "NexusAI", "Checkpoints");
+                    Directory.CreateDirectory(checkpointsDir);
+                    string checkpointPath = Path.Combine(checkpointsDir, $"{experimentId}.dat");
+                    model.save(checkpointPath);
+
+                    return new ModelMetadata(
+                        ModelId: experimentId,
+                        ArchitectureType: "TemporalFusionTransformer",
+                        Backend: Core.AI.Enums.ExecutionBackend.TorchSharp,
+                        DatasetId: dataset.DatasetId,
+                        ExperimentId: experimentId,
+                        FeatureVersion: "1.0",
+                        LabelVersion: "1.0",
+                        Status: Core.AI.Enums.ModelStatus.Candidate,
+                        CheckpointPath: checkpointPath,
+                        CreatedAtUtc: DateTime.UtcNow,
+                        GitCommit: "HEAD"
+                    );
+                }
+            }, ct);
         }
     }
 }

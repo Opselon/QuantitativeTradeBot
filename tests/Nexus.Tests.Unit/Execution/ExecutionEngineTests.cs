@@ -37,7 +37,6 @@ namespace Nexus.Tests.Unit.Execution
             _mt5Gateway = new MT5ExecutionGateway(_stubMt5Service);
             _riskGuard = new RiskExecutionGuard();
             _auditService = new StubExecutionAuditService();
-            _positionManager = new PositionManager(_simGateway);
             _logger = new StubLogger<RiskControlledExecutionEngine>();
 
             _engine = new RiskControlledExecutionEngine(

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.Extensions.DependencyInjection;
 using Nexus.Core.Entities;
 using Nexus.Core.Enums;
 using Nexus.Training;
@@ -377,7 +378,9 @@ namespace Nexus.Tests.Unit.Training
                 learningManager.RegisterExperience(sample);
             }
 
-            var pipeline = new TrainingPipeline(registry, storage, validation, learningManager);
+            // Use the manual fake service scope factory
+            var fakeScopeFactory = new FakeServiceScopeFactory();
+            var pipeline = new TrainingPipeline(registry, storage, validation, learningManager, fakeScopeFactory);
 
             // Act
             var trainedModel = await pipeline.ExecuteTrainingCycleAsync(
@@ -400,5 +403,23 @@ namespace Nexus.Tests.Unit.Training
             Assert.Contains(pipeline.PipelineLogs, x => x.Contains("[APPROVED]"));
             Assert.Contains(pipeline.PipelineLogs, x => x.Contains("[PROMOTED]"));
         }
+    }
+
+    // --- MANUAL FAKES TO REPLACE MOQ ---
+
+    internal class FakeServiceScopeFactory : IServiceScopeFactory
+    {
+        public IServiceScope CreateScope() => new FakeServiceScope();
+    }
+
+    internal class FakeServiceScope : IServiceScope
+    {
+        public IServiceProvider ServiceProvider => new FakeServiceProvider();
+        public void Dispose() { }
+    }
+
+    internal class FakeServiceProvider : IServiceProvider
+    {
+        public object? GetService(Type serviceType) => null;
     }
 }

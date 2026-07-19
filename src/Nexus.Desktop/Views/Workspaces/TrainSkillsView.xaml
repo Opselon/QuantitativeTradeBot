@@ -1,0 +1,236 @@
+<UserControl x:Class="Nexus.Desktop.Views.Workspaces.TrainSkillsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="1100">
+	<materialDesign:Card Style="{StaticResource NtePremiumCard}">
+		<Grid>
+			<Grid.RowDefinitions>
+				<!-- 1. Elegant Header -->
+				<RowDefinition Height="Auto"/>
+				<RowDefinition Height="20"/>
+				<!-- 2. Integrated Control Panel and Dynamic Skill Selector Grid -->
+				<RowDefinition Height="Auto"/>
+				<RowDefinition Height="20"/>
+				<!-- 3. Terminal Emulator Log console -->
+				<RowDefinition Height="*"/>
+			</Grid.RowDefinitions>
+
+			<!-- Workspace Title and Subsystem Details -->
+			<DockPanel Grid.Row="0">
+				<StackPanel Orientation="Horizontal" VerticalAlignment="Center" DockPanel.Dock="Left">
+					<materialDesign:PackIcon Kind="Brain" Width="30" Height="30" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+					<StackPanel VerticalAlignment="Center">
+						<TextBlock Text="NEXUS AI - TRADING SKILLS ACQUISITION CENTRE" Style="{StaticResource NteHeadline}" Margin="0,0,0,2"/>
+						<TextBlock Text="Build deep-learning custom datasets. Secure local MetaTrader 5 history, model ICT Fair Value Gaps, and export Price Action weights." Style="{StaticResource NteBodyMedium}"/>
+					</StackPanel>
+				</StackPanel>
+			</DockPanel>
+
+			<!-- Compact Data Ingestion and Interactive Skill Cards -->
+			<Grid Grid.Row="2">
+				<Grid.ColumnDefinitions>
+					<!-- Column 0: Environment Setup Card (Compact Ingestion) -->
+					<ColumnDefinition Width="340"/>
+					<ColumnDefinition Width="20"/>
+					<!-- Column 1: Price Action Master Skill Card -->
+					<ColumnDefinition Width="*"/>
+					<ColumnDefinition Width="20"/>
+					<!-- Column 2: SMC / ICT Liquidity Skill Card -->
+					<ColumnDefinition Width="*"/>
+				</Grid.ColumnDefinitions>
+
+				<!-- CARD 1: ENVIRONMENT SETUP & DATA INGESTION -->
+				<Border Grid.Column="0" Background="{DynamicResource SurfaceContainerBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1.5" CornerRadius="12" Padding="15">
+					<StackPanel>
+						<TextBlock Text="ENVIRONMENT &amp; INGESTION" Style="{StaticResource NteLabelLarge}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,15"/>
+
+						<!-- Mini Symbol Input -->
+						<Grid Margin="0,0,0,12">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="110"/>
+								<ColumnDefinition Width="*"/>
+							</Grid.ColumnDefinitions>
+							<TextBlock Text="Target Symbol:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+							<TextBox Grid.Column="1" Text="{Binding Symbol, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MaterialDesignFilledTextBox}" Height="36" Padding="8,4" HorizontalContentAlignment="Center"/>
+						</Grid>
+
+						<!-- Mini Candle Count Input -->
+						<Grid Margin="0,0,0,15">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="110"/>
+								<ColumnDefinition Width="*"/>
+							</Grid.ColumnDefinitions>
+							<TextBlock Text="Candles Length:" Style="{StaticResource NteLabelLarge}" VerticalAlignment="Center"/>
+							<TextBox Grid.Column="1" Text="{Binding CandleCount, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MaterialDesignFilledTextBox}" Height="36" Padding="8,4" HorizontalContentAlignment="Center"/>
+						</Grid>
+
+						<Separator Background="{DynamicResource GlassBorderBrush}" Margin="0,0,0,15"/>
+
+						<!-- One-Click Environment Installer Button -->
+						<Button Command="{Binding InstallDependenciesCommand}" Height="38">
+							<Button.Style>
+								<Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
+									<Setter Property="IsEnabled" Value="True"/>
+									<Style.Triggers>
+										<DataTrigger Binding="{Binding IsProcessing}" Value="True">
+											<Setter Property="IsEnabled" Value="False"/>
+										</DataTrigger>
+									</Style.Triggers>
+								</Style>
+							</Button.Style>
+							<StackPanel Orientation="Horizontal">
+								<materialDesign:PackIcon Kind="LayersPlus" Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+								<TextBlock Text="SETUP ENVIRONMENT (PIP)" VerticalAlignment="Center" FontWeight="Bold" FontSize="11"/>
+							</StackPanel>
+						</Button>
+					</StackPanel>
+				</Border>
+
+				<!-- CARD 2: PRICE ACTION MASTER SKILL -->
+				<Border Grid.Column="2" Background="{DynamicResource SurfaceContainerBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1.5" CornerRadius="12" Padding="15">
+					<Grid>
+						<Grid.RowDefinitions>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="*"/>
+							<RowDefinition Height="Auto"/>
+						</Grid.RowDefinitions>
+
+						<StackPanel Grid.Row="0">
+							<DockPanel>
+								<materialDesign:PackIcon Kind="ChartLine" Width="24" Height="24" Foreground="{DynamicResource PrimaryBrush}" DockPanel.Dock="Left" Margin="0,0,10,0"/>
+								<TextBlock Text="PRICE ACTION MASTER" Style="{StaticResource NteLabelLarge}" FontWeight="Bold" VerticalAlignment="Center"/>
+							</DockPanel>
+							<TextBlock Text="Extracts 24 price action features including body-ratios, wick structures, ATR volatility spreads, and swing highs." Style="{StaticResource NteBodyMedium}" TextWrapping="Wrap" Margin="0,8,0,0" LineHeight="16"/>
+						</StackPanel>
+
+						<StackPanel Grid.Row="1" VerticalAlignment="Center">
+							<TextBlock Text="STATUS: SYSTEM READY" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontSize="11" Margin="0,0,0,4"/>
+							<TextBlock Text="Target: Multi-Timeframe M1 to D1" Style="{StaticResource NteBodyMedium}"/>
+						</StackPanel>
+
+						<!-- Actions -->
+						<StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,15,0,0">
+							<Button Content="TRAIN PRICE ACTION" Command="{Binding TrainPriceActionCommand}" Height="36" Width="150" Margin="0,0,8,0">
+								<Button.Style>
+									<Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
+										<Setter Property="IsEnabled" Value="True"/>
+										<Style.Triggers>
+											<DataTrigger Binding="{Binding IsProcessing}" Value="True">
+												<Setter Property="IsEnabled" Value="False"/>
+											</DataTrigger>
+										</Style.Triggers>
+									</Style>
+								</Button.Style>
+							</Button>
+							<Button Content="ABORT" Command="{Binding StopTrainingCommand}" IsEnabled="{Binding IsProcessing}" Style="{StaticResource NteSecondaryButton}" Height="36"/>
+						</StackPanel>
+					</Grid>
+				</Border>
+
+				<!-- CARD 3: SMC / ICT LIQUIDITY SKILL -->
+				<Border Grid.Column="4" Background="{DynamicResource SurfaceContainerBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1.5" CornerRadius="12" Padding="15">
+					<Grid>
+						<Grid.RowDefinitions>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="*"/>
+							<RowDefinition Height="Auto"/>
+						</Grid.RowDefinitions>
+
+						<StackPanel Grid.Row="0">
+							<DockPanel>
+								<materialDesign:PackIcon Kind="Target" Width="24" Height="24" Foreground="{DynamicResource PrimaryBrush}" DockPanel.Dock="Left" Margin="0,0,10,0"/>
+								<TextBlock Text="ICT / SMC LIQUIDITY" Style="{StaticResource NteLabelLarge}" FontWeight="Bold" VerticalAlignment="Center"/>
+							</DockPanel>
+							<TextBlock Text="Models Fair Value Gaps (FVG), swing structures, Order Blocks (OB), liquidity pools, and market structure shifts (MSS)." Style="{StaticResource NteBodyMedium}" TextWrapping="Wrap" Margin="0,8,0,0" LineHeight="16"/>
+						</StackPanel>
+
+						<StackPanel Grid.Row="1" VerticalAlignment="Center">
+							<TextBlock Text="STATUS: SYSTEM READY" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontSize="11" Margin="0,0,0,4"/>
+							<TextBlock Text="Target: High-Timeframe M15 to H4" Style="{StaticResource NteBodyMedium}"/>
+						</StackPanel>
+
+						<!-- Actions -->
+						<StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,15,0,0">
+							<Button Content="TRAIN ICT SKILL" Command="{Binding TrainIctCommand}" Height="36" Width="140" Margin="0,0,8,0">
+								<Button.Style>
+									<Style TargetType="Button" BasedOn="{StaticResource NtePremiumButton}">
+										<Setter Property="IsEnabled" Value="True"/>
+										<Style.Triggers>
+											<DataTrigger Binding="{Binding IsProcessing}" Value="True">
+												<Setter Property="IsEnabled" Value="False"/>
+											</DataTrigger>
+										</Style.Triggers>
+									</Style>
+								</Button.Style>
+							</Button>
+							<Button Content="ABORT" Command="{Binding StopTrainingCommand}" IsEnabled="{Binding IsProcessing}" Style="{StaticResource NteSecondaryButton}" Height="36"/>
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Grid>
+
+			<!-- Console Terminal Window Emulator with live status bar -->
+			<Grid Grid.Row="4">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="*"/>
+				</Grid.RowDefinitions>
+
+				<!-- FIXED: Combined administration console header. Added high-performance COPY LOGS and CLEAR buttons in stack panel -->
+				<Border Grid.Row="0" Background="{DynamicResource SurfaceContainerBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1,1,1,0" CornerRadius="8,8,0,0" Padding="15,10">
+					<DockPanel>
+						<StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+							<Button Content="COPY LOGS" Command="{Binding CopyConsoleCommand}" Style="{StaticResource NteSecondaryButton}" Height="28" Padding="10,0" Margin="0,0,10,0"/>
+							<Button Content="CLEAR TERMINAL SCREEN" Command="{Binding ClearConsoleCommand}" Style="{StaticResource NteSecondaryButton}" Height="28" Padding="10,0"/>
+						</StackPanel>
+						<StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+							<TextBlock Text="PIPELINE RUNTIME STATUS: " Style="{StaticResource NteLabelSmall}" Foreground="{DynamicResource TextSecondaryBrush}"/>
+							<TextBlock Text="{Binding StatusText}" Style="{StaticResource NteLabelSmall}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="Bold" Margin="5,0,0,0"/>
+						</StackPanel>
+					</DockPanel>
+				</Border>
+
+				<Border Grid.Row="1" Background="#0C0F16" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1,0,1,1" CornerRadius="0,0,8,8">
+					<Grid>
+						<Grid.RowDefinitions>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="*"/>
+						</Grid.RowDefinitions>
+
+						<!-- Simulating terminal window bar -->
+						<Border Grid.Row="0" Background="#141923" Padding="12,6">
+							<DockPanel>
+								<StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+									<Ellipse Width="10" Height="10" Fill="#FF5F56" Margin="0,0,6,0"/>
+									<Ellipse Width="10" Height="10" Fill="#FFBD2E" Margin="0,0,6,0"/>
+									<Ellipse Width="10" Height="10" Fill="#27C93F"/>
+								</StackPanel>
+								<TextBlock Text="NEXUS@QUANT_LEARNING_CENTRE:~" HorizontalAlignment="Center" FontFamily="Consolas, monospace" FontSize="11" Foreground="#6C7A9C" FontWeight="Bold"/>
+							</DockPanel>
+						</Border>
+
+						<!-- Terminal logs - FIXED: Mapped ItemTemplate Foreground natively to ColorBrush property of ConsoleLogEntry -->
+						<ListBox Grid.Row="1" ItemsSource="{Binding ConsoleOutput}" Background="Transparent" BorderThickness="0" Padding="15">
+							<ListBox.ItemContainerStyle>
+								<Style TargetType="ListBoxItem">
+									<Setter Property="Focusable" Value="False"/>
+									<Setter Property="Padding" Value="0,2"/>
+									<Setter Property="Background" Value="Transparent"/>
+								</Style>
+							</ListBox.ItemContainerStyle>
+							<ListBox.ItemTemplate>
+								<DataTemplate>
+									<TextBlock Text="{Binding Text}" Foreground="{Binding ColorBrush}" FontFamily="Consolas, monospace" FontSize="12" TextWrapping="Wrap"/>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+					</Grid>
+				</Border>
+			</Grid>
+		</Grid>
+	</materialDesign:Card>
+</UserControl>

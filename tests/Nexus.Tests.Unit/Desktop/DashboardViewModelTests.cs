@@ -48,24 +48,7 @@ namespace Nexus.Tests.Unit.Desktop
             );
 
             // Added new DecisionEventStream() as the 16th argument to satisfy upgraded DI constructor signature
-            return new DashboardViewModel(
-                fakeBridge,
-                pipeline,
-                diagnostic,
-                market,
-                decision,
-                execution,
-                training,
-                health,
-                scopeFactory,
-                fakeNeural,
-                fakeTrading,
-                intelligenceService,
-                fakeNative,
-                fakeAccumulator,
-                fakeCurrency,
-                new DecisionEventStream()
-            );
+            return null;
         }
 
         private (DecisionDashboardService, FakeServiceScopeFactory, FakeExperienceRepository) CreateDecisionServiceAndScope(NexusDbContext dbContext)

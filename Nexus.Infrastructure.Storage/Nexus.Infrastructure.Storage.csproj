@@ -11,6 +11,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\Nexus.Infrastructure.TorchSharp\Nexus.Infrastructure.TorchSharp.csproj" />
 	  <ProjectReference Include="..\src\Nexus.Application\Nexus.Application.csproj" />
 	  <ProjectReference Include="..\src\Nexus.Core\Nexus.Core.csproj" />
 	</ItemGroup>

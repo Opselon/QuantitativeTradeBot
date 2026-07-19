@@ -193,6 +193,13 @@ namespace Nexus.Desktop
                     services.AddSingleton<Nexus.Training.TimeframeLearningManager>();
                     services.AddSingleton<Nexus.Training.TrainingPipeline>();
 
+                    // Python process runner and dataset builder port registration
+                    services.AddSingleton<Nexus.Application.Ports.IPythonExecutionService, Nexus.Infrastructure.Services.PythonExecutionService>();
+                    // =========================
+
+                    // REASON: Registered the AlphaGo-style Trading Learning Platform
+                    services.AddSingleton<Nexus.Training.TradingLearningPlatform>();
+
                     // REASON: Registered the AlphaGo-style Trading Learning Platform (builds local directories structure)
                     // replacing the legacy flat DataStore.
                     services.AddSingleton<Nexus.Training.TradingLearningPlatform>();
@@ -232,6 +239,7 @@ namespace Nexus.Desktop
                     services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.DiagnosticsViewModel>();
                     services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.TestConsoleViewModel>();
                     services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.SettingsViewModel>();
+                    services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.TrainSkillsViewModel>();
                     #endregion
 
                     #region Observability & Web Server (Background Workers)

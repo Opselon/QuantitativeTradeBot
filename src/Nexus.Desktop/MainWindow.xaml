@@ -332,6 +332,24 @@
                                 </StackPanel>
                             </Button>
 
+                            <Button Command="{Binding SelectTrainSkillsCommand}" HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="9">
+                                                <Setter Property="Background" Value="{DynamicResource SurfaceVariantBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Brain" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="Train Skills" VerticalAlignment="Center" Style="{StaticResource NteBodyLarge}"/>
+                                </StackPanel>
+                            </Button>
+
                             <!-- Test Console -->
                             <Button Command="{Binding SelectTestConsoleCommand}" HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
                                 <Button.Style>
@@ -873,6 +891,12 @@
                             <TabItem>
                                 <workspaces:TestConsoleView DataContext="{Binding TestConsole}"/>
                             </TabItem>
+
+
+                            <TabItem>
+                                <workspaces:TrainSkillsView DataContext="{Binding TrainSkills}"/>
+                            </TabItem>
+
                         </TabControl>
                     </Grid>
                 </Grid>
