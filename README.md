@@ -281,12 +281,12 @@ To get started, please review the contribution guidelines outlined above, explor
 ### 📊 Latest Build & Commit Metadata
 | Field | Value |
 | --- | --- |
-| **Commit Message** | Strong upgrades |
+| **Commit Message** | new updates |
 | **Author** | Capsizer |
 | **Branch** | `main` |
-| **Run Number** | `113` |
-| **Commit SHA** | `ef915989f52fcef021e9a84d8facf51b6959cf36` |
-| **Generated At** | `2026-07-17 21:43:32 UTC` |
+| **Run Number** | `116` |
+| **Commit SHA** | `88f176798aa0511cbdf14c2c38e6396281135727` |
+| **Generated At** | `2026-07-21 17:56:13 UTC` |
 
 ---
 ### 📂 Interactive Project Structure Tree
@@ -381,6 +381,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   └── AiDbModels.cs
 │   ├── Repositories/
 │   │   └── ModelRegistry.cs
+│   ├── KnowledgeDataWriter.cs
 │   ├── Nexus.Infrastructure.Storage.csproj
 │   ├── StorageDependencyInjection.cs
 │   └── TrainingDbContext.cs
@@ -388,24 +389,67 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── Inference/
 │   │   └── TorchInferenceEngine.cs
 │   ├── Models/
-│   │   └── MlpTradingModel.cs
+│   │   ├── GatedResidualNetwork.cs
+│   │   ├── MlpTradingModel.cs
+│   │   ├── TemporalFusionTransformer.cs
+│   │   └── VariableSelectionNetwork.cs
 │   ├── Training/
 │   │   └── TorchTrainingPipeline.cs
 │   ├── Nexus.Infrastructure.TorchSharp.csproj
 │   └── TorchDependencyInjection.cs
+├── Nexus.PriceAction/
+│   ├── Abstractions/
+│   │   ├── IPriceActionEngine.cs
+│   │   └── PriceActionContext.cs
+│   ├── Candle/
+│   │   ├── Calculators/
+│   │   │   ├── BodyCalculator.cs
+│   │   │   ├── CandleClassifier.cs
+│   │   │   ├── MomentumCalculator.cs
+│   │   │   ├── RangeCalculator.cs
+│   │   │   └── ShadowCalculator.cs
+│   │   ├── CandleAnalyzer.cs
+│   │   └── Enums.cs
+│   ├── CandlePattern/
+│   │   ├── DojiDetector.cs
+│   │   ├── EngulfingDetector.cs
+│   │   ├── EveningStarDetector.cs
+│   │   ├── InsideBarDetector.cs
+│   │   ├── MorningStarDetector.cs
+│   │   ├── OutsideBarDetector.cs
+│   │   ├── PinBarDetector.cs
+│   │   ├── ThreeBlackCrowsDetector.cs
+│   │   └── ThreeWhiteSoldiersDetector.cs
+│   ├── Models/
+│   │   └── CandleAnalysisResult.cs
+│   ├── Pipeline/
+│   │   └── PriceActionPipeline.cs
+│   ├── Structural/
+│   │   ├── FairValueGapDetector.cs
+│   │   ├── LiquiditySweepDetector.cs
+│   │   ├── MarketStructureDetector.cs
+│   │   ├── OrderBlockDetector.cs
+│   │   └── SwingPointDetector.cs
+│   └── Nexus.PriceAction.csproj
 ├── src/
 │   ├── Nexus.AI/
+│   │   ├── Entities/
+│   │   │   └── MarketKnowledgeRow.cs
+│   │   ├── MarketEmbedding.cs.cs
 │   │   ├── NeuralModelService.cs
 │   │   └── Nexus.AI.csproj
 │   ├── Nexus.Application/
 │   │   ├── AI/
 │   │   │   ├── Datasets/
-│   │   │   │   └── DatasetGenerator.cs
+│   │   │   │   ├── DatasetGenerator.cs
+│   │   │   │   └── MemoryMappedDatasetGenerator.cs
 │   │   │   ├── Decision/
 │   │   │   │   ├── AiTradingOrchestrator.cs
 │   │   │   │   └── DecisionFusionEngine.cs
 │   │   │   ├── Evaluation/
-│   │   │   │   └── ChampionChallengerEvaluator.cs
+│   │   │   │   ├── ChampionChallengerEvaluator.cs
+│   │   │   │   ├── KnowledgeReportGenerator.cs
+│   │   │   │   └── PriceActionExperienceEngine.cs
 │   │   │   └── Features/
 │   │   │       ├── AtrFeatureExtractor.cs
 │   │   │       ├── FeatureOrchestrator.cs
@@ -507,6 +551,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── IMt5TradeService.cs
 │   │   │   ├── IOrderRepository.cs
 │   │   │   ├── IPositionRepository.cs
+│   │   │   ├── IPythonExecutionService.cs
 │   │   │   ├── IRepository.cs
 │   │   │   ├── ITradingPlatformConnector.cs
 │   │   │   ├── IUnitOfWork.cs
@@ -557,10 +602,12 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   └── Interfaces/
 │   │   │       ├── IDatasetRegistry.cs
 │   │   │       ├── IDriftDetector.cs
+│   │   │       ├── IExperienceMemory.cs
 │   │   │       ├── IExperimentTracker.cs
 │   │   │       ├── IInferenceEngine.cs
 │   │   │       ├── IModelRegistry.cs
-│   │   │       └── ITrainingPipeline.cs
+│   │   │       ├── ITrainingPipeline.cs
+│   │   │       └── ProbabilisticPrediction.cs
 │   │   ├── DomainEvents/
 │   │   │   ├── DecisionEvents.cs
 │   │   │   ├── MarginCallEvent.cs
@@ -571,7 +618,8 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   └── RiskLimitReachedEvent.cs
 │   │   ├── Entities/
 │   │   │   ├── Interfaces/
-│   │   │   │   └── IExperienceDatabaseWriter.cs
+│   │   │   │   ├── IExperienceDatabaseWriter.cs
+│   │   │   │   └── IPositionManagerSettingsProvider.cs
 │   │   │   ├── Account.cs
 │   │   │   ├── AccumulatorState.cs
 │   │   │   ├── Bar.cs
@@ -589,6 +637,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── Order.cs
 │   │   │   ├── PatternMatchResult.cs
 │   │   │   ├── Position.cs
+│   │   │   ├── PositionManagerSettings.cs
 │   │   │   ├── RiskState.cs
 │   │   │   ├── ScenarioScore.cs
 │   │   │   ├── ScenarioSearchNode.cs
@@ -599,6 +648,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── OrderSide.cs
 │   │   │   ├── PositionStatus.cs
 │   │   │   ├── RiskLevel.cs
+│   │   │   ├── ScalpingStrategyType.cs
 │   │   │   ├── TimeframeType.cs
 │   │   │   └── TradeAction.cs
 │   │   ├── Exceptions/
@@ -655,6 +705,7 @@ To get started, please review the contribution guidelines outlined above, explor
 │   ├── Nexus.Desktop/
 │   │   ├── Converters/
 │   │   │   ├── EqualityToBooleanConverter.cs
+│   │   │   ├── InverseBooleanConverter.cs
 │   │   │   └── ProfitToBrushConverter.cs
 │   │   ├── Models/
 │   │   │   ├── DesktopOrderSide.cs
@@ -674,8 +725,11 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   │   ├── ManualDeskViewModel.cs
 │   │   │   │   ├── MarketWatchViewModel.cs
 │   │   │   │   ├── Mt5BridgeViewModel.cs
+│   │   │   │   ├── PositionManagerViewModel.cs
+│   │   │   │   ├── RiskControlDeskViewModel.cs
 │   │   │   │   ├── SettingsViewModel.cs
-│   │   │   │   └── TestConsoleViewModel.cs
+│   │   │   │   ├── TestConsoleViewModel.cs
+│   │   │   │   └── TrainSkillsViewModel.cs
 │   │   │   ├── AsyncRelayCommand.cs
 │   │   │   ├── DesktopPositionViewModel.cs
 │   │   │   ├── DesktopSymbolViewModel.cs
@@ -696,10 +750,14 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   │   ├── MarketWatchView.xaml.cs
 │   │   │   │   ├── Mt5BridgeView.xaml
 │   │   │   │   ├── Mt5BridgeView.xaml.cs
+│   │   │   │   ├── PositionManagerView.xaml
+│   │   │   │   ├── PositionManagerView.xaml.cs
 │   │   │   │   ├── SettingsView.xaml
 │   │   │   │   ├── SettingsView.xaml.cs
 │   │   │   │   ├── TestConsoleView.xaml
-│   │   │   │   └── TestConsoleView.xaml.cs
+│   │   │   │   ├── TestConsoleView.xaml.cs
+│   │   │   │   ├── TrainSkillsView.xaml
+│   │   │   │   └── TrainSkillsView.xaml.cs
 │   │   │   ├── Mt5TradingPanel.xaml
 │   │   │   ├── Mt5TradingPanel.xaml.cs
 │   │   │   ├── NexusIntelligenceDashboard.xaml
@@ -808,10 +866,13 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   │   ├── DesignTimeNexusDbContextFactory.cs
 │   │   │   ├── ExperienceDatabaseWriter.cs
 │   │   │   ├── NexusDbContext.cs
+│   │   │   ├── PositionManagerSettingsProvider.cs
 │   │   │   ├── PostgreSqlDatabaseBootstrapper.cs
 │   │   │   └── SqliteDatabaseBootstrapper.cs
 │   │   ├── Security/
 │   │   │   └── WindowsSecretStore.cs
+│   │   ├── Services/
+│   │   │   └── PythonExecutionService.cs
 │   │   ├── Storage/
 │   │   │   └── FileStorage/
 │   │   │       └── LocalFileStorage.cs
@@ -876,29 +937,22 @@ To get started, please review the contribution guidelines outlined above, explor
 │   │   ├── tests/
 │   │   │   └── native_tests.cpp
 │   │   └── CMakeLists.txt
-│   ├── Nexus.Training/
-│   │   ├── ExperienceEngine.cs
-│   │   ├── ExperienceReplayBuffer.cs
-│   │   ├── ExperienceReplayEngine.cs
-│   │   ├── FileModelStorage.cs
-│   │   ├── IModelStorage.cs
-│   │   ├── ModelRegistry.cs
-│   │   ├── ModelVersionInfo.cs
-│   │   ├── Nexus.Training.csproj
-│   │   ├── RewardEvaluator.cs
-│   │   ├── TimeframeLearningManager.cs
-│   │   ├── TradingLearningPlatform.cs
-│   │   ├── TrainingDataStore.cs
-│   │   ├── TrainingPipeline.cs
-│   │   ├── ValidationEngine.cs
-│   │   └── ValidationResult.cs
-│   └── Nexus.WpfUi/
-│       ├── App.xaml
-│       ├── App.xaml.cs
-│       ├── AssemblyInfo.cs
-│       ├── MainWindow.xaml
-│       ├── MainWindow.xaml.cs
-│       └── Nexus.WpfUi.csproj
+│   └── Nexus.Training/
+│       ├── ExperienceEngine.cs
+│       ├── ExperienceReplayBuffer.cs
+│       ├── ExperienceReplayEngine.cs
+│       ├── FileModelStorage.cs
+│       ├── IModelStorage.cs
+│       ├── ModelRegistry.cs
+│       ├── ModelVersionInfo.cs
+│       ├── Nexus.Training.csproj
+│       ├── RewardEvaluator.cs
+│       ├── TimeframeLearningManager.cs
+│       ├── TradingLearningPlatform.cs
+│       ├── TrainingDataStore.cs
+│       ├── TrainingPipeline.cs
+│       ├── ValidationEngine.cs
+│       └── ValidationResult.cs
 ├── tests/
 │   ├── Nexus.Tests.EndToEnd/
 │   │   ├── Fixture/
@@ -956,7 +1010,7 @@ To get started, please review the contribution guidelines outlined above, explor
 
 | File Type | Count |
 | --- | ---: |
-| C# (.cs) | 408 |
+| C# (.cs) | 453 |
 | WPF (.xaml) | 15 |
 | C/C++ Source | 17 |
 | CMake | 1 |
@@ -967,34 +1021,39 @@ To get started, please review the contribution guidelines outlined above, explor
 - **Job Status:** failure
 #### 🔴 Errors
 ```text
-    10>/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Execution/ExecutionEngineTests.cs(40,36): error CS7036: There is no argument given that corresponds to the required parameter 'decisionStream' of 'PositionManager.PositionManager(IExecutionGateway, IDecisionEventStream, ExperienceReplayEngine, IServiceScopeFactory?, IMarketDashboardService)' [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
-    10>/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Training/TrainingEngineTests.cs(380,32): error CS7036: There is no argument given that corresponds to the required parameter 'scopeFactory' of 'TrainingPipeline.TrainingPipeline(ModelRegistry, IModelStorage, ValidationEngine, TimeframeLearningManager, IServiceScopeFactory)' [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
-         /home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Execution/ExecutionEngineTests.cs(40,36): error CS7036: There is no argument given that corresponds to the required parameter 'decisionStream' of 'PositionManager.PositionManager(IExecutionGateway, IDecisionEventStream, ExperienceReplayEngine, IServiceScopeFactory?, IMarketDashboardService)' [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
-         /home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Training/TrainingEngineTests.cs(380,32): error CS7036: There is no argument given that corresponds to the required parameter 'scopeFactory' of 'TrainingPipeline.TrainingPipeline(ModelRegistry, IModelStorage, ValidationEngine, TimeframeLearningManager, IServiceScopeFactory)' [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
+No explicit C# errors.
 ```
 #### 🟡 Warnings
 ```text
-No explicit C# warnings.
+    11>/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/src/Nexus.Core/Entities/TradeDecision.cs(173,19): warning CS8073: The result of the expression is always 'true' since a value of type 'Volume' is never equal to 'null' of type 'Volume?' [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/src/Nexus.Core/Nexus.Core.csproj]
+     3>/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Execution/ExecutionEngineTests.cs(41,17): warning CS8604: Possible null reference argument for parameter 'positionManager' in 'RiskControlledExecutionEngine.RiskControlledExecutionEngine(SimulationExecutionGateway simulationGateway, MT5ExecutionGateway liveGateway, IRiskExecutionGuard riskGuard, IExecutionAuditService auditService, PositionManager positionManager, ILogger<RiskControlledExecutionEngine> logger)'. [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
+     3>/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Execution/ExecutionEngineTests.cs(23,42): warning CS0649: Field 'ExecutionEngineTests._positionManager' is never assigned to, and will always have its default value null [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
+         /home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/src/Nexus.Core/Entities/TradeDecision.cs(173,19): warning CS8073: The result of the expression is always 'true' since a value of type 'Volume' is never equal to 'null' of type 'Volume?' [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/src/Nexus.Core/Nexus.Core.csproj]
+         /home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Execution/ExecutionEngineTests.cs(41,17): warning CS8604: Possible null reference argument for parameter 'positionManager' in 'RiskControlledExecutionEngine.RiskControlledExecutionEngine(SimulationExecutionGateway simulationGateway, MT5ExecutionGateway liveGateway, IRiskExecutionGuard riskGuard, IExecutionAuditService auditService, PositionManager positionManager, ILogger<RiskControlledExecutionEngine> logger)'. [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
+         /home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Execution/ExecutionEngineTests.cs(23,42): warning CS0649: Field 'ExecutionEngineTests._positionManager' is never assigned to, and will always have its default value null [/home/runner/work/QuantitativeTradeBot/QuantitativeTradeBot/tests/Nexus.Tests.Unit/Nexus.Tests.Unit.csproj]
 ```
 
 ### 🚀 Pipeline Diagnostics (Build Stage - Windows)
-- **Job Status:** failure
+- **Job Status:** success
 
 #### 🔴 Errors
 ```text
-7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\DashboardViewModelTests.cs(51,24): error CS7036: There is no argument given that corresponds to the required parameter 'aiTradingOrchestrator' of 'DashboardViewModel.DashboardViewModel(IMt5BridgeService, MarketDataPipeline, IDiagnosticService, IMarketDashboardService, IDecisionDashboardService, IExecutionDashboardService, ITrainingDashboardService, ISystemHealthMonitorService, IServiceScopeFactory, INeuralModelService, IMt5TradingService, NativeMarketIntelligenceService, INativeCoreService, IAccumulatorService, ICurrencyStrengthEngine, IDecisionEventStream, AiTradingOrchestrator)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Training\TrainingEngineTests.cs(380,32): error CS7036: There is no argument given that corresponds to the required parameter 'scopeFactory' of 'TrainingPipeline.TrainingPipeline(ModelRegistry, IModelStorage, ValidationEngine, TimeframeLearningManager, IServiceScopeFactory)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Execution\ExecutionEngineTests.cs(40,36): error CS7036: There is no argument given that corresponds to the required parameter 'decisionStream' of 'PositionManager.PositionManager(IExecutionGateway, IDecisionEventStream, ExperienceReplayEngine, IServiceScopeFactory?, IMarketDashboardService)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\DashboardViewModelTests.cs(51,24): error CS7036: There is no argument given that corresponds to the required parameter 'aiTradingOrchestrator' of 'DashboardViewModel.DashboardViewModel(IMt5BridgeService, MarketDataPipeline, IDiagnosticService, IMarketDashboardService, IDecisionDashboardService, IExecutionDashboardService, ITrainingDashboardService, ISystemHealthMonitorService, IServiceScopeFactory, INeuralModelService, IMt5TradingService, NativeMarketIntelligenceService, INativeCoreService, IAccumulatorService, ICurrencyStrengthEngine, IDecisionEventStream, AiTradingOrchestrator)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Training\TrainingEngineTests.cs(380,32): error CS7036: There is no argument given that corresponds to the required parameter 'scopeFactory' of 'TrainingPipeline.TrainingPipeline(ModelRegistry, IModelStorage, ValidationEngine, TimeframeLearningManager, IServiceScopeFactory)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Execution\ExecutionEngineTests.cs(40,36): error CS7036: There is no argument given that corresponds to the required parameter 'decisionStream' of 'PositionManager.PositionManager(IExecutionGateway, IDecisionEventStream, ExperienceReplayEngine, IServiceScopeFactory?, IMarketDashboardService)' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+No C# errors.
 ```
 #### 🟡 Warnings
 ```text
-7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-7>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(374,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
-D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(375,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+17>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\src\Nexus.Core\Entities\TradeDecision.cs(173,19): warning CS8073: The result of the expression is always 'true' since a value of type 'Volume' is never equal to 'null' of type 'Volume?' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\src\Nexus.Core\Nexus.Core.csproj]
+4>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\DashboardViewModelTests.cs(51,20): warning CS8603: Possible null reference return. [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+4>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Execution\ExecutionEngineTests.cs(41,17): warning CS8604: Possible null reference argument for parameter 'positionManager' in 'RiskControlledExecutionEngine.RiskControlledExecutionEngine(SimulationExecutionGateway simulationGateway, MT5ExecutionGateway liveGateway, IRiskExecutionGuard riskGuard, IExecutionAuditService auditService, PositionManager positionManager, ILogger<RiskControlledExecutionEngine> logger)'. [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+4>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(370,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+4>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Execution\ExecutionEngineTests.cs(23,42): warning CS0649: Field 'ExecutionEngineTests._positionManager' is never assigned to, and will always have its default value null [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+4>D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(369,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\src\Nexus.Core\Entities\TradeDecision.cs(173,19): warning CS8073: The result of the expression is always 'true' since a value of type 'Volume' is never equal to 'null' of type 'Volume?' [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\src\Nexus.Core\Nexus.Core.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\DashboardViewModelTests.cs(51,20): warning CS8603: Possible null reference return. [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Execution\ExecutionEngineTests.cs(41,17): warning CS8604: Possible null reference argument for parameter 'positionManager' in 'RiskControlledExecutionEngine.RiskControlledExecutionEngine(SimulationExecutionGateway simulationGateway, MT5ExecutionGateway liveGateway, IRiskExecutionGuard riskGuard, IExecutionAuditService auditService, PositionManager positionManager, ILogger<RiskControlledExecutionEngine> logger)'. [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(370,42): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnStatusChanged' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Execution\ExecutionEngineTests.cs(23,42): warning CS0649: Field 'ExecutionEngineTests._positionManager' is never assigned to, and will always have its default value null [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
+D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Desktop\Mt5TradingViewModelTests.cs(369,53): warning CS0067: The event 'Mt5TradingViewModelTests.FakeBridgeService.OnTickReceived' is never used [D:\a\QuantitativeTradeBot\QuantitativeTradeBot\tests\Nexus.Tests.Unit\Nexus.Tests.Unit.csproj]
 ```
 
 <!-- NEXUS_AUTO_DOC_END -->
