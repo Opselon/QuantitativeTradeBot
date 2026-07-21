@@ -1,0 +1,541 @@
+<UserControl x:Class="Nexus.Desktop.Views.Workspaces.PositionManagerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Nexus.Desktop.Views.Workspaces"
+             xmlns:enums="clr-namespace:Nexus.Core.Enums;assembly=Nexus.Core"
+             mc:Ignorable="d" 
+             d:DesignHeight="950" d:DesignWidth="1300">
+
+    <UserControl.Resources>
+        <!-- Theme Brushes and Resource Styles -->
+        <!-- Dark Premium Cockpit Palette -->
+        <SolidColorBrush x:Key="QuantumBg" Color="#04060B"/>
+        <SolidColorBrush x:Key="PanelBg" Color="#090D1A"/>
+        <SolidColorBrush x:Key="BorderSilver" Color="#182235"/>
+        <SolidColorBrush x:Key="AccentGold" Color="#F59E0B"/>
+        <SolidColorBrush x:Key="TextMint" Color="#10B981"/>
+        <SolidColorBrush x:Key="TextRed" Color="#EF4444"/>
+        <SolidColorBrush x:Key="SoftWhite" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="SubtleGray" Color="#9CA3AF"/>
+        <SolidColorBrush x:Key="NeonBlue" Color="#3B82F6"/>
+
+        <!-- High-Impact Button Styles -->
+        <Style x:Key="QuantumBtn" TargetType="Button">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentGold}"/>
+            <Setter Property="Foreground" Value="{StaticResource SoftWhite}"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style x:Key="EvacuateBtn" TargetType="Button" BasedOn="{StaticResource QuantumBtn}">
+            <Setter Property="Background" Value="#7F1D1D"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TextRed}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- Compact Form Label Styles -->
+        <Style x:Key="HeaderLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Foreground" Value="{StaticResource AccentGold}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+
+        <Style x:Key="IndicatorValueText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource QuantumBg}">
+        <Grid.RowDefinitions>
+            <!-- Banner (Header) -->
+            <RowDefinition Height="Auto"/>
+            <!-- Main Content Area -->
+            <RowDefinition Height="*"/>
+            <!-- System Status Bar (Footer) -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Row 0: Banner Header (Ultra-Compact) -->
+        <Border Grid.Row="0" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderSilver}" BorderThickness="0,0,0,1" Padding="15,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="NEXUS ALGORITHMIC HFT COCKPIT &amp; POSITION STATION" FontSize="15" FontWeight="Bold" Foreground="{StaticResource AccentGold}"/>
+                    <TextBlock Text="Live Multi-Strategy Routing Matrix, Volatility Drift Trailing, and Time-Series Return Projections" FontSize="9.5" Foreground="{StaticResource SubtleGray}" Margin="0,1,0,0"/>
+                </StackPanel>
+
+                <!-- Auto-Trading Control -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding SyncPositionsCommand}" Style="{StaticResource QuantumBtn}" Content="SYNC BRIDGE" Height="24" Margin="0,0,10,0"/>
+
+                    <Border Background="#1E293B" CornerRadius="3" Padding="8,4" BorderBrush="{StaticResource BorderSilver}" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="AUTO-TRADING SYSTEM Perms:" FontSize="9.5" Foreground="{StaticResource SoftWhite}" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <CheckBox IsChecked="{Binding IsAutoTradingEnabled, Mode=TwoWay}" VerticalAlignment="Center" Cursor="Hand"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Row 1: Main Grid Layout -->
+        <Grid Grid.Row="1" Margin="6">
+            <Grid.ColumnDefinitions>
+                <!-- Left Tuning Panel: Extended to 480px to accommodate all 40 Strategy Checkboxes & 20 Sliders -->
+                <ColumnDefinition Width="480"/>
+                <!-- Right Monitor Panel -->
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT COLUMN: HIGH-DENSITY COCKPIT CONFIGURATION (Sliders and 40 Strategies) -->
+            <Border Grid.Column="0" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderSilver}" BorderThickness="1" CornerRadius="4" Padding="10">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <!-- SECTION 1: 40 SCALPING STRATEGIES ACTIVE MATRIX -->
+                        <TextBlock Text="QUANT STRATEGY SELECTION MATRIX (40 ACTIVE ALGORITHMS)" Style="{StaticResource HeaderLabel}"/>
+                        <TextBlock Text="Toggle simultaneous, independent micro-scalping modules:" FontSize="9" Foreground="{StaticResource SubtleGray}" Margin="0,0,0,6"/>
+
+                        <!-- High-Density TabControl to pack 40 Checkboxes neatly -->
+                        <TabControl Background="#070A14" BorderBrush="{StaticResource BorderSilver}" BorderThickness="1" Margin="0,0,0,12" Height="185">
+                            <TabControl.Resources>
+                                <Style TargetType="TabItem">
+                                    <Setter Property="HeaderTemplate">
+                                        <Setter.Value>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding}" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource SoftWhite}" Padding="4,2"/>
+                                            </DataTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="Background" Value="#101726"/>
+                                </Style>
+                            </TabControl.Resources>
+
+                            <!-- Tab 1: M1 Hyper Scalping -->
+                            <TabItem Header="M1 SCALPING">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="4">
+                                    <UniformGrid Columns="2" Rows="5">
+                                        <CheckBox Content="M1 Momentum Breakout" IsChecked="{Binding IsStr_M1_MomentumBreakout, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M1 RSI Mean Reversion" IsChecked="{Binding IsStr_M1_MeanReversion_RSI, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M1 VWAP Rider" IsChecked="{Binding IsStr_M1_VWAP_Rider, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M1 Bollinger Trap" IsChecked="{Binding IsStr_M1_BollingerTrap, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M1 Tick Acceleration" IsChecked="{Binding IsStr_M1_TickAcceleration, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M1 Spread Exploiter" IsChecked="{Binding IsStr_M1_SpreadExploiter, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M1 OrderBook Imbalance" IsChecked="{Binding IsStr_M1_OrderBookImbalance, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M1 HeikinAshi Wave" IsChecked="{Binding IsStr_M1_HeikinAshi_TrendWave, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M1 MACD Hist Breakout" IsChecked="{Binding IsStr_M1_MACD_HistogramBreakout, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M1 Stochastic Rebound" IsChecked="{Binding IsStr_M1_StochasticRebound, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                    </UniformGrid>
+                                </ScrollViewer>
+                            </TabItem>
+
+                            <!-- Tab 2: M5 Structural -->
+                            <TabItem Header="M5 STRUCTURAL">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="4">
+                                    <UniformGrid Columns="2" Rows="5">
+                                        <CheckBox Content="M5 EMA Crossover" IsChecked="{Binding IsStr_M5_EMACrossover, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M5 ATR Band Breakout" IsChecked="{Binding IsStr_M5_AtrBandBreakout, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M5 Pivot Reversal" IsChecked="{Binding IsStr_M5_PivotPointReversal, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M5 Fib Retracement" IsChecked="{Binding IsStr_M5_FibonacciRetracement, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M5 SuperTrend Rider" IsChecked="{Binding IsStr_M5_SuperTrendRider, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M5 Donchian Breakout" IsChecked="{Binding IsStr_M5_DonchianChannelBreakout, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M5 Volume Spread VSA" IsChecked="{Binding IsStr_M5_VolumeSpreadAnalysis, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M5 RSI Divergence" IsChecked="{Binding IsStr_M5_RsiDivergence, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M5 MACD Signal Line" IsChecked="{Binding IsStr_M5_MacdSignalLineCrossover, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="M5 Keltner Reversal" IsChecked="{Binding IsStr_M5_KeltnerChannelReversal, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                    </UniformGrid>
+                                </ScrollViewer>
+                            </TabItem>
+
+                            <!-- Tab 3: HFT Liquidity -->
+                            <TabItem Header="HFT &amp; LIQUIDITY">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="4">
+                                    <UniformGrid Columns="2" Rows="5">
+                                        <CheckBox Content="HFT Order Flow Imbal" IsChecked="{Binding IsStr_HFT_OrderFlowImbalance, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="HFT Market Maker Spread" IsChecked="{Binding IsStr_HFT_MarketMakerSpread, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="HFT Tick Velocity" IsChecked="{Binding IsStr_HFT_TickMomentum_Velocity, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="HFT Statistical Spread" IsChecked="{Binding IsStr_HFT_StatisticalSpreadArbitrage, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="HFT Iceberg Detection" IsChecked="{Binding IsStr_HFT_IcebergOrderDetection, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="HFT Stop-Hunt Exploiter" IsChecked="{Binding IsStr_HFT_StopHuntingExploiter, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="HFT Volume Cluster" IsChecked="{Binding IsStr_HFT_VolumeClusterReversal, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="HFT Block Order Trail" IsChecked="{Binding IsStr_HFT_BlockOrderTrailing, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="HFT Tri-Arbitrage Switch" IsChecked="{Binding IsStr_HFT_TriangularArbitrage_Fallback, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="HFT Asset Correlation" IsChecked="{Binding IsStr_HFT_CorrelationScalping, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                    </UniformGrid>
+                                </ScrollViewer>
+                            </TabItem>
+
+                            <!-- Tab 4: Macro Alignments -->
+                            <TabItem Header="MTF &amp; MACRO">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="4">
+                                    <UniformGrid Columns="2" Rows="5">
+                                        <CheckBox Content="MTF M1/M5 Consensus" IsChecked="{Binding IsStr_MTF_ConsensusRider_M1_M5, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="MTF H4/D1 Trend Rider" IsChecked="{Binding IsStr_MTF_H4_D1_TrendFollowing, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="MTF Hybrid VWAP/SMA" IsChecked="{Binding IsStr_MTF_VwapSma_Hybrid, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="MTF Multi-Oscillator" IsChecked="{Binding IsStr_MTF_MultiOscillator_Consensus, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="MTF Volatility Drift" IsChecked="{Binding IsStr_MTF_VolatilityDriftFollower, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="MTF Macro News Momentum" IsChecked="{Binding IsStr_MTF_MacroNews_Momentum, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="MTF Session Breakout" IsChecked="{Binding IsStr_MTF_SessionOpen_Breakout, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="MTF Session Close Revers" IsChecked="{Binding IsStr_MTF_SessionClose_Reversion, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="MTF Weekend Gap Close" IsChecked="{Binding IsStr_MTF_WeekendGap_Close, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                        <CheckBox Content="MTF Champion Model AI" IsChecked="{Binding IsStr_MTF_SelfLearning_ChampionModel, Mode=TwoWay}" Foreground="{StaticResource SoftWhite}" FontSize="9.5" Margin="2" Cursor="Hand"/>
+                                    </UniformGrid>
+                                </ScrollViewer>
+                            </TabItem>
+                        </TabControl>
+
+                        <Separator Background="{StaticResource BorderSilver}" Margin="0,2,0,10"/>
+
+                        <!-- SECTION 2: DYNAMIC STOP-LOSS, PATIENCE and RISK GATES (20 New Features) -->
+                        <TextBlock Text="DYNAMIC TRAILING &amp; RISK SAFEGUARDS" Style="{StaticResource HeaderLabel}"/>
+
+                        <!-- Row: Risk Free Shield & News Sentiment Impact Slider -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.1*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Account Shield (Risk Free Priority) -->
+                            <Border Grid.Column="0" Background="#1C0D11" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="3" Padding="6">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="RISK-FREE SHIELD" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextRed}"/>
+                                        <TextBlock Text="Instant BE lock priority" FontSize="8.5" Foreground="{StaticResource SubtleGray}"/>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding IsRiskFreePriorityEnabled, Mode=TwoWay}" VerticalAlignment="Center" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Session Allocation Dropdown -->
+                            <Border Grid.Column="2" Background="#1E293B" BorderBrush="{StaticResource BorderSilver}" BorderThickness="1" CornerRadius="3" Padding="5">
+                                <StackPanel>
+                                    <TextBlock Text="SESSION ROUTING" FontSize="8.5" FontWeight="Bold" Foreground="{StaticResource AccentGold}"/>
+                                    <ComboBox SelectedIndex="0" Height="20" FontSize="9.5" Background="Transparent" BorderThickness="0" Foreground="White">
+                                        <ComboBoxItem Content="All Sessions Active"/>
+                                        <ComboBoxItem Content="London Focus"/>
+                                        <ComboBoxItem Content="New York Focus"/>
+                                        <ComboBoxItem Content="Asian Range Only"/>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- Sliders Block (Extremely dense) -->
+                        <!-- System Patience Slider -->
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="System Patience Delay (Sec):" FontSize="10" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Slider Width="150" Minimum="2" Maximum="60" Value="{Binding SystemPatienceSeconds}" SmallChange="1" LargeChange="5" VerticalAlignment="Center"/>
+                                <TextBox Text="{Binding SystemPatienceSeconds}" Width="35" Height="18" IsReadOnly="True" Margin="6,0,0,0" Background="#1E293B" Foreground="White" BorderBrush="{StaticResource BorderSilver}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="9.5"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Greed vs Rational Slider -->
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Quantum Greed Index (Volatility Trailing):" FontSize="10" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Slider Width="150" Minimum="0.0" Maximum="1.0" TickFrequency="0.1" Value="{Binding GreedIndex}" VerticalAlignment="Center"/>
+								<TextBox Text="{Binding GreedIndexText, Mode=OneWay}"
+		   Width="80"
+		   Height="18"
+		   IsReadOnly="True"
+		   Margin="6,0,0,0"
+		   Background="#1E293B"
+		   Foreground="White"
+		   BorderBrush="{StaticResource BorderSilver}"
+		   HorizontalContentAlignment="Center"
+		   VerticalContentAlignment="Center"
+		   FontSize="9.5"
+		   FontWeight="Bold"/>
+								
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Save Profit Scale-Out Threshold -->
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Save Profit Scaling Trigger (% of Bal):" FontSize="10" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Slider Width="150" Minimum="0.05" Maximum="2.0" TickFrequency="0.05" Value="{Binding SaveProfitThresholdPercent}" VerticalAlignment="Center"/>
+                                <TextBox Text="{Binding SaveProfitThresholdPercent, StringFormat={}{0:F2}%}" Width="35" Height="18" IsReadOnly="True" Margin="6,0,0,0" Background="#1E293B" Foreground="White" BorderBrush="{StaticResource BorderSilver}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="9.5"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Maximum Allowed Spread Gate -->
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Max Allowed Spread Gate (Pips):" FontSize="10" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Slider Width="150" Minimum="0.5" Maximum="10.0" TickFrequency="0.5" Value="{Binding MaxAllowedSpreadPips}" VerticalAlignment="Center"/>
+                                <TextBox Text="{Binding MaxAllowedSpreadPips, StringFormat={}{0:F1}}" Width="35" Height="18" IsReadOnly="True" Margin="6,0,0,0" Background="#1E293B" Foreground="White" BorderBrush="{StaticResource BorderSilver}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="9.5"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- HFT Server Response Latency Limit -->
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="HFT Server Latency Cutoff (ms):" FontSize="10" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Slider Width="150" Minimum="10" Maximum="300" TickFrequency="10" Value="{Binding HftLatencyLimitMs}" VerticalAlignment="Center"/>
+                                <TextBox Text="{Binding HftLatencyLimitMs}" Width="35" Height="18" IsReadOnly="True" Margin="6,0,0,0" Background="#1E293B" Foreground="White" BorderBrush="{StaticResource BorderSilver}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="9.5"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Volatility Drift Threshold Slider -->
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Volatility Regime Drift Threshold:" FontSize="10" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Slider Width="150" Minimum="0.1" Maximum="2.0" TickFrequency="0.1" Value="{Binding VolatilityDriftThreshold}" VerticalAlignment="Center"/>
+                                <TextBox Text="{Binding VolatilityDriftThreshold, StringFormat={}{0:F1}}" Width="35" Height="18" IsReadOnly="True" Margin="6,0,0,0" Background="#1E293B" Foreground="White" BorderBrush="{StaticResource BorderSilver}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="9.5"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Macro News Sentiment Impact Gate -->
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Text="Macro News Sentiment Filter Ratio:" FontSize="10" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Slider Width="150" Minimum="0.0" Maximum="1.0" TickFrequency="0.1" Value="{Binding NewsSentimentImpactGate}" VerticalAlignment="Center"/>
+                                <TextBox Text="{Binding NewsSentimentImpactGate, StringFormat={}{0:F1}}" Width="35" Height="18" IsReadOnly="True" Margin="6,0,0,0" Background="#1E293B" Foreground="White" BorderBrush="{StaticResource BorderSilver}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="9.5"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Separator Background="{StaticResource BorderSilver}" Margin="0,2,0,10"/>
+
+                        <!-- SECTION 3: TIME-SERIES PREDICTIVE PROJECTIONS (GLOWING NUMBERS) -->
+                        <TextBlock Text="AI PREDICTIVE SYSTEM PROJECTIONS" Style="{StaticResource HeaderLabel}"/>
+                        <Border BorderBrush="{StaticResource BorderSilver}" BorderThickness="1" CornerRadius="4" Background="#050812" Padding="8">
+                            <StackPanel>
+                                <!-- 20-Day Consistency -->
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="20-Day Actual Result Consistency Rate:" FontSize="9.5" Foreground="{StaticResource SubtleGray}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Consistency20DayText}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextMint}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </Grid>
+                                <!-- 1-Week Forecast -->
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="1-Week Projected Return Target:" FontSize="9.5" Foreground="{StaticResource SubtleGray}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Expected1WeekReturnText}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource NeonBlue}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </Grid>
+                                <!-- 30-Day Predict -->
+                                <Grid>
+                                    <TextBlock Text="30-Day Time-Series Target Gain Forecast:" FontSize="9.5" Foreground="{StaticResource SubtleGray}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Predictive30DayGainText}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentGold}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Button Command="{Binding ResetSettingsCommand}" Style="{StaticResource QuantumBtn}" Content="RELOAD MODEL DEFAULT LIMITS" Margin="0,8,0,0" Height="24" Width="260" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+            <!-- End LEFT COLUMN -->
+
+            <!-- RIGHT COLUMN: FINANCIAL GLOW CARDS and COMPACT TRADES DESK -->
+            <Grid Grid.Column="1" Margin="10,0,0,0">
+                <Grid.RowDefinitions>
+                    <!-- Realized Glowing Statistics Header Cards -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Active Positions compact Table -->
+                    <RowDefinition Height="240"/>
+                    <!-- Selected Intervention cockpit -->
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- GLOWING REALIZED FINANCIAL READOUTS (Compact layout) -->
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="6"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="6"/>
+                        <ColumnDefinition Width="1.5*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- PROFIT GLOW CARD -->
+                    <Border Grid.Column="0" Background="#0C1F15" BorderBrush="#059669" BorderThickness="1" CornerRadius="4" Padding="8">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#10B981" BlurRadius="6" ShadowDepth="0" Opacity="0.4"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="TOTAL REALIZED PROFIT" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMint}"/>
+                            <TextBlock Text="{Binding TotalRealizedProfitText}" Style="{StaticResource IndicatorValueText}" Foreground="{StaticResource TextMint}" Margin="0,2,0,0" FontSize="16"/>
+                            <TextBlock Text="{Binding TotalRealizedProfitPercentText}" FontSize="9" Foreground="{StaticResource SubtleGray}" Margin="0,1,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- LOSS GLOW CARD -->
+                    <Border Grid.Column="2" Background="#241015" BorderBrush="#DC2626" BorderThickness="1" CornerRadius="4" Padding="8">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#EF4444" BlurRadius="6" ShadowDepth="0" Opacity="0.4"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="TOTAL REALIZED LOSS" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextRed}"/>
+                            <TextBlock Text="{Binding TotalRealizedLossText}" Style="{StaticResource IndicatorValueText}" Foreground="{StaticResource TextRed}" Margin="0,2,0,0" FontSize="16"/>
+                            <TextBlock Text="{Binding TotalRealizedLossPercentText}" FontSize="9" Foreground="{StaticResource SubtleGray}" Margin="0,1,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- NET REALIZED and EXPECTED UTILITY GLOW CARD -->
+                    <Border Grid.Column="4" Background="#0D1A2D" BorderBrush="#2563EB" BorderThickness="1" CornerRadius="4" Padding="8">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#3B82F6" BlurRadius="6" ShadowDepth="0" Opacity="0.4"/>
+                        </Border.Effect>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="NET REALIZED GAIN" FontSize="9" FontWeight="Bold" Foreground="{StaticResource NeonBlue}"/>
+                                <TextBlock Text="{Binding NetPnLText}" Style="{StaticResource IndicatorValueText}" Foreground="{StaticResource NeonBlue}" Margin="0,2,0,0" FontSize="16"/>
+                                <TextBlock Text="Calculated dynamically against base" FontSize="8.5" Foreground="{StaticResource SubtleGray}" Margin="0,1,0,0"/>
+                            </StackPanel>
+                            <!-- Live status viability -->
+                            <Border Grid.Column="1" VerticalAlignment="Center" Background="#1D4ED8" CornerRadius="3" Padding="6,4">
+                                <StackPanel>
+                                    <TextBlock Text="NET RETURN" FontSize="8" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding NetReturnPercentText}" FontSize="10.5" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ACTIVE EXPOSURES DATAGRID (Highly Compacted) -->
+                <Border Grid.Row="1" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderSilver}" BorderThickness="1" CornerRadius="4" Padding="6">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="LIVE MT5 ACTIVE EXPOSURES" FontSize="10" FontWeight="Bold" Foreground="{StaticResource SoftWhite}" Margin="3,0,0,4"/>
+
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding OpenPositions}" SelectedItem="{Binding SelectedPosition}" AutoGenerateColumns="False" CanUserAddRows="False" Background="Transparent" BorderThickness="0" Foreground="{StaticResource SoftWhite}" RowBackground="#101522" AlternatingRowBackground="#0D101C" HeadersVisibility="Column" GridLinesVisibility="None" RowHeight="20" FontSize="10">
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#151D2F"/>
+                                    <Setter Property="Foreground" Value="{StaticResource AccentGold}"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Height" Value="20"/>
+                                    <Setter Property="Padding" Value="4,0"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource BorderSilver}"/>
+                                </Style>
+                            </DataGrid.Resources>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Ticket" Binding="{Binding TicketId}" Width="70"/>
+                                <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="70"/>
+                                <DataGridTextColumn Header="Dir" Binding="{Binding Direction}" Width="40"/>
+                                <DataGridTextColumn Header="Volume" Binding="{Binding Volume, StringFormat={}{0:F2}}" Width="55"/>
+                                <DataGridTextColumn Header="Entry Price" Binding="{Binding EntryPrice, StringFormat={}{0:F5}}" Width="85"/>
+                                <DataGridTextColumn Header="Current Price" Binding="{Binding CurrentPrice, StringFormat={}{0:F5}}" Width="85"/>
+                                <DataGridTextColumn Header="Stop Loss" Binding="{Binding StopLoss, StringFormat={}{0:F5}}" Width="85"/>
+                                <DataGridTextColumn Header="Take Profit" Binding="{Binding TakeProfit, StringFormat={}{0:F5}}" Width="85"/>
+                                <DataGridTemplateColumn Header="Floating PnL ($)" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding UnrealizedPnl, StringFormat={}{0:C2}}" FontWeight="Bold" Foreground="{StaticResource TextMint}" HorizontalAlignment="Right" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- DENSE CONTROL DESK and Expected Utility Assessment (Slightly taller to balance layout) -->
+                <Border Grid.Row="2" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderSilver}" BorderThickness="1" CornerRadius="4" Margin="0,8,0,0" Padding="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.8*"/>
+                            <ColumnDefinition Width="1.5*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Manual reduction options -->
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="MANUAL COCKPIT INTERVENTION DESK" FontWeight="Bold" Foreground="{StaticResource AccentGold}" Margin="0,0,0,4"/>
+                            <TextBlock Text="Secure assets instantly by scaling out volume or executing panic evacuations." FontSize="9.5" Foreground="{StaticResource SubtleGray}" Margin="0,0,0,8" TextWrapping="Wrap"/>
+
+                            <!-- Lot slider -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="LOTS TO CLOSE:" FontSize="10" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,6,0"/>
+                                <Slider Grid.Column="1" Minimum="0.01" Maximum="1.0" TickFrequency="0.01" Value="{Binding ManualReduceVolume}"/>
+                                <TextBox Text="{Binding ManualReduceVolume, StringFormat={}{0:F2}}" Width="45" Height="20" IsReadOnly="True" Margin="274,25,24,-25" Background="#1E293B" Foreground="White" BorderBrush="{StaticResource BorderSilver}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="10" FontWeight="Bold" Grid.Column="1"/>
+                            </Grid>
+
+                            <!-- Actions -->
+                            <StackPanel Orientation="Horizontal">
+                                <Button Command="{Binding ManualReduceCommand}" Style="{StaticResource QuantumBtn}" Content="REDUCE VOLUME" Margin="0,0,8,0" Height="24"/>
+                                <Button Command="{Binding ForceEvacuateCommand}" Style="{StaticResource EvacuateBtn}" Content="PANIC EVACUATE EXPOSURE" Height="24"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- EXPECTED UTILITY and VIABILITY COCKPIT -->
+                        <Border Grid.Column="1" Background="#060912" CornerRadius="4" BorderBrush="{StaticResource BorderSilver}" BorderThickness="1" Margin="10,0,0,0" Padding="8">
+                            <StackPanel>
+                                <TextBlock Text="ACTIVE EXPECTED UTILITY MATRIX" FontSize="10" FontWeight="Bold" Foreground="{StaticResource SoftWhite}" Margin="0,0,0,6"/>
+
+                                <!-- Max profit potential estimated by AI -->
+                                <Grid Margin="0,2">
+                                    <TextBlock Text="Max Profit Potential:" FontSize="9.5" Foreground="{StaticResource SubtleGray}"/>
+                                    <TextBlock Text="{Binding SelectedPositionMaxProfitPotentialText}" FontSize="10" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource TextMint}"/>
+                                </Grid>
+
+                                <!-- Viability to hold percentage -->
+                                <Grid Margin="0,2">
+                                    <TextBlock Text="Neural Hold Viability:" FontSize="9.5" Foreground="{DynamicResource SubtleGray}"/>
+                                    <TextBlock Text="{Binding SelectedPositionExpectedUtilityHoldViabilityText}" FontSize="10" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource NeonBlue}"/>
+                                </Grid>
+
+                                <!-- Risk Exposure -->
+                                <Grid Margin="0,2">
+                                    <TextBlock Text="Exposure Sizing:" FontSize="9.5" Foreground="{DynamicResource SubtleGray}"/>
+                                    <TextBlock Text="{Binding SelectedPosition.RiskExposure, StringFormat={}{0:C2}}" FontSize="10" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource AccentGold}"/>
+                                </Grid>
+
+                                <!-- Evaluation status -->
+                                <Border Background="#1E293B" CornerRadius="2" Margin="0,6,0,0" Padding="4,2">
+                                    <TextBlock Text="AI CRITIQUE: HOLD STATE VIABLE - HIGH UTILITY" FontSize="8.5" FontWeight="Bold" Foreground="{StaticResource TextMint}" HorizontalAlignment="Center"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+            <!-- End RIGHT COLUMN -->
+        </Grid>
+        <!-- End Row 1 -->
+
+        <!-- Row 2: Status Bar Footer -->
+        <Border Grid.Row="2" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderSilver}" BorderThickness="0,1,0,0" Padding="15,4">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding TelemetryStatus}" Foreground="{StaticResource TextMint}" FontSize="9.5" FontFamily="Consolas"/>
+                <TextBlock Grid.Column="1" Text="NEXUS AUTOMATED POSITION MANAGER: OK" FontSize="9.5" Foreground="{StaticResource TextMint}" FontWeight="Bold"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -6,7 +6,12 @@ using Nexus.Core.Entities;
 using Nexus.Core.Interfaces;
 using Nexus.Execution.Domain;
 using Nexus.Training;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Nexus.Execution.Management
 {
@@ -14,8 +19,13 @@ namespace Nexus.Execution.Management
     /// Jet-Engine Scale, ultra-fast, multi-scenario quantitative position manager.
     /// Executes high-frequency mathematical evaluations, volume-weighted scale-outs,
     /// margin-level defense locks, and preemptive survival-first closures.
-    /// Fully integrated with the AlphaGo-style Experience Replay Engine.
+    /// Fully integrated with the AlphaGo-style Experience Replay Engine and Runtime Configurable Sliders.
     /// </summary>
+    /// <remarks>
+    /// Reference Files:
+    /// - Integrated Configuration: src/Nexus.Core/Interfaces/IPositionManagerSettingsProvider.cs
+    /// - Executed within: src/Nexus.Desktop/ViewModels/Workspaces/DashboardViewModel.cs
+    /// </remarks>
     public class PositionManager
     {
         #region Private Fields & Concurrency Trackers
@@ -29,6 +39,9 @@ namespace Nexus.Execution.Management
         private readonly IMarketDashboardService _marketDashboard;
         private readonly IDecisionEventStream _decisionStream;
         private readonly ExperienceReplayEngine _replayEngine;
+
+        // Dynamic Configuration Settings Provider (Replaces previous static Magic Numbers)
+        private readonly IPositionManagerSettingsProvider _settingsProvider;
 
         // Concurrency Guard: Strictly prevents duplicate executions, race conditions, or double-closures on the same ticket.
         private readonly ConcurrentDictionary<string, byte> _processingTickets = new();
@@ -51,12 +64,14 @@ namespace Nexus.Execution.Management
             Nexus.Execution.Gateways.IExecutionGateway executionGateway,
             IDecisionEventStream decisionStream,
             ExperienceReplayEngine replayEngine,
+            IPositionManagerSettingsProvider settingsProvider,
             IServiceScopeFactory? scopeFactory = null,
             IMarketDashboardService marketDashboard = null!)
         {
             _executionGateway = executionGateway ?? throw new ArgumentNullException(nameof(executionGateway));
             _decisionStream = decisionStream ?? throw new ArgumentNullException(nameof(decisionStream));
             _replayEngine = replayEngine ?? throw new ArgumentNullException(nameof(replayEngine));
+            _settingsProvider = settingsProvider ?? throw new ArgumentNullException(nameof(settingsProvider));
             _scopeFactory = scopeFactory;
             _marketDashboard = marketDashboard ?? throw new ArgumentNullException(nameof(marketDashboard));
         }
@@ -84,7 +99,7 @@ namespace Nexus.Execution.Management
         #region High-Frequency Quantum Risk Control Engine (Survival Guard)
         /// <summary>
         /// Executes high-speed mathematical evaluations and pre-emptive capital preservation closures.
-        /// Decouples from sluggish cooldowns in volatile market spikes to execute FAST-ACT.
+        /// Dynamically retrieves operating parameters from the IPositionManagerSettingsProvider in real-time.
         /// </summary>
         public async Task ManageActivePositionsRiskAsync(
             double currentEquity,
@@ -95,6 +110,9 @@ namespace Nexus.Execution.Management
         {
             if (_openPositions.IsEmpty) return;
 
+            // Resolve the current hot-reloadable active configuration settings
+            var activeSettings = _settingsProvider.GetSettings();
+
             #region Extract Active Market Volatility & Regime
             double volatility = _marketDashboard != null ? _marketDashboard.Volatility : 0.15;
             if (volatility <= 0) volatility = 0.12;
@@ -103,9 +121,9 @@ namespace Nexus.Execution.Management
             #endregion
 
             #region PRIORITY 1: Margin Call Defense (MCD Lock - Survival First)
-            // REASON: If Margin Level drops below 250%, the account is at extreme risk of cascading liquidations.
+            // REASON: If Margin Level drops below user-defined threshold, the account is at extreme risk of cascading liquidations.
             // Fast-Act: Immediately execute a market order to close the worst losing position. Survival > Profit.
-            bool isMarginCritical = marginLevel > 0 && marginLevel < 250.0;
+            bool isMarginCritical = marginLevel > 0 && marginLevel < activeSettings.MarginDefenseThreshold;
             if (isMarginCritical)
             {
                 var worstLosingPosition = _openPositions.Values
@@ -117,7 +135,7 @@ namespace Nexus.Execution.Management
                 {
                     _decisionStream.PublishPositionManagement(new PositionManagementEvent(
                         Guid.NewGuid(), worstLosingPosition.Symbol, "MARGIN_DEFENSE", worstLosingPosition.Volume,
-                        $"[EMERGENCY] Margin Level critical ({marginLevel:F1}%). Evacuating position {worstLosingPosition.TicketId} to prevent margin call."
+                        $"[EMERGENCY] Margin Level critical ({marginLevel:F1}% < Thresh {activeSettings.MarginDefenseThreshold}%). Evacuating position {worstLosingPosition.TicketId}."
                     ));
 
                     await HandlePartialCloseAsync(worstLosingPosition.TicketId, worstLosingPosition.Volume, worstLosingPosition.CurrentPrice, cancellationToken);
@@ -153,11 +171,11 @@ namespace Nexus.Execution.Management
                     {
                         bool isBuy = direction.Equals("Buy", StringComparison.OrdinalIgnoreCase);
                         double defaultSl = (!pos.StopLoss.HasValue || pos.StopLoss.Value == 0.0)
-                            ? (isBuy ? (entryPrice - (volatility * 2.5 * pipMultiplier * pipSize)) : (entryPrice + (volatility * 2.5 * pipMultiplier * pipSize)))
+                            ? (isBuy ? (entryPrice - (volatility * activeSettings.InitialSlVolatilityMultiplier * pipMultiplier * pipSize)) : (entryPrice + (volatility * activeSettings.InitialSlVolatilityMultiplier * pipMultiplier * pipSize)))
                             : pos.StopLoss.Value;
 
                         double defaultTp = (!pos.TakeProfit.HasValue || pos.TakeProfit.Value == 0.0)
-                            ? (isBuy ? (entryPrice + (volatility * 4.5 * pipMultiplier * pipSize)) : (entryPrice - (volatility * 4.5 * pipMultiplier * pipSize)))
+                            ? (isBuy ? (entryPrice + (volatility * activeSettings.InitialTpVolatilityMultiplier * pipMultiplier * pipSize)) : (entryPrice - (volatility * activeSettings.InitialTpVolatilityMultiplier * pipMultiplier * pipSize)))
                             : pos.TakeProfit.Value;
 
                         var modifyResult = await HandleStopModificationAsync(pos.TicketId, defaultSl, defaultTp, cancellationToken);
@@ -174,12 +192,12 @@ namespace Nexus.Execution.Management
 
                     #region SCENARIO 1: Statistical Noise Floor & Pre-Emptive Capital Preservation (Fast-Act Cut)
                     // REASON: Do not wait for a hard Stop Loss. Calculate a Survival Probability.
-                    // If loss exceeds the market noise floor (1.5 * Volatility) OR the momentum is violently against us,
+                    // If loss exceeds the user-configured noise floor OR the momentum is violently against us,
                     // execute a pre-emptive FAST-ACT close. Understanding the trade is doomed.
                     if (floatingPips < 0)
                     {
                         double lossPips = Math.Abs(floatingPips);
-                        double noiseFloorPips = volatility * 1.5 * pipMultiplier;
+                        double noiseFloorPips = volatility * activeSettings.NoiseFloorMultiplier * pipMultiplier;
 
                         bool isBuy = direction.Equals("Buy", StringComparison.OrdinalIgnoreCase);
                         bool regimeFlipped = (isBuy && currentRegime.Contains("Bearish")) || (!isBuy && currentRegime.Contains("Bullish"));
@@ -188,7 +206,7 @@ namespace Nexus.Execution.Management
                         {
                             _decisionStream.PublishPositionManagement(new PositionManagementEvent(
                                 Guid.NewGuid(), pos.Symbol, "SURVIVAL_CUT", volume,
-                                $"[FAST-ACT] Noise floor broken ({lossPips:F1} pips) or regime flipped. Pre-emptive survival close executed."
+                                $"[FAST-ACT] Noise floor broken ({lossPips:F1} pips >= Thresh {noiseFloorPips:F1} pips) or regime flipped. Pre-emptive close executed."
                             ));
 
                             await HandlePartialCloseAsync(ticketId, volume, currentPrice, cancellationToken);
@@ -232,12 +250,12 @@ namespace Nexus.Execution.Management
                     else
                     {
                         // Standard Volume Multi-Stage Target
-                        // STAGE 1: Lock 30% of position when profit reaches 0.20% of the entire account balance
-                        if (profitPercentage >= 0.20 && currentStage == 0)
+                        // STAGE 1: Lock specified volume of position when profit reaches Stage 1 balance percentage threshold
+                        if (profitPercentage >= activeSettings.Stage1TpBalancePercent && currentStage == 0)
                         {
                             _scaleOutStages[ticketId] = 1;
 
-                            double closeVol = Math.Round(volume * 0.30, 2);
+                            double closeVol = Math.Round(volume * activeSettings.Stage1CloseVolumePercent, 2);
                             if (closeVol < 0.01) closeVol = 0.01;
 
                             await HandlePartialCloseAsync(ticketId, closeVol, currentPrice, cancellationToken);
@@ -247,17 +265,17 @@ namespace Nexus.Execution.Management
 
                             _decisionStream.PublishPositionManagement(new PositionManagementEvent(
                                 Guid.NewGuid(), pos.Symbol, "STAGE_1_TP", closeVol,
-                                $"Profit hit 0.20% of balance. Scaled out 30% volume. SL to Break-Even: {beSl:F5}"
+                                $"Profit hit {activeSettings.Stage1TpBalancePercent:F2}% of balance. Scaled out {activeSettings.Stage1CloseVolumePercent * 100:F0}%. SL to Break-Even: {beSl:F5}"
                             ));
                             continue;
                         }
 
-                        // STAGE 2: Lock 50% of the remaining volume when profit reaches 0.50% of the account balance
-                        if (profitPercentage >= 0.50 && currentStage == 1)
+                        // STAGE 2: Lock specified remaining volume when profit reaches Stage 2 balance percentage threshold
+                        if (profitPercentage >= activeSettings.Stage2TpBalancePercent && currentStage == 1)
                         {
                             _scaleOutStages[ticketId] = 2;
 
-                            double closeVol = Math.Round(volume * 0.50, 2);
+                            double closeVol = Math.Round(volume * activeSettings.Stage2CloseVolumePercent, 2);
                             if (closeVol < 0.01) closeVol = 0.01;
 
                             await HandlePartialCloseAsync(ticketId, closeVol, currentPrice, cancellationToken);
@@ -267,19 +285,19 @@ namespace Nexus.Execution.Management
 
                             _decisionStream.PublishPositionManagement(new PositionManagementEvent(
                                 Guid.NewGuid(), pos.Symbol, "STAGE_2_TP", closeVol,
-                                $"Profit hit 0.50% of balance. Scaled out 50% remaining. SL locked at: {lockSl:F5}"
+                                $"Profit hit {activeSettings.Stage2TpBalancePercent:F2}% of balance. Scaled out {activeSettings.Stage2CloseVolumePercent * 100:F0}%. SL locked at: {lockSl:F5}"
                             ));
                             continue;
                         }
                     }
 
                     // STAGE 3 (Peak-Utility Limit): Absolute mathematical boundary close
-                    double peakExpectedPips = volatility * 4.0 * pipMultiplier;
+                    double peakExpectedPips = volatility * activeSettings.PeakUtilityMultiplier * pipMultiplier;
                     if (floatingPips >= peakExpectedPips * 0.90)
                     {
                         _decisionStream.PublishPositionManagement(new PositionManagementEvent(
                             Guid.NewGuid(), pos.Symbol, "PEAK_CLOSE", volume,
-                            $"Statistical peak utility reached ({floatingPips:F1} pips). Full profit-lock close executed."
+                            $"Statistical peak utility reached ({floatingPips:F1} pips >= {peakExpectedPips * 0.90:F1} pips). Profit-lock close executed."
                         ));
 
                         await HandlePartialCloseAsync(ticketId, volume, currentPrice, cancellationToken);
@@ -289,7 +307,7 @@ namespace Nexus.Execution.Management
 
                     #region SCENARIO 3: Hysteresis-Protected Continuous SL/TP Tuning
                     // REASON: Continuous modification of stops on every tick ensures the protective boundaries
-                    // dynamically adjust. Protects against MT5 Rate-Limits by enforcing a 15-second cooldown and 3-pip minimum change.
+                    // dynamically adjust. Protects against MT5 Rate-Limits by enforcing a user-defined cooldown and hysteresis pip threshold.
                     bool isBuyOrder = direction.Equals("Buy", StringComparison.OrdinalIgnoreCase);
                     double targetSl = isBuyOrder
                         ? (currentPrice - (volatility * 1.8 * pipMultiplier * pipSize))
@@ -307,11 +325,11 @@ namespace Nexus.Execution.Management
 
                         if (_lastModifications.TryGetValue(ticketId, out var lastMod))
                         {
-                            isCooldownExpired = (DateTime.UtcNow - lastMod.Time) >= TimeSpan.FromSeconds(15);
-                            isHysteresisMet = Math.Abs(targetSl - lastMod.Sl) >= (3.0 * pipSize);
+                            isCooldownExpired = (DateTime.UtcNow - lastMod.Time) >= TimeSpan.FromSeconds(activeSettings.CooldownSeconds);
+                            isHysteresisMet = Math.Abs(targetSl - lastMod.Sl) >= (activeSettings.HysteresisPipThreshold * pipSize);
                         }
 
-                        // FAST-ACT Bypass: If standard deviation spikes, bypass the 15s cooldown to secure capital
+                        // FAST-ACT Bypass: If standard deviation spikes, bypass the configured cooldown to secure capital
                         bool isVolatilitySpike = volatility > 0.40;
 
                         if ((isCooldownExpired && isHysteresisMet) || isVolatilitySpike)

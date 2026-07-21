@@ -59,6 +59,7 @@ namespace Nexus.Desktop
                 .ConfigureServices((context, services) =>
                 {
                     #region Configuration & Core Services
+                    services.AddSingleton<IPositionManagerSettingsProvider, PositionManagerSettingsProvider>();
                     services.AddSingleton<IAppConfigurationService>(sp => new AppConfigurationService());
                     services.AddSingleton<ISecretStore>(sp => new WindowsSecretStore());
                     services.AddSingleton<IDiagnosticService, DiagnosticService>();
@@ -232,6 +233,8 @@ namespace Nexus.Desktop
                     #endregion
 
                     #region Workspace ViewModels
+                    services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.PositionManagerViewModel>();
+                    services.AddTransient<Nexus.Desktop.Views.Workspaces.PositionManagerView>();
                     services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.DashboardViewModel>();
                     services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.Mt5BridgeViewModel>();
                     services.AddSingleton<Nexus.Desktop.ViewModels.Workspaces.MarketWatchViewModel>();

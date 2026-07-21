@@ -207,6 +207,59 @@ namespace Nexus.Desktop.ViewModels
         public IAsyncRelayCommand BridgePingCommand { get; }
         public ICommand ToggleSubscriptionCommand { get; }
 
+        #region Position Manager Navigation & Context Properties
+
+        /// <summary>
+        /// Gets the dedicated View Model driving the independent Position Manager Cockpit workspace.
+        /// Acts as the primary DataContext for live MT5 position monitoring and 20-level risk tuning.
+        /// </summary>
+        /// <value>
+        /// Variable Type: <see cref="PositionManagerViewModel"/> (Read-only Singleton instance).
+        /// Value Output: Returns the active ViewModel instance or throws if uninitialized.
+        /// </value>
+        public PositionManagerViewModel PositionManager { get; }
+
+        /// <summary>
+        /// Gets the UI Command triggered when the operator selects the "Position Manager" item from the left drawer.
+        /// Executes a synchronous state transition on the UI thread by setting <see cref="SelectedTabIndex"/> to 10.
+        /// </summary>
+        /// <value>
+        /// Variable Type: <see cref="ICommand"/> (RelayCommand instance).
+        /// Execution Input: None (Void parameter).
+        /// Execution Output: Mutates <see cref="SelectedTabIndex"/> property to value <c>10</c>.
+        /// </value>
+        public ICommand SelectPositionManagerCommand { get; }
+
+
+
+        #endregion
+        /// <summary>
+        /// Initializes the master root ViewModel for the desktop workstation with full dependency resolution.
+        /// </summary>
+        /// <param name="configService">Global configuration provider.</param>
+        /// <param name="secretStore">Encrypted DPAPI secret manager.</param>
+        /// <param name="bootstrappers">Database migration engine collection.</param>
+        /// <param name="connectionService">MT5 socket connection service.</param>
+        /// <param name="accountService">Broker balance & margin service.</param>
+        /// <param name="tradeService">Order dispatch & modification service.</param>
+        /// <param name="diagnosticService">System health audit logger.</param>
+        /// <param name="mt5Trading">MT5 Trading panel VM.</param>
+        /// <param name="intelligence">Market Intelligence matrix VM.</param>
+        /// <param name="bridgeService">Local Kestrel API bridge service.</param>
+        /// <param name="pipeline">High-frequency tick data processing pipeline.</param>
+        /// <param name="dashboard">Primary analytics dashboard VM.</param>
+        /// <param name="mt5Bridge">MT5 Bridge workspace VM.</param>
+        /// <param name="marketWatch">Market quotes watcher VM.</param>
+        /// <param name="manualDesk">Manual order execution desk VM.</param>
+        /// <param name="diagnostics">Diagnostics workspace VM.</param>
+        /// <param name="trainSkills">ML Skill training workspace VM.</param>
+        /// <param name="testConsole">HFT test execution console VM.</param>
+        /// <param name="settings">Application settings VM.</param>
+        /// <param name="positionManager">
+        /// Input Parameter: <see cref="PositionManagerViewModel"/> instance.
+        /// Represents the isolated position management workstation controller.
+        /// Variable Type: <see cref="PositionManagerViewModel"/> (Must not be null).
+        /// </param>
         public MainViewModel(
             IAppConfigurationService configService,
             ISecretStore secretStore,
@@ -226,7 +279,8 @@ namespace Nexus.Desktop.ViewModels
             DiagnosticsViewModel diagnostics,
             TrainSkillsViewModel trainSkills,
             TestConsoleViewModel testConsole,
-            SettingsViewModel settings)
+            SettingsViewModel settings,
+            PositionManagerViewModel positionManager)
         {
             _configService = configService;
             _secretStore = secretStore;
@@ -245,7 +299,10 @@ namespace Nexus.Desktop.ViewModels
             Diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             TestConsole = testConsole ?? throw new ArgumentNullException(nameof(testConsole));
             Settings = settings ?? throw new ArgumentNullException(nameof(settings));
-
+            // Variable Check & Storage: Validate and assign the Position Manager ViewModel reference
+            // Input: positionManager (Parameter)
+            // Output: PositionManager (Public Property)
+            PositionManager = positionManager ?? throw new ArgumentNullException(nameof(positionManager));
             // Wire Bridge Connection Commands
             BridgeConnectCommand = new AsyncRelayCommand(OnBridgeConnectAsync);
             BridgeDisconnectCommand = new AsyncRelayCommand(OnBridgeDisconnectAsync);
@@ -308,6 +365,11 @@ namespace Nexus.Desktop.ViewModels
             SelectSettingsCommand = new RelayCommand(() => SelectedTabIndex = 7);
             SelectTestConsoleCommand = new RelayCommand(() => SelectedTabIndex = 8);
             SelectTrainSkillsCommand = new RelayCommand(() => SelectedTabIndex = 9);
+            // Navigation Command Binding: Map Position Manager selection to Tab Index 10
+            // Input Action: User click on sidebar navigation button
+            // State Mutation: SelectedTabIndex = 10
+            // Output View: Displays PositionManagerView.xaml bound to PositionManagerViewModel
+            SelectPositionManagerCommand = new RelayCommand(() => SelectedTabIndex = 10);
             RunSmokeTestCommand = new AsyncRelayCommand(OnRunSmokeTestAsync);
 
             // Wire Trade Commands

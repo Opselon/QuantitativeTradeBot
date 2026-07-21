@@ -332,6 +332,37 @@
                                 </StackPanel>
                             </Button>
 
+
+                            <!-- NEW: POSITION MANAGER WORKSTATION SIDEBAR BUTTON -->
+                            <!-- Command Input: Binds to SelectPositionManagerCommand on MainViewModel -->
+                            <!-- UI Trigger: Highlights with PrimaryBrush when SelectedTabIndex == 10 -->
+                            <Button Command="{Binding SelectPositionManagerCommand}" 
+        HorizontalContentAlignment="Left" 
+        Height="40" 
+        Padding="12,0" 
+        Margin="0,0,0,3" 
+        IsEnabled="{Binding IsOnboarded}"
+        ToolTip="Open Independent Position Manager Cockpit &amp; Risk Tuning Desk">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTabIndex}" Value="10">
+                                                <Setter Property="Background" Value="{DynamicResource SurfaceVariantBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ShieldLock" Width="18" Height="18" Foreground="#F59E0B" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Position Manager" VerticalAlignment="Center" FontWeight="Bold" Foreground="#F59E0B" Style="{StaticResource NteBodyLarge}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Train Skills -->
+
+
                             <Button Command="{Binding SelectTrainSkillsCommand}" HorizontalContentAlignment="Left" Height="46" Padding="15,0" Margin="0,0,0,4" IsEnabled="{Binding IsOnboarded}">
                                 <Button.Style>
                                     <Style TargetType="Button" BasedOn="{StaticResource NteSecondaryButton}">
@@ -876,6 +907,8 @@
                                     <views:NexusIntelligenceDashboard Grid.Column="2" DataContext="{Binding Intelligence}"/>
                                 </Grid>
                             </TabItem>
+                            
+                            
 
                             <!-- Tab 6: Diagnostics -->
                             <TabItem>
@@ -887,6 +920,7 @@
                                 <workspaces:SettingsView DataContext="{Binding Settings}"/>
                             </TabItem>
 
+                            
                             <!-- Tab 8: Test Console -->
                             <TabItem>
                                 <workspaces:TestConsoleView DataContext="{Binding TestConsole}"/>
@@ -896,7 +930,12 @@
                             <TabItem>
                                 <workspaces:TrainSkillsView DataContext="{Binding TrainSkills}"/>
                             </TabItem>
-
+                            <!-- NEW: TAB 10 - POSITION MANAGER WORKSTATION -->
+                            <!-- DataContext Mapping: Binds directly to MainViewModel.PositionManager -->
+                            <!-- View Element: Renders the PositionManagerView workspace -->
+                            <TabItem>
+                                <workspaces:PositionManagerView DataContext="{Binding PositionManager}"/>
+                            </TabItem>
                         </TabControl>
                     </Grid>
                 </Grid>
